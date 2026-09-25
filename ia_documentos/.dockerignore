@@ -1,0 +1,11 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+.git/
+data/output/
+data/logs/
+data/input/*.pdf
+.env

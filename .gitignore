@@ -1,0 +1,40 @@
+# ── Secretos y configuración local ──────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+!nginx/certs/.gitkeep
+
+# ── Datos locales (NUNCA subir documentos reales ni respaldos) ──────────────
+/data/
+.run/
+backups/*
+!backups/.gitkeep
+ia_documentos/data/input/*
+!ia_documentos/data/input/.gitkeep
+!ia_documentos/data/input/AQUI_VAN_LOS_PDFS.txt
+ia_documentos/data/output/
+ia_documentos/data/logs/
+ocr-platform-extension*.zip
+*.log
+
+# Copia del historial git original de ia_documentos (repo LuisRan/ia_documentos)
+.respaldo-git-ia_documentos/
+
+# ── Dependencias / builds ───────────────────────────────────────────────────
+node_modules/
+dist/
+.astro/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.coverage
+*.tgz
+
+# ── Sistema / editores ──────────────────────────────────────────────────────
+.DS_Store
+.vscode/
+.idea/

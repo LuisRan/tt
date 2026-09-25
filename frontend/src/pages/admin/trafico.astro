@@ -1,0 +1,63 @@
+---
+import Panel from '../../layouts/Panel.astro';
+---
+<Panel titulo="Tráfico" seccion="admin" activo="trafico">
+  <div class="encabezado">
+    <div><h1>Tráfico del sistema</h1><p class="sub">Accesos, uso de la API y procesamiento de documentos.</p></div>
+    <select data-dias style="width:auto"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="90">Últimos 90 días</option></select>
+  </div>
+  <div class="grid grid-3" style="margin-bottom:24px">
+    <div class="card kpi"><div class="etiqueta">Precisión de la IA</div><div class="valor" data-t="precision">–</div><div class="small muted" data-t="evaluados"></div></div>
+    <div class="card kpi"><div class="etiqueta">Tiempo promedio IA</div><div class="valor" data-t="tiempo">–</div></div>
+    <div class="card kpi"><div class="etiqueta">Confianza promedio</div><div class="valor" data-t="confianza">–</div></div>
+    <div class="card kpi"><div class="etiqueta">Errores del módulo IA</div><div class="valor rojo" data-t="errores">–</div></div>
+    <div class="card kpi"><div class="etiqueta">Nuevos registros</div><div class="valor" data-t="registros">–</div></div>
+    <div class="card kpi"><div class="etiqueta">Cómo se mide la precisión</div><div class="small muted">Porcentaje de campos que el usuario confirmó sin corregir al validar. Las ediciones posteriores no cuentan.</div></div>
+  </div>
+  <div class="grid grid-2" style="margin-bottom:24px">
+    <div class="card"><h2>Accesos exitosos por día</h2><div class="grafica" data-g="accesos_exitosos"></div></div>
+    <div class="card"><h2>Solicitudes OCR por día</h2><div class="grafica" data-g="solicitudes_ocr"></div></div>
+    <div class="card"><h2>Solicitudes a la API por día</h2><div class="grafica" data-g="solicitudes_api"></div></div>
+    <div class="card"><h2>Accesos fallidos por día</h2><div class="grafica" data-g="accesos_fallidos"></div></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card"><h2 style="margin-bottom:12px">Documentos por tipo</h2><table class="tabla"><tbody data-tipos></tbody></table></div>
+    <div class="card"><h2 style="margin-bottom:12px">Rutas más usadas</h2><table class="tabla"><tbody data-rutas></tbody></table></div>
+  </div>
+</Panel>
+<script>
+  import { api, requerirSesion } from '../../lib/api';
+  import { esc } from '../../lib/ui';
+
+  await requerirSesion('administrador');
+  const dias = document.querySelector('[data-dias]') as HTMLSelectElement;
+
+  function grafica(el: HTMLElement, serie: any[], campo: string) {
+    const max = Math.max(1, ...serie.map((s) => s[campo]));
+    const cada = Math.ceil(serie.length / 8);
+    el.innerHTML = serie
+      .map(
+        (s, i) => `<div class="col" title="${esc(s.dia)}: ${s[campo]}"><span style="height:${(s[campo] / max) * 130}px"></span>
+          <small>${i % cada === 0 ? esc(String(s.dia).slice(5)) : '&nbsp;'}</small></div>`,
+      )
+      .join('');
+  }
+
+  async function cargar() {
+    const r = await api(`/admin/trafico?dias=${dias.value}`);
+    const t = r.totales;
+    (document.querySelector('[data-t=tiempo]') as HTMLElement).textContent = t.tiempo_promedio_ms ? `${(t.tiempo_promedio_ms / 1000).toFixed(1)} s` : '—';
+    (document.querySelector('[data-t=confianza]') as HTMLElement).textContent = t.confianza_promedio != null ? `${Math.round(t.confianza_promedio * 100)}%` : '—';
+    (document.querySelector('[data-t=errores]') as HTMLElement).textContent = String(t.errores_ia ?? 0);
+    (document.querySelector('[data-t=registros]') as HTMLElement).textContent = String(t.registros ?? 0);
+    (document.querySelector('[data-t=precision]') as HTMLElement).textContent = t.precision_campos != null ? `${(Number(t.precision_campos) * 100).toFixed(1)}%` : '—';
+    (document.querySelector('[data-t=evaluados]') as HTMLElement).textContent = `${t.campos_evaluados ?? 0} campos evaluados`;
+    document.querySelectorAll<HTMLElement>('[data-g]').forEach((g) => grafica(g, r.serie, g.dataset.g!));
+    (document.querySelector('[data-tipos]') as HTMLElement).innerHTML =
+      r.documentos_por_tipo.map((x: any) => `<tr><td>${esc(x.tipo)}</td><td style="text-align:right"><b>${x.total}</b></td></tr>`).join('') || '<tr><td class="muted">Sin datos</td></tr>';
+    (document.querySelector('[data-rutas]') as HTMLElement).innerHTML =
+      r.rutas_mas_usadas.map((x: any) => `<tr><td class="mono small">${esc(x.metodo)} ${esc(x.ruta)}</td><td style="text-align:right"><b>${x.total}</b></td></tr>`).join('') || '<tr><td class="muted">Sin datos</td></tr>';
+  }
+  dias.addEventListener('change', cargar);
+  await cargar();
+</script>

@@ -1,0 +1,14 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --cov=domain --cov=application --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["domain", "application"]
+omit = ["tests/*", "config/*", "application/pipeline.py"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true

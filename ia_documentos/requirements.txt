@@ -1,0 +1,37 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ia_documentos — dependencias Python (3.11+)
+# Los marcadores "; sys_platform == ..." hacen que pip instale lo correcto
+# segun el sistema operativo (macOS / Windows / Linux-Docker).
+# ─────────────────────────────────────────────────────────────────────────────
+
+# OCR / Extraccion de PDF (Docling trae pypdfium2 y torch)
+docling>=2.30.0,<3.0.0
+# OCR nativo de macOS (Vision framework) que Docling usa en Apple Silicon
+ocrmac>=1.0.0; sys_platform == "darwin"
+
+# OCR de respaldo (requiere el binario de Tesseract en el sistema)
+pytesseract>=0.3.10
+pdf2image>=1.16.0          # requiere Poppler; si falta se usa pypdfium2
+pypdf>=4.0.0
+Pillow>=10.0.0
+
+# LLM local
+ollama>=0.4.0
+
+# Validacion de esquemas
+pydantic>=2.7.0
+
+# Logging estructurado
+structlog>=24.0.0
+
+# Configuracion por .env
+python-dotenv>=1.0.0
+
+# API REST (adaptador de entrada para el backend Node.js)
+flask>=3.0.0
+gunicorn>=22.0.0; sys_platform != "win32"
+waitress>=3.0.0; sys_platform == "win32"
+
+# Pruebas
+pytest>=8.0.0
+pytest-cov>=5.0.0

@@ -1,0 +1,12 @@
+# Solo lo usa la imagen "web" (contexto = raíz): frontend + nginx
+**/node_modules
+**/dist
+**/.astro
+ia_documentos
+backend
+backup
+data
+backups
+.env
+*.tgz
+.git

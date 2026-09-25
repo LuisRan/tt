@@ -1,0 +1,16 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base titulo="Términos y aviso de privacidad">
+  <div class="pantalla-centrada">
+    <article class="card caja-auth ancha">
+      <h1>Términos y condiciones · Aviso de privacidad</h1>
+      <div data-terminos-texto style="margin-top:18px"></div>
+      <a class="btn btn-borde" href="javascript:history.back()">Regresar</a>
+    </article>
+  </div>
+</Base>
+<script>
+  import { TERMINOS_HTML } from '../lib/terminos';
+  (document.querySelector('[data-terminos-texto]') as HTMLElement).innerHTML = TERMINOS_HTML;
+</script>

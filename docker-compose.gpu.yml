@@ -1,0 +1,11 @@
+# GPU NVIDIA para Ollama en contenedor (Windows con WSL2 / Linux).
+# Uso: docker compose -f docker-compose.yml -f docker-compose.gpu.yml --profile ollama up -d
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

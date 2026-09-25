@@ -1,0 +1,67 @@
+---
+import Panel from '../../layouts/Panel.astro';
+---
+<Panel titulo="Inicio" seccion="usuario" activo="inicio">
+  <div class="encabezado">
+    <div>
+      <h1 data-saludo>Bienvenid@ de vuelta</h1>
+      <p class="sub">Gestiona y valida tus documentos fácilmente.</p>
+    </div>
+    <a class="btn btn-primario" href="/app/subir">+ Subir documento</a>
+  </div>
+
+  <div data-alertas></div>
+
+  <div class="grid grid-4" style="margin-bottom:28px">
+    <div class="card kpi"><div class="etiqueta">Documentos</div><div class="valor" data-k="documentos">–</div></div>
+    <div class="card kpi"><div class="etiqueta">Procesados OCR</div><div class="valor" data-k="procesados">–</div></div>
+    <div class="card kpi"><div class="etiqueta">Validados</div><div class="valor" data-k="validados">–</div></div>
+    <div class="card kpi"><div class="etiqueta">Pendientes</div><div class="valor" data-k="pendientes">–</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-cabecera"><h2>Documentos recientes</h2><a href="/app/documentos">Ver todos</a></div>
+    <div class="tabla-scroll">
+      <table class="tabla">
+        <thead><tr><th>Documento</th><th>Tipo</th><th>Fecha</th><th>Estado</th></tr></thead>
+        <tbody data-recientes><tr><td colspan="4" class="muted">Cargando…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</Panel>
+<script>
+  import { api, requerirSesion } from '../../lib/api';
+  import { esc, estadoHtml, fecha } from '../../lib/ui';
+  import { icono } from '../../lib/iconos';
+
+  const yo = await requerirSesion('usuario');
+  if (yo.nombre) (document.querySelector('[data-saludo]') as HTMLElement).textContent = `Bienvenid@ de vuelta, ${yo.nombre.split(' ')[0]}`;
+
+  const [resumen, docs] = await Promise.all([api('/documentos/resumen'), api('/documentos')]);
+  for (const k of ['documentos', 'procesados', 'validados', 'pendientes']) {
+    (document.querySelector(`[data-k=${k}]`) as HTMLElement).textContent = String(resumen[k] ?? 0);
+  }
+  const alertas = resumen.alertas_vigencia as any[];
+  if (alertas?.length) {
+    (document.querySelector('[data-alertas]') as HTMLElement).innerHTML = alertas
+      .map((a) => {
+        const vencido = a.dias_restantes < 0;
+        return `<div class="alerta ${vencido ? 'alerta-error' : 'alerta-aviso'}">${icono('alerta', 18)}Tu <b>${esc(a.tipo_nombre)}</b> ${vencido ? 'venció' : 'vence'} el <b>${fecha(a.fecha_vigencia)}</b>${vencido ? '' : ` (en ${a.dias_restantes} días)`}. <a href="/app/subir">Carga una versión actualizada</a>.</div>`;
+      })
+      .join('');
+  }
+  const tbody = document.querySelector('[data-recientes]') as HTMLElement;
+  tbody.innerHTML = docs.length
+    ? docs
+        .slice(0, 6)
+        .map(
+          (d: any) => `<tr class="clic" data-id="${d.id}" data-estado="${esc(d.estado)}"><td>${esc(d.nombre_original)}</td><td>${esc(d.tipo_nombre ?? '—')}</td><td>${fecha(d.creado_en)}</td><td>${estadoHtml(d.estado)}</td></tr>`,
+        )
+        .join('')
+    : '<tr><td colspan="4" class="muted">Aún no tienes documentos. <a href="/app/subir">Sube el primero</a>.</td></tr>';
+  tbody.addEventListener('click', (e) => {
+    const tr = (e.target as HTMLElement).closest('tr[data-id]') as HTMLElement | null;
+    if (!tr) return;
+    location.href = tr.dataset.estado === 'procesado' ? `/app/validar?id=${tr.dataset.id}` : `/app/documentos?id=${tr.dataset.id}`;
+  });
+</script>

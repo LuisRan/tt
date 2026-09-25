@@ -1,0 +1,9 @@
+Coloca aquí tus archivos PDF de documentos de identidad:
+
+  - INE (Credencial para Votar) — anverso
+  - Acta de Nacimiento — Formato Único Nacional 2015
+  - Pasaporte Mexicano — versión electrónica 2021+
+  - Constancia de CURP — formato SEGOB/RENAPO 2019
+
+Luego ejecuta desde la carpeta raíz del proyecto:
+  python run_local.py

@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "OCR Platform - Mis documentos",
+  "short_name": "OCR Platform",
+  "version": "1.0.0",
+  "description": "Tus documentos validados (INE, CURP, acta y pasaporte) a la mano: consulta y copia sus datos.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6tufnghRvh86PuCb38I2abmOiOrELmw6mHWnI9sPfwVlN/k7/f2NTs43VP7f/4xfZn2E/fy/XmqK+Hg/zSbcH+oKAmhXfIknEP8ehSarVMzWGyoxS7KefEvxYiXxNKDYEYEQnHleNO4i890kM+MHa10HU4djglRbyU5qZof0NBslGn888rHcZHHDvuK62+YG8GjWO5iusM/96wPj9JEwpsiIjcZmRZtK+DpEusPBDkgSKdQ8IPpYQiEDx0MU7s2aHzBf4dzgr9pCuFpHGYXwPziuwJg9TgPr89i/eonc/TCmE99QwRdaVoWlH/IEvhyZ0KhroqFstiXtNMj1VqRdbwIDAQAB",
+  "minimum_chrome_version": "110",
+  "icons": {
+    "16": "icons/icono-16.png",
+    "32": "icons/icono-32.png",
+    "48": "icons/icono-48.png",
+    "128": "icons/icono-128.png"
+  },
+  "action": {
+    "default_title": "OCR Platform - Mis documentos",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icono-16.png",
+      "32": "icons/icono-32.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://localhost/*"
+  ],
+  "externally_connectable": {
+    "matches": [
+      "https://localhost/*"
+    ]
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  }
+}

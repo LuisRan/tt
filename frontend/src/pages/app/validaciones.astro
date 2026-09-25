@@ -1,0 +1,46 @@
+---
+import Panel from '../../layouts/Panel.astro';
+---
+<Panel titulo="Validaciones" seccion="usuario" activo="validaciones">
+  <div class="encabezado">
+    <div>
+      <h1>Validaciones</h1>
+      <p class="sub">La información extraída no es definitiva hasta que la revisas y confirmas (RN-08).</p>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-cabecera"><h2>Pendientes de validar</h2></div>
+    <div class="tabla-scroll"><table class="tabla"><tbody data-pendientes><tr><td class="muted">Cargando…</td></tr></tbody></table></div>
+  </div>
+  <div class="card">
+    <div class="card-cabecera"><h2>Validados recientemente</h2></div>
+    <div class="tabla-scroll"><table class="tabla"><tbody data-validados></tbody></table></div>
+  </div>
+</Panel>
+<script>
+  import { api, requerirSesion } from '../../lib/api';
+  import { esc, fecha } from '../../lib/ui';
+
+  await requerirSesion('usuario');
+  const docs: any[] = await api('/documentos');
+  const pend = docs.filter((d) => d.estado === 'procesado');
+  const val = docs.filter((d) => d.estado === 'validado').slice(0, 10);
+  (document.querySelector('[data-pendientes]') as HTMLElement).innerHTML = pend.length
+    ? pend
+        .map(
+          (d) => `<tr><td><b>${esc(d.tipo_nombre)}</b></td><td>${esc(d.nombre_original)}</td><td>${fecha(d.creado_en, true)}</td>
+            <td>${d.confianza != null ? `Confianza ${Math.round(d.confianza * 100)}%` : ''}</td>
+            <td style="text-align:right"><a class="btn btn-primario btn-sm" href="/app/validar?id=${d.id}">Validar</a></td></tr>`,
+        )
+        .join('')
+    : '<tr><td class="muted">No tienes documentos pendientes de validar.</td></tr>';
+  (document.querySelector('[data-validados]') as HTMLElement).innerHTML = val.length
+    ? val
+        .map(
+          (d) => `<tr><td><b>${esc(d.tipo_nombre)}</b> v${d.version}</td><td>${esc(d.nombre_original)}</td><td>${fecha(d.actualizado_en, true)}</td>
+            <td>${d.vigente ? '<span class="pill pill-ok">vigente</span>' : '<span class="pill">histórico</span>'}</td>
+            <td style="text-align:right"><a href="/app/documentos?id=${d.id}">Ver</a></td></tr>`,
+        )
+        .join('')
+    : '<tr><td class="muted">Aún no hay validaciones.</td></tr>';
+</script>

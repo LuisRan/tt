@@ -1,0 +1,6 @@
+---
+import { icono, type NombreIcono } from '../lib/iconos';
+interface Props { nombre: NombreIcono; tam?: number; class?: string }
+const { nombre, tam = 20, class: clase = '' } = Astro.props;
+---
+<span class={`icono ${clase}`} set:html={icono(nombre, tam)} />

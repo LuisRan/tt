@@ -1,0 +1,54 @@
+---
+import Base from './Base.astro';
+import Icono from '../components/Icono.astro';
+interface Props { titulo: string; seccion: 'usuario' | 'admin'; activo: string }
+const { titulo, seccion, activo } = Astro.props;
+
+const navUsuario = [
+  { href: '/app', texto: 'Inicio', id: 'inicio' },
+  { href: '/app/documentos', texto: 'Documentos', id: 'documentos' },
+  { href: '/app/subir', texto: 'Procesamiento OCR', id: 'subir' },
+  { href: '/app/validaciones', texto: 'Validaciones', id: 'validaciones' },
+  { href: '/app/extension', texto: 'Extensión', id: 'extension' },
+  { href: '/app/perfil', texto: 'Configuración', id: 'perfil' },
+];
+const navAdmin = [
+  { href: '/admin', texto: 'Dashboard', id: 'dashboard' },
+  { href: '/admin/usuarios', texto: 'Usuarios', id: 'usuarios' },
+  { href: '/admin/trafico', texto: 'Tráfico', id: 'trafico' },
+  { href: '/admin/logs', texto: 'Logs', id: 'logs' },
+];
+const nav = seccion === 'admin' ? navAdmin : navUsuario;
+---
+<Base titulo={titulo}>
+  <div class="panel-layout">
+    <aside class="lateral">
+      <a href={seccion === 'admin' ? '/admin' : '/app'} class="marca" style="text-decoration:none">
+        <img src="/favicon.svg" alt="" />
+        <span>{seccion === 'admin' ? 'Admin Panel' : 'OCR Platform'}</span>
+      </a>
+      <nav class="nav" aria-label="Navegación principal">
+        {nav.map((n) => <a href={n.href} class={n.id === activo ? 'activo' : ''} aria-current={n.id === activo ? 'page' : undefined}>{n.texto}</a>)}
+      </nav>
+      <div class="usuario-lateral">
+        <b data-usuario-nombre>…</b>
+        <span data-usuario-correo class="small"></span>
+        <div style="margin-top:10px"><button class="link-btn" data-cerrar-sesion>Cerrar sesión</button></div>
+      </div>
+    </aside>
+    <main class="contenido">
+      {seccion === 'usuario' && (
+        <div class="barra-superior">
+          <a href="/app/tutorial" class={`pestana ${activo === 'tutorial' ? 'activa' : ''}`}>
+            <Icono nombre="libro" tam={16} /> Guía de uso
+          </a>
+        </div>
+      )}
+      <slot />
+    </main>
+  </div>
+</Base>
+<script>
+  import { cerrarSesion } from '../lib/api';
+  document.querySelector('[data-cerrar-sesion]')?.addEventListener('click', () => cerrarSesion());
+</script>

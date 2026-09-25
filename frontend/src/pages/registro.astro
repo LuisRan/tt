@@ -1,0 +1,171 @@
+---
+import Base from '../layouts/Base.astro';
+import Icono from '../components/Icono.astro';
+---
+<Base titulo="Registro">
+  <div class="pantalla-centrada">
+    <div class="card caja-auth ancha">
+      <a href="/" class="marca" style="margin-bottom:22px;text-decoration:none"><img src="/favicon.svg" alt="" /> OCR Platform</a>
+      <div class="pasos" data-pasos>
+        <span data-p="cuenta">1. Cuenta</span>
+        <span data-p="codigo">2. Verificar correo</span>
+        <span data-p="terminos">3. Términos</span>
+      </div>
+      <div data-mensaje></div>
+
+      <!-- 1. Cuenta -->
+      <section data-seccion="cuenta">
+        <h1>Crea tu cuenta</h1>
+        <p class="sub">Tu bóveda de identidad digital: tus documentos protegidos y listos para tus trámites.</p>
+        <form data-form-cuenta style="margin-top:20px;max-width:520px">
+          <div class="campo"><label for="r-correo">Correo electrónico</label><input id="r-correo" type="email" autocomplete="email" required /></div>
+          <div class="campo"><label for="r-pass">Contraseña</label><input id="r-pass" type="password" autocomplete="new-password" minlength="10" required />
+            <span class="ayuda">Mínimo 10 caracteres, con mayúscula, minúscula y número.</span></div>
+          <div class="campo"><label for="r-pass2">Confirmar contraseña</label><input id="r-pass2" type="password" autocomplete="new-password" required /></div>
+          <button class="btn btn-primario btn-grande">Continuar</button>
+        </form>
+        <p class="muted small" style="margin-top:18px">¿Ya tienes cuenta? <a href="/login">Inicia sesión</a></p>
+      </section>
+
+      <!-- 2. Código -->
+      <section data-seccion="codigo" class="oculto">
+        <h1>Verifica tu correo</h1>
+        <p class="sub">Enviamos un código de 6 dígitos a <b data-correo></b>.</p>
+        <form data-form-codigo style="margin-top:20px;max-width:420px">
+          <div class="campo"><label for="r-codigo">Código de verificación</label>
+            <input id="r-codigo" class="codigo-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required /></div>
+          <button class="btn btn-primario btn-grande">Verificar</button>
+        </form>
+        <p class="muted small" style="margin-top:18px">¿No llegó? <button class="link-btn" data-reenviar>Reenviar código</button></p>
+      </section>
+
+      <!-- 3. Términos -->
+      <section data-seccion="terminos" class="oculto">
+        <h1>Términos y condiciones</h1>
+        <p class="sub">Lee cómo tratamos tus datos personales y documentos oficiales.</p>
+        <div class="card" style="background:var(--bg);box-shadow:none;max-height:320px;overflow:auto;margin:18px 0" data-terminos></div>
+        <label style="display:flex;gap:10px;align-items:center;margin-bottom:18px"><input type="checkbox" data-acepto /> He leído y acepto los términos y el aviso de privacidad.</label>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn btn-primario btn-grande" data-aceptar disabled>Aceptar y continuar</button>
+          <button class="btn btn-peligro" data-rechazar>No acepto (cancelar registro)</button>
+        </div>
+      </section>
+
+      <!-- Listo -->
+      <section data-seccion="listo" class="oculto" style="text-align:center;padding:30px 0">
+        <span class="icono icono-ok" style="margin-bottom:14px"><Icono nombre="check" tam={32} /></span>
+        <h1>Registro completado</h1>
+        <p class="sub">Te mostraremos una guía rápida de cómo usar la plataforma…</p>
+      </section>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import { api } from '../lib/api';
+  import { TERMINOS_HTML } from '../lib/terminos';
+  import { confirmar, esc, limpiar, mostrarError, toast } from '../lib/ui';
+
+  const ORDEN = ['cuenta', 'codigo', 'terminos'];
+  const msg = document.querySelector('[data-mensaje]') as HTMLElement;
+  let correo = '';
+
+  function ir(seccion: string) {
+    limpiar(msg);
+    document.querySelectorAll<HTMLElement>('[data-seccion]').forEach((s) => s.classList.toggle('oculto', s.dataset.seccion !== seccion));
+    const idx = seccion === 'listo' ? ORDEN.length : ORDEN.indexOf(seccion);
+    document.querySelectorAll<HTMLElement>('[data-p]').forEach((p) => {
+      const i = ORDEN.indexOf(p.dataset.p!);
+      p.classList.toggle('activo', i === idx);
+      p.classList.toggle('hecho', i < idx);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  (document.querySelector('[data-terminos]') as HTMLElement).innerHTML = TERMINOS_HTML;
+
+  // 1. Cuenta
+  document.querySelector('[data-form-cuenta]')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    correo = (document.getElementById('r-correo') as HTMLInputElement).value.trim().toLowerCase();
+    const p1 = (document.getElementById('r-pass') as HTMLInputElement).value;
+    const p2 = (document.getElementById('r-pass2') as HTMLInputElement).value;
+    if (p1 !== p2) return mostrarError(msg, { message: 'Las contraseñas no coinciden' });
+    const b = (e.target as HTMLFormElement).querySelector('button')!;
+    b.disabled = true;
+    try {
+      const r = await api('/auth/registro', { cuerpo: { correo, password: p1 }, redirigir401: false });
+      (document.querySelector('[data-correo]') as HTMLElement).textContent = correo;
+      ir(r.requiereCodigo === false ? 'terminos' : 'codigo');
+    } catch (err) {
+      mostrarError(msg, err);
+    } finally {
+      b.disabled = false;
+    }
+  });
+
+  // 2. Código de verificación del correo
+  document.querySelector('[data-form-codigo]')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const codigo = (document.getElementById('r-codigo') as HTMLInputElement).value.trim();
+    try {
+      await api('/auth/registro/verificar', { cuerpo: { correo, codigo }, redirigir401: false });
+      ir('terminos');
+    } catch (err) {
+      mostrarError(msg, err);
+    }
+  });
+  document.querySelector('[data-reenviar]')!.addEventListener('click', async () => {
+    try {
+      await api('/auth/registro/reenviar', { cuerpo: { correo }, redirigir401: false });
+      toast('Código reenviado', 'ok');
+    } catch (err: any) {
+      toast(err.message, 'error');
+    }
+  });
+
+  // 3. Términos: al aceptar se completa el registro y se abre la sesión
+  const acepto = document.querySelector('[data-acepto]') as HTMLInputElement;
+  const btnAceptar = document.querySelector('[data-aceptar]') as HTMLButtonElement;
+  acepto.addEventListener('change', () => (btnAceptar.disabled = !acepto.checked));
+  btnAceptar.addEventListener('click', async () => {
+    btnAceptar.disabled = true;
+    try {
+      const r = await api('/auth/registro/terminos', { cuerpo: { acepta: true }, redirigir401: false });
+      ir('listo');
+      setTimeout(() => (location.href = r.redirigir ?? '/app/tutorial'), 1200);
+    } catch (err: any) {
+      btnAceptar.disabled = false;
+      if (err.status === 401) {
+        toast('Tu sesión de registro expiró. Vuelve a comenzar.', 'error');
+        return ir('cuenta');
+      }
+      mostrarError(msg, err);
+    }
+  });
+  document.querySelector('[data-rechazar]')!.addEventListener('click', async () => {
+    if (!(await confirmar('Cancelar registro', 'Sin aceptar los términos no es posible crear tu cuenta. Se eliminará la información capturada.', 'Cancelar registro', true))) return;
+    await api('/auth/registro/terminos', { cuerpo: { acepta: false }, redirigir401: false }).catch(() => undefined);
+    location.href = '/';
+  });
+
+  // Reanudar un registro en curso o continuar desde el inicio de sesión
+  (async () => {
+    const q = new URLSearchParams(location.search);
+    try {
+      const est = await api('/auth/registro/estado', { redirigir401: false });
+      correo = est.correo;
+      if (!est.terminos_aceptados) return ir('terminos');
+    } catch {
+      /* sin registro en curso */
+    }
+    if (q.get('continuar')) {
+      correo = q.get('continuar')!.toLowerCase();
+      (document.querySelector('[data-correo]') as HTMLElement).textContent = correo;
+      ir('codigo');
+      msg.innerHTML = `<div class="alerta alerta-info">Tu registro está incompleto. Enviamos un código a <b>${esc(correo)}</b> para continuarlo.</div>`;
+      return;
+    }
+    ir('cuenta');
+  })();
+</script>

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OCR Platform - Mis documentos</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="cabecera">
+      <button class="icono-btn oculto" data-atras title="Regresar" aria-label="Regresar"></button>
+      <img src="icons/icono-32.png" alt="" class="logo" />
+      <div class="cabecera-texto">
+        <strong data-titulo>Mis documentos</strong>
+        <span class="sub" data-subtitulo></span>
+      </div>
+      <button class="icono-btn oculto" data-sincronizar title="Sincronizar con la plataforma" aria-label="Sincronizar"></button>
+    </header>
+
+    <main data-vista></main>
+
+    <footer class="pie oculto" data-pie>
+      <button class="enlace" data-abrir>Abrir plataforma</button>
+      <button class="enlace peligro" data-desvincular>Desvincular</button>
+    </footer>
+
+    <div class="aviso-flotante oculto" data-toast role="status" aria-live="polite"></div>
+
+    <script src="config.js"></script>
+    <script src="lib.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

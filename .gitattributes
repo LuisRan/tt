@@ -1,0 +1,4 @@
+# Scripts de shell siempre con LF (se copian a contenedores Linux)
+*.sh   text eol=lf
+*.ps1  text eol=crlf
+*.pdf  binary

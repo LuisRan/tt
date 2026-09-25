@@ -1,0 +1,102 @@
+# ════════════════════════════════════════════════════════════════════════
+# Nginx: reverse proxy + HTTPS/TLS (secciones 2.7.2.1, 2.7.2.2 y 4.2)
+# - Sirve el frontend estático (Astro)
+# - Reenvía /api al backend Node.js (red interna de Docker)
+# - El módulo de IA y las bases de datos NO se exponen al exterior
+# ════════════════════════════════════════════════════════════════════════
+server_tokens off;
+
+limit_req_zone $binary_remote_addr zone=auth:10m rate=10r/m;
+limit_req_zone $binary_remote_addr zone=api:10m rate=20r/s;
+
+upstream backend_node {
+    server backend:3000;
+    keepalive 16;
+}
+
+# HTTP -> HTTPS
+server {
+    listen 80;
+    server_name _;
+    location = /salud { return 200 'ok'; add_header Content-Type text/plain; }
+    location / { return 301 https://$host:${HTTPS_PORT}$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name _;
+
+    ssl_certificate     /etc/nginx/certs/cert.pem;
+    ssl_certificate_key /etc/nginx/certs/key.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 1d;
+
+    root  /usr/share/nginx/html;
+    index index.html;
+    # Redirecciones relativas: el puerto publicado (8443) difiere del interno (443)
+    absolute_redirect off;
+
+    # Cabeceras de seguridad
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "same-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'" always;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+
+    # API -> backend
+    location /api/ {
+        client_max_body_size 12m;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_read_timeout 180s;
+        proxy_send_timeout 180s;
+        limit_req zone=api burst=60 nodelay;
+        proxy_pass http://backend_node;
+    }
+
+    # Límite estricto para autenticación (fuerza bruta)
+    location ~ ^/api/auth/(login|registro)(/.*)?$ {
+        client_max_body_size 16k;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        limit_req zone=auth burst=10 nodelay;
+        limit_req_status 429;
+        proxy_pass http://backend_node;
+    }
+
+    # Recursos estáticos con hash: caché larga
+    location /_astro/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        try_files $uri =404;
+    }
+
+    location / {
+        try_files $uri $uri/index.html $uri.html =404;
+        add_header Cache-Control "no-cache" always;
+        add_header Strict-Transport-Security "max-age=31536000" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header Referrer-Policy "same-origin" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'" always;
+    }
+
+    error_page 404 /404.html;
+}

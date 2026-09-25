@@ -1,0 +1,67 @@
+---
+import Panel from '../../layouts/Panel.astro';
+---
+<Panel titulo="Panel administrativo" seccion="admin" activo="dashboard">
+  <div class="encabezado">
+    <div>
+      <h1>Panel administrativo</h1>
+      <p class="sub">Monitoreo general de la plataforma OCR.</p>
+    </div>
+    <a class="btn btn-primario" href="/api/admin/reporte" download>Generar reporte</a>
+  </div>
+  <div class="grid grid-4" style="margin-bottom:28px">
+    <div class="card kpi"><div class="etiqueta">Usuarios activos</div><div class="valor" data-k="usuarios_activos">–</div></div>
+    <div class="card kpi"><div class="etiqueta">Documentos procesados</div><div class="valor" data-k="documentos_procesados">–</div></div>
+    <div class="card kpi"><div class="etiqueta">Solicitudes OCR</div><div class="valor" data-k="solicitudes_ocr">–</div></div>
+    <div class="card kpi"><div class="etiqueta">Errores detectados</div><div class="valor rojo" data-k="errores_detectados">–</div></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-cabecera"><h2>Actividad reciente</h2><a href="/admin/logs">Ver logs</a></div>
+      <div class="actividad" data-actividad><p class="muted">Cargando…</p></div>
+    </div>
+    <div class="card">
+      <div class="card-cabecera"><h2>Estado del sistema</h2><button class="link-btn" data-refrescar>Actualizar</button></div>
+      <div class="estado-sistema" data-estado></div>
+      <p class="muted small" style="margin-top:14px" data-plataforma></p>
+    </div>
+  </div>
+</Panel>
+<script>
+  import { api, requerirSesion } from '../../lib/api';
+  import { esc, haceTiempo } from '../../lib/ui';
+
+  await requerirSesion('administrador');
+  const COLOR: Record<string, string> = { error: 'var(--error)', advertencia: 'var(--aviso)', seguridad: 'var(--aviso)', auditoria: 'var(--ok)', info: 'var(--info)' };
+  const fila = (nombre: string, ok: boolean, si: string, no: string) =>
+    `<div><span>${esc(nombre)}</span><b style="color:${ok ? 'var(--ok)' : 'var(--error)'}">${ok ? si : no}</b></div>`;
+
+  async function cargar() {
+    const r = await api('/admin/resumen');
+    for (const k of ['usuarios_activos', 'documentos_procesados', 'solicitudes_ocr', 'errores_detectados']) {
+      (document.querySelector(`[data-k=${k}]`) as HTMLElement).textContent = Number(r[k] ?? 0).toLocaleString('es-MX');
+    }
+    (document.querySelector('[data-actividad]') as HTMLElement).innerHTML = r.actividad_reciente.length
+      ? r.actividad_reciente
+          .map(
+            (a: any) => `<div class="item"><span class="punto" style="background:${COLOR[a.tipo_evento] ?? 'var(--info)'}"></span>
+              <p>${esc(a.descripcion)}</p><span class="muted small">${haceTiempo(a.fecha)}${a.correo ? ` · ${esc(a.correo)}` : ''}</span></div>`,
+          )
+          .join('')
+      : '<p class="muted">Sin actividad.</p>';
+    const e = r.estado_sistema;
+    (document.querySelector('[data-estado]') as HTMLElement).innerHTML = [
+      fila('Servidor API', e.servidor_api, 'Online', 'Offline'),
+      fila('OCR Engine', e.ocr, 'Activo', 'Inactivo'),
+      fila('LLM local (Ollama)', e.llm, 'Activo', 'Solo regex'),
+      fila('Base de datos', e.base_datos, 'Conectada', 'Sin conexión'),
+      fila('MongoDB (resultados OCR)', e.mongo, 'Conectada', 'Sin conexión'),
+      `<div><span>Cola de procesamiento</span><b>${e.cola.en_curso} en curso · ${e.cola.pendientes} en espera</b></div>`,
+    ].join('');
+    (document.querySelector('[data-plataforma]') as HTMLElement).textContent = e.plataforma_ia
+      ? `Módulo de IA en ${e.plataforma_ia.sistema}${e.plataforma_ia.docker ? ' (Docker)' : ''} · motor OCR de Docling: ${e.plataforma_ia.motor} · modelo: ${e.modelo_llm ?? '—'}`
+      : 'El módulo de IA no respondió.';
+  }
+  document.querySelector('[data-refrescar]')!.addEventListener('click', cargar);
+  await cargar();
+</script>

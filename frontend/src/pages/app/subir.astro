@@ -1,0 +1,136 @@
+---
+import Panel from '../../layouts/Panel.astro';
+import Icono from '../../components/Icono.astro';
+---
+<Panel titulo="Procesamiento OCR" seccion="usuario" activo="subir">
+  <div class="encabezado">
+    <div>
+      <h1>Procesamiento OCR</h1>
+      <p class="sub">Sube un documento oficial: se clasificará y se extraerán sus datos con OCR + IA local.</p>
+    </div>
+  </div>
+  <div data-mensaje></div>
+
+  <section class="card" data-paso="subir">
+    <h2 style="margin-bottom:16px">1. Tipo de documento</h2>
+    <div class="selector-tipo">
+      <label><input type="radio" name="tipo" value="ine" checked /><span>INE</span></label>
+      <label><input type="radio" name="tipo" value="curp" /><span>CURP</span></label>
+      <label><input type="radio" name="tipo" value="acta_nacimiento" /><span>Acta de nacimiento</span></label>
+      <label><input type="radio" name="tipo" value="pasaporte" /><span>Pasaporte</span></label>
+    </div>
+    <p class="muted small" data-ayuda-tipo></p>
+    <h2 style="margin:22px 0 16px">2. Archivo</h2>
+    <div class="zona-subida" data-zona>
+      <span class="icono icono-grande"><Icono nombre="subir" tam={32} /></span>
+      <h3>Subir documento</h3>
+      <span class="muted">PDF, JPG o PNG · máximo 10 MB · sin documentos manuscritos</span>
+      <label class="btn btn-primario">Seleccionar archivo<input type="file" accept="application/pdf,image/jpeg,image/png" data-archivo hidden /></label>
+    </div>
+    <div data-confirmar class="oculto" style="margin-top:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <span>Archivo: <b data-nombre></b></span>
+      <button class="btn btn-primario" data-subir>Confirmar carga</button>
+      <button class="btn btn-borde" data-cambiar>Cambiar</button>
+    </div>
+  </section>
+
+  <section class="card oculto" data-paso="procesando" style="text-align:center;padding:40px">
+    <div class="spinner"></div>
+    <h2 style="margin-top:20px">Procesando documento…</h2>
+    <p class="muted">Puedes salir de esta página: el procesamiento continúa y lo verás en “Documentos”.</p>
+    <div data-pasos-proceso></div>
+  </section>
+
+  <section class="card oculto" data-paso="validar">
+    <div class="card-cabecera"><h2>Datos detectados · <span data-tipo-detectado></span></h2><button class="btn btn-borde btn-sm" data-ver>Ver documento</button></div>
+    <div data-form-validacion></div>
+  </section>
+
+  <section class="card oculto" data-paso="listo" style="text-align:center;padding:40px">
+    <span class="icono icono-ok"><Icono nombre="check" tam={32} /></span>
+    <h2>Documento validado y guardado</h2>
+    <p class="muted" data-listo-detalle></p>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:16px">
+      <a class="btn btn-primario" href="/app/documentos">Ver mis documentos</a>
+      <a class="btn btn-borde" href="/app/subir">Subir otro</a>
+    </div>
+  </section>
+</Panel>
+<script>
+  import { api, requerirSesion } from '../../lib/api';
+  import { mostrarError, limpiar } from '../../lib/ui';
+  import { esperarProcesamiento, pasosProceso, renderValidacion } from '../../lib/validacion';
+
+  await requerirSesion('usuario');
+  const msg = document.querySelector('[data-mensaje]') as HTMLElement;
+  const AYUDA: Record<string, string> = {
+    ine: 'Credencial para votar, formato vigente desde 2016 (anverso).',
+    curp: 'Constancia CURP digital (formato 2019) con antigüedad máxima de 3 meses. Descárgala en gob.mx/curp.',
+    acta_nacimiento: 'Acta de nacimiento en Formato Único Nacional (2015 en adelante).',
+    pasaporte: 'Pasaporte mexicano electrónico tipo “E” (2021 en adelante), página de datos.',
+  };
+  const ayuda = document.querySelector('[data-ayuda-tipo]') as HTMLElement;
+  const tipoSel = () => (document.querySelector('input[name=tipo]:checked') as HTMLInputElement).value;
+  const actualizarAyuda = () => (ayuda.textContent = AYUDA[tipoSel()]);
+  document.querySelectorAll('input[name=tipo]').forEach((r) => r.addEventListener('change', actualizarAyuda));
+  const pre = new URLSearchParams(location.search).get('tipo');
+  if (pre) (document.querySelector(`input[name=tipo][value="${CSS.escape(pre)}"]`) as HTMLInputElement | null)?.click();
+  actualizarAyuda();
+
+  const paso = (p: string) => document.querySelectorAll<HTMLElement>('[data-paso]').forEach((s) => s.classList.toggle('oculto', s.dataset.paso !== p));
+  let archivo: File | null = null;
+  let docId = 0;
+
+  const elegir = (f: File) => {
+    limpiar(msg);
+    if (f.size > 10 * 1024 * 1024) return mostrarError(msg, { message: 'El archivo excede 10 MB' });
+    if (!['application/pdf', 'image/jpeg', 'image/png'].includes(f.type)) return mostrarError(msg, { message: 'Formato no permitido: usa PDF, JPG o PNG' });
+    archivo = f;
+    (document.querySelector('[data-nombre]') as HTMLElement).textContent = f.name;
+    document.querySelector('[data-confirmar]')!.classList.remove('oculto');
+  };
+  const input = document.querySelector('[data-archivo]') as HTMLInputElement;
+  input.addEventListener('change', () => input.files?.[0] && elegir(input.files[0]));
+  const zona = document.querySelector('[data-zona]') as HTMLElement;
+  ['dragenter', 'dragover'].forEach((ev) => zona.addEventListener(ev, (e) => (e.preventDefault(), zona.classList.add('arrastrando'))));
+  ['dragleave', 'drop'].forEach((ev) => zona.addEventListener(ev, (e) => (e.preventDefault(), zona.classList.remove('arrastrando'))));
+  zona.addEventListener('drop', (e) => {
+    const f = (e as DragEvent).dataTransfer?.files?.[0];
+    if (f) elegir(f);
+  });
+  document.querySelector('[data-cambiar]')!.addEventListener('click', () => input.click());
+
+  document.querySelector('[data-subir]')!.addEventListener('click', async () => {
+    if (!archivo) return;
+    const form = new FormData();
+    form.append('tipo', tipoSel());
+    form.append('archivo', archivo);
+    try {
+      const r = await api('/documentos', { form });
+      docId = r.id;
+      paso('procesando');
+      const pasos = document.querySelector('[data-pasos-proceso]') as HTMLElement;
+      const e = await esperarProcesamiento(docId, (estado) => (pasos.innerHTML = pasosProceso(estado)));
+      if (e.estado !== 'procesado') {
+        paso('subir');
+        return mostrarError(msg, { message: e.motivo_rechazo ?? 'No se pudo procesar el documento.' });
+      }
+      const doc = await api(`/documentos/${docId}`);
+      (document.querySelector('[data-tipo-detectado]') as HTMLElement).textContent = doc.tipo_nombre;
+      paso('validar');
+      renderValidacion(document.querySelector('[data-form-validacion]') as HTMLElement, doc, (res) => {
+        const extra = (res.advertencias ?? []).join(' ');
+        (document.querySelector('[data-listo-detalle]') as HTMLElement).textContent =
+          `${res.identificador ? `Identificador: ${res.identificador}. ` : ''}Quedó como versión vigente #${res.version} de tu ${doc.tipo_nombre}; ya está disponible en la extensión al sincronizar. ${extra}`;
+        paso('listo');
+      });
+    } catch (err: any) {
+      paso('subir');
+      mostrarError(msg, err);
+    }
+  });
+  document.querySelector('[data-ver]')!.addEventListener('click', async () => {
+    const { url } = await api(`/documentos/${docId}/archivo-url`);
+    window.open(url, '_blank', 'noopener');
+  });
+</script>

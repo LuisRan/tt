@@ -1,0 +1,13 @@
+# Igual que requirements.txt pero sin herramientas de prueba.
+# torch se instala antes en el Dockerfile desde el indice CPU (imagen ~2 GB menor).
+docling>=2.30.0,<3.0.0
+pytesseract>=0.3.10
+pdf2image>=1.16.0
+pypdf>=4.0.0
+Pillow>=10.0.0
+ollama>=0.4.0
+pydantic>=2.7.0
+structlog>=24.0.0
+python-dotenv>=1.0.0
+flask>=3.0.0
+gunicorn>=22.0.0

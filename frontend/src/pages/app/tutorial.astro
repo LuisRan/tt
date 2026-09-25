@@ -1,0 +1,138 @@
+---
+import Panel from '../../layouts/Panel.astro';
+---
+<Panel titulo="Guía de uso" seccion="usuario" activo="tutorial">
+  <div class="tutorial">
+    <div class="encabezado" style="margin-bottom:8px">
+      <div>
+        <h1>Guía de uso</h1>
+        <p class="sub" data-subtitulo>Antes de empezar, recorre estos pasos para conocer cómo funciona la plataforma.</p>
+      </div>
+    </div>
+    <div class="tutorial-progreso" data-progreso></div>
+    <section class="card">
+      <div class="tutorial-paso">
+        <span class="icono icono-grande" data-icono></span>
+        <div>
+          <p class="small muted" data-contador></p>
+          <h2 data-titulo></h2>
+          <div data-cuerpo></div>
+        </div>
+      </div>
+      <div class="tutorial-nav">
+        <button class="btn btn-borde" data-anterior>Anterior</button>
+        <button class="btn btn-primario" data-siguiente>Siguiente</button>
+      </div>
+    </section>
+  </div>
+</Panel>
+<script>
+  import { api, requerirSesion } from '../../lib/api';
+  import { icono, type NombreIcono } from '../../lib/iconos';
+
+  const yo = await requerirSesion('usuario');
+
+  const PASOS: { icono: NombreIcono; titulo: string; cuerpo: string }[] = [
+    {
+      icono: 'escudo',
+      titulo: 'Tu bóveda de identidad',
+      cuerpo: `<p>Aquí resguardas tus documentos oficiales mexicanos: <b>INE, CURP, acta de nacimiento y pasaporte</b>.</p>
+        <ul><li>Los archivos y tus datos personales se guardan <b>cifrados</b> (AES-256).</li>
+        <li>El análisis con inteligencia artificial se hace <b>de forma local</b>: tus documentos no se envían a servicios externos.</li>
+        <li>Solo tú puedes ver tus documentos.</li></ul>`,
+    },
+    {
+      icono: 'subir',
+      titulo: '1. Sube un documento',
+      cuerpo: `<p>Entra a <b>Procesamiento OCR</b>, elige el tipo de documento y selecciona el archivo.</p>
+        <ul><li>Formatos: PDF, JPG o PNG de hasta 10 MB.</li>
+        <li>Debe ser legible y de un formato vigente (INE 2016+, CURP digital de máximo 3 meses, acta Formato Único, pasaporte tipo "E").</li>
+        <li>No se aceptan documentos escritos a mano.</li>
+        <li>Por seguridad te pediremos confirmar tu contraseña antes de subirlo.</li></ul>`,
+    },
+    {
+      icono: 'cerebro',
+      titulo: '2. Procesamiento automático',
+      cuerpo: `<p>El sistema identifica el tipo de documento y extrae sus datos con OCR e inteligencia artificial.</p>
+        <ul><li>Tarda desde unos segundos hasta un par de minutos; puedes seguir usando la plataforma mientras tanto.</li>
+        <li>Los datos sensibles (CURP, clave de elector, fechas) se verifican contra el documento para evitar datos inventados.</li>
+        <li>Si detectamos un error de lectura corregible, lo marcamos para que lo revises.</li></ul>`,
+    },
+    {
+      icono: 'checkCirculo',
+      titulo: '3. Revisa y valida',
+      cuerpo: `<p>La información extraída <b>no es definitiva hasta que tú la confirmas</b>.</p>
+        <ul><li>Revisa cada campo y corrige lo necesario; los campos con asterisco son obligatorios.</li>
+        <li>Al confirmar, el documento queda como la <b>versión vigente</b> de ese tipo.</li>
+        <li>Si después notas un error, puedes <b>editar</b> la información desde <b>Documentos</b>.</li></ul>`,
+    },
+    {
+      icono: 'documento',
+      titulo: '4. Consulta tus documentos',
+      cuerpo: `<p>En <b>Documentos</b> ves todos tus archivos, su estado y la información de cada uno.</p>
+        <ul><li><b>Por validar</b>: ya se procesó y espera tu revisión.</li>
+        <li><b>Validado</b>: información confirmada; puedes ver el archivo original y su historial de versiones.</li>
+        <li><b>Rechazado</b>: el documento no cumplió una regla (por ejemplo, CURP con más de 3 meses); verás el motivo.</li></ul>`,
+    },
+    {
+      icono: 'campana',
+      titulo: '5. Alertas de vigencia',
+      cuerpo: `<p>Si un documento tiene fecha de vencimiento (INE, pasaporte, constancia CURP), te avisaremos por correo
+        90, 30 y 7 días antes, y el día que venza. También verás el aviso en tu inicio.</p>`,
+    },
+    {
+      icono: 'extension',
+      titulo: '6. Tus datos a la mano con la extensión',
+      cuerpo: `<p>En <b>Extensión</b> descargas una extensión para tu navegador (Chrome, Edge o Brave) que se vincula sola con tu cuenta.</p>
+        <ul><li>Muestra tus documentos <b>validados</b> por categoría (INE, CURP, acta y pasaporte).</li>
+        <li>Cada documento tiene un identificador como <b>0001_CSC</b>: el orden en que lo confirmaste y las iniciales del titular.</li>
+        <li>Copia cualquier dato con un clic o descarga su <b>.txt</b>; usa <b>Sincronizar</b> para traer documentos nuevos.</li></ul>`,
+    },
+    {
+      icono: 'usuario',
+      titulo: '7. Configura tu cuenta',
+      cuerpo: `<p>En <b>Configuración</b> puedes:</p>
+        <ul><li>Editar tu información personal.</li>
+        <li>Activar la <b>verificación en dos pasos</b>: al iniciar sesión te enviaremos un código a tu correo.</li>
+        <li>Activar o desactivar las alertas de vigencia y cambiar tu contraseña.</li></ul>
+        <p>Puedes volver a esta guía cuando quieras desde la pestaña <b>Guía de uso</b>, arriba a la derecha.</p>`,
+    },
+  ];
+
+  let paso = 0;
+  let maximoVisto = 0;
+  const $ = (s: string) => document.querySelector(s) as HTMLElement;
+  const anterior = $('[data-anterior]') as HTMLButtonElement;
+  const siguiente = $('[data-siguiente]') as HTMLButtonElement;
+  if (yo.tutorial_visto) {
+    $('[data-subtitulo]').textContent = 'Consulta en cualquier momento cómo funciona la plataforma.';
+  }
+
+  function pintar() {
+    const p = PASOS[paso];
+    maximoVisto = Math.max(maximoVisto, paso);
+    $('[data-icono]').innerHTML = icono(p.icono, 32);
+    $('[data-titulo]').textContent = p.titulo;
+    $('[data-cuerpo]').innerHTML = p.cuerpo;
+    $('[data-contador]').textContent = `Paso ${paso + 1} de ${PASOS.length}`;
+    $('[data-progreso]').innerHTML = PASOS.map((_, i) => `<span class="${i <= paso ? 'hecho' : ''}"></span>`).join('');
+    anterior.disabled = paso === 0;
+    siguiente.textContent = paso === PASOS.length - 1 ? (yo.tutorial_visto ? 'Ir al inicio' : 'Comenzar a usar la plataforma') : 'Siguiente';
+  }
+
+  anterior.addEventListener('click', () => {
+    if (paso > 0) paso--;
+    pintar();
+  });
+  siguiente.addEventListener('click', async () => {
+    if (paso < PASOS.length - 1) {
+      paso++;
+      return pintar();
+    }
+    // Solo se marca como visto al terminar el recorrido completo (no se puede saltar)
+    siguiente.disabled = true;
+    await api('/perfil/tutorial', { cuerpo: {} }).catch(() => undefined);
+    location.href = '/app';
+  });
+  pintar();
+</script>

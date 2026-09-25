@@ -1,0 +1,162 @@
+---
+import Panel from '../../layouts/Panel.astro';
+---
+<Panel titulo="Documentos" seccion="usuario" activo="documentos">
+  <div class="encabezado">
+    <div>
+      <h1>Mis documentos</h1>
+      <p class="sub">Tu bóveda: documentos cargados, su estado y la información extraída.</p>
+    </div>
+    <a class="btn btn-primario" href="/app/subir">+ Subir documento</a>
+  </div>
+  <div data-mensaje></div>
+  <div class="card">
+    <div class="card-cabecera">
+      <h2>Documentos</h2>
+      <select data-filtro style="width:auto">
+        <option value="">Todos</option>
+        <option value="vigentes">Vigentes (validados)</option>
+        <option value="procesado">Por validar</option>
+        <option value="rechazado">Rechazados / con error</option>
+      </select>
+    </div>
+    <div class="tabla-scroll">
+      <table class="tabla">
+        <thead><tr><th>ID</th><th>Documento</th><th>Tipo</th><th>Versión</th><th>Cargado</th><th>Vigencia</th><th>Estado</th></tr></thead>
+        <tbody data-lista><tr><td colspan="7" class="muted">Cargando…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</Panel>
+<script>
+  import { api, requerirSesion } from '../../lib/api';
+  import { abrirModal, confirmar, esc, estadoHtml, etiqueta, fecha, mostrarError, ORDEN_CAMPOS, toast } from '../../lib/ui';
+
+  await requerirSesion('usuario');
+  const tbody = document.querySelector('[data-lista]') as HTMLElement;
+  const filtro = document.querySelector('[data-filtro]') as HTMLSelectElement;
+  let docs: any[] = [];
+
+  async function cargar() {
+    try {
+      docs = await api('/documentos');
+      pintar();
+    } catch (err) {
+      mostrarError(document.querySelector('[data-mensaje]'), err);
+    }
+  }
+
+  function pintar() {
+    const f = filtro.value;
+    const lista = docs.filter((d) =>
+      !f ? true : f === 'vigentes' ? d.vigente : f === 'rechazado' ? ['rechazado', 'error'].includes(d.estado) : d.estado === f,
+    );
+    tbody.innerHTML = lista.length
+      ? lista
+          .map((d) => {
+            const vence = d.fecha_vigencia ? new Date(`${d.fecha_vigencia}T12:00:00`) : null;
+            const vencido = vence && vence < new Date();
+            return `<tr class="clic" data-id="${d.id}">
+              <td class="mono"><b>${esc(d.identificador ?? '—')}</b></td>
+              <td>${esc(d.nombre_original)} ${d.vigente ? '<span class="pill pill-ok">vigente</span>' : ''}</td>
+              <td>${esc(d.tipo_nombre ?? '—')}</td><td>${d.estado === 'validado' ? `v${d.version}` : '—'}</td>
+              <td>${fecha(d.creado_en)}</td>
+              <td>${vence ? `<span class="${vencido ? 'estado-error' : ''}">${fecha(d.fecha_vigencia)}</span>` : '—'}</td>
+              <td>${estadoHtml(d.estado)}</td></tr>`;
+          })
+          .join('')
+      : '<tr><td colspan="7" class="muted">No hay documentos para este filtro.</td></tr>';
+  }
+  filtro.addEventListener('change', pintar);
+  tbody.addEventListener('click', (e) => {
+    const tr = (e.target as HTMLElement).closest('tr[data-id]') as HTMLElement | null;
+    if (tr) abrirDetalle(Number(tr.dataset.id));
+  });
+
+  const lista = (obj: Record<string, any> | null) => {
+    const entradas = Object.entries(obj ?? {})
+      .filter(([, v]) => v !== null && v !== '')
+      .sort(([a], [b]) => ORDEN_CAMPOS.indexOf(a) - ORDEN_CAMPOS.indexOf(b));
+    return entradas.length
+      ? `<dl class="lista-datos">${entradas.map(([k, v]) => `<div><dt>${esc(etiqueta(k))}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`
+      : '<p class="muted">Sin datos.</p>';
+  };
+
+  async function abrirDetalle(id: number) {
+    let d: any;
+    try {
+      d = await api(`/documentos/${id}`);
+    } catch (err: any) {
+      return toast(err.message, 'error');
+    }
+    const r = d.resultado;
+    const validaciones = Object.entries(r?.validaciones ?? {})
+      .map(([k, v]) => `<span class="pill ${v ? 'pill-ok' : 'pill-error'}">${esc(k.replace(/_/g, ' '))}</span>`)
+      .join(' ');
+    const m = abrirModal(
+      `<div class="card-cabecera"><div><h2>${d.identificador ? `<span class="mono">${esc(d.identificador)}</span> · ` : ''}${esc(d.tipo_nombre ?? 'Documento')} ${d.estado === 'validado' ? `· v${d.version}` : ''}</h2>
+         <p class="sub">${esc(d.nombre_original)} · cargado ${fecha(d.creado_en, true)} · ${estadoHtml(d.estado)}</p></div>
+         <button class="btn btn-borde btn-sm" data-cerrar>Cerrar</button></div>
+       ${d.motivo_rechazo ? `<div class="alerta alerta-error">${esc(d.motivo_rechazo)}</div>` : ''}
+       ${(d.advertencias ?? []).length ? `<div class="alerta alerta-aviso"><ul>${d.advertencias.map((a: string) => `<li>${esc(a)}</li>`).join('')}</ul></div>` : ''}
+       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">
+         <button class="btn btn-sm" data-archivo>Ver archivo</button>
+         ${d.estado === 'procesado' ? `<a class="btn btn-primario btn-sm" href="/app/validar?id=${d.id}">Validar información</a>` : ''}
+         ${d.estado === 'validado' ? `<a class="btn btn-primario btn-sm" href="/app/validar?id=${d.id}&modo=editar">Editar información</a>` : ''}
+         ${d.estado === 'error' ? '<button class="btn btn-primario btn-sm" data-reintentar>Reintentar procesamiento</button>' : ''}
+         ${['procesado', 'rechazado', 'error', 'cargado'].includes(d.estado) ? '<button class="btn btn-peligro btn-sm" data-descartar>Descartar</button>' : ''}
+       </div>
+       ${r ? `
+         <h3 style="margin:8px 0 12px">${r.datos_confirmados ? 'Información validada' : 'Datos detectados (sin validar)'}</h3>
+         ${lista(r.datos_confirmados ?? r.datos_extraidos)}
+         <div style="margin:18px 0 6px" class="small muted">Verificaciones</div><div>${validaciones || '—'}</div>
+         <div class="grid grid-3" style="margin-top:18px;gap:12px">
+           <div class="card" style="padding:14px;box-shadow:none"><div class="small muted">Confianza</div><b>${r.confianza_ocr != null ? Math.round(r.confianza_ocr * 100) + '%' : '—'}</b></div>
+           <div class="card" style="padding:14px;box-shadow:none"><div class="small muted">Motor</div><b class="small">${esc(r.modelo_ia ?? r.adaptador ?? '—')}</b></div>
+           <div class="card" style="padding:14px;box-shadow:none"><div class="small muted">Tiempo de procesamiento</div><b>${d.metricas?.tiempo_procesamiento ? (d.metricas.tiempo_procesamiento / 1000).toFixed(1) + ' s' : '—'}</b>
+             ${r.metadatos?.tiempos_etapas_ms ? `<div class="small muted">OCR ${(r.metadatos.tiempos_etapas_ms.ocr_ms / 1000).toFixed(1)} s · extracción ${(r.metadatos.tiempos_etapas_ms.extraccion_ms / 1000).toFixed(1)} s</div>` : ''}</div>
+         </div>` : ''}
+       ${d.versiones?.length ? `<h3 style="margin:22px 0 10px">Historial de versiones</h3>
+         <table class="tabla"><tbody>${d.versiones.map((v: any) => `<tr><td>v${v.version}</td><td>${fecha(v.fecha, true)}</td><td>${v.documento_id === d.id ? '<span class="pill">este documento</span>' : `<button class="link-btn" data-abrir="${v.documento_id}">abrir</button>`}</td></tr>`).join('')}</tbody></table>` : ''}
+       ${d.historial_validacion?.some((h: any) => h.corregido) ? `<h3 style="margin:22px 0 10px">Historial de correcciones</h3>
+         <table class="tabla"><thead><tr><th>Campo</th><th>Antes</th><th>Después</th><th>Origen</th></tr></thead><tbody>
+         ${d.historial_validacion.filter((h: any) => h.corregido).map((h: any) => `<tr><td>${esc(etiqueta(h.campo))}</td><td class="muted">${esc(h.valor_detectado ?? '—')}</td><td>${esc(h.valor_confirmado ?? '—')}</td><td class="small">${h.origen === 'edicion' ? 'Edición posterior' : 'Validación inicial'}</td></tr>`).join('')}
+         </tbody></table>` : ''}
+       `,
+      true,
+    );
+    m.el.querySelector('[data-cerrar]')?.addEventListener('click', m.cerrar);
+    m.el.querySelector('[data-archivo]')?.addEventListener('click', async () => {
+      const { url } = await api(`/documentos/${id}/archivo-url`);
+      window.open(url, '_blank', 'noopener');
+    });
+    m.el.querySelector('[data-reintentar]')?.addEventListener('click', async () => {
+      await api(`/documentos/${id}/procesar`, { cuerpo: {} });
+      toast('Documento enviado de nuevo a procesamiento', 'ok');
+      m.cerrar();
+      cargar();
+    });
+    m.el.querySelector('[data-descartar]')?.addEventListener('click', async () => {
+      if (!(await confirmar('Descartar documento', 'Se eliminará el archivo y la información extraída.', 'Descartar', true))) return;
+      await api(`/documentos/${id}`, { metodo: 'DELETE' });
+      toast('Documento descartado', 'ok');
+      m.cerrar();
+      cargar();
+    });
+    m.el.querySelectorAll<HTMLElement>('[data-abrir]').forEach((b) =>
+      b.addEventListener('click', () => {
+        m.cerrar();
+        abrirDetalle(Number(b.dataset.abrir));
+      }),
+    );
+  }
+
+  await cargar();
+  const q = new URLSearchParams(location.search);
+  if (q.get('validado')) toast('Información validada y guardada', 'ok');
+  if (q.get('editado')) toast('Cambios guardados', 'ok');
+  if (q.get('ajeno')) toast('El documento es de otra persona: se guardó, pero no se usó para actualizar tu perfil.', 'info', 8000);
+  if (q.get('id')) abrirDetalle(Number(q.get('id')));
+  // refresco automático mientras haya documentos en proceso
+  setInterval(() => docs.some((d) => ['cargado', 'procesando'].includes(d.estado)) && cargar(), 5000);
+</script>

@@ -1,0 +1,102 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base titulo="Iniciar sesión">
+  <div class="pantalla-centrada">
+    <div class="card caja-auth">
+      <a href="/" class="marca" style="margin-bottom:22px;text-decoration:none"><img src="/favicon.svg" alt="" /> OCR Platform</a>
+
+      <section data-paso="credenciales">
+        <h1>Iniciar sesión</h1>
+        <p class="sub">Ingresa con tu correo y contraseña. Si activaste la verificación en dos pasos, te enviaremos un código.</p>
+        <div data-mensaje style="margin-top:18px"></div>
+        <form data-form-login style="margin-top:12px">
+          <div class="campo"><label for="correo">Correo electrónico</label><input id="correo" type="email" autocomplete="username" required /></div>
+          <div class="campo"><label for="password">Contraseña</label><input id="password" type="password" autocomplete="current-password" required /></div>
+          <button class="btn btn-primario btn-grande" style="width:100%">Continuar</button>
+        </form>
+        <p class="muted small" style="margin-top:18px">¿No tienes cuenta? <a href="/registro">Regístrate</a></p>
+      </section>
+
+      <section data-paso="codigo" class="oculto">
+        <h1>Verificación en dos pasos</h1>
+        <p class="sub">Escribe el código de 6 dígitos que enviamos a <b data-correo></b>.</p>
+        <div data-mensaje-codigo style="margin-top:18px"></div>
+        <form data-form-codigo style="margin-top:12px">
+          <div class="campo"><label for="codigo">Código</label>
+            <input id="codigo" class="codigo-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required /></div>
+          <button class="btn btn-primario btn-grande" style="width:100%">Verificar</button>
+        </form>
+        <p class="muted small" style="margin-top:18px">¿No llegó? <button class="link-btn" data-reenviar>Reenviar código</button> · <a href="/login">Usar otra cuenta</a></p>
+      </section>
+    </div>
+  </div>
+</Base>
+<script>
+  import { api } from '../lib/api';
+  import { esc, mostrarError, toast } from '../lib/ui';
+
+  const q = new URLSearchParams(location.search);
+  const msg = document.querySelector('[data-mensaje]') as HTMLElement;
+  if (q.get('expirada')) msg.innerHTML = '<div class="alerta alerta-info">Tu sesión expiró. Inicia sesión de nuevo.</div>';
+  if (q.get('registrado')) msg.innerHTML = '<div class="alerta alerta-ok">Registro completado. Ya puedes iniciar sesión.</div>';
+
+  const pasoCred = document.querySelector('[data-paso=credenciales]')!;
+  const pasoCod = document.querySelector('[data-paso=codigo]')!;
+
+  document.querySelector('[data-form-login]')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const correo = (document.getElementById('correo') as HTMLInputElement).value.trim();
+    const password = (document.getElementById('password') as HTMLInputElement).value;
+    const boton = (e.target as HTMLFormElement).querySelector('button')!;
+    boton.disabled = true;
+    try {
+      const r = await api('/auth/login', { cuerpo: { correo, password }, redirigir401: false });
+      if (!r.requiere2fa) {
+        // Verificación en dos pasos desactivada: la sesión ya está abierta
+        const volver = q.get('volver');
+        location.href = r.rol !== 'administrador' && volver && volver.startsWith('/app') && !volver.startsWith('//') ? volver : r.redirigir;
+        return;
+      }
+      (document.querySelector('[data-correo]') as HTMLElement).textContent = correo;
+      pasoCred.classList.add('oculto');
+      pasoCod.classList.remove('oculto');
+      (document.getElementById('codigo') as HTMLInputElement).focus();
+    } catch (err: any) {
+      if (err.codigo === 'REGISTRO_INCOMPLETO') {
+        location.href = `/registro?continuar=${encodeURIComponent(correo)}`;
+        return;
+      }
+      mostrarError(msg, err);
+    } finally {
+      boton.disabled = false;
+    }
+  });
+
+  document.querySelector('[data-form-codigo]')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const codigo = (document.getElementById('codigo') as HTMLInputElement).value.trim();
+    try {
+      const r = await api('/auth/login/verificar', { cuerpo: { codigo }, redirigir401: false });
+      const volver = q.get('volver');
+      const destino = volver && volver.startsWith('/') && !volver.startsWith('//') ? volver : r.redirigir;
+      location.href = r.rol === 'administrador' && !destino.startsWith('/admin') ? '/admin' : destino;
+    } catch (err: any) {
+      if (err.status === 401) {
+        toast('La verificación expiró, inicia sesión de nuevo', 'error');
+        setTimeout(() => location.reload(), 1200);
+        return;
+      }
+      mostrarError(document.querySelector('[data-mensaje-codigo]'), err);
+    }
+  });
+
+  document.querySelector('[data-reenviar]')!.addEventListener('click', async () => {
+    try {
+      await api('/auth/login/reenviar', { cuerpo: {}, redirigir401: false });
+      toast('Código reenviado', 'ok');
+    } catch (err: any) {
+      toast(esc(err.message), 'error');
+    }
+  });
+</script>

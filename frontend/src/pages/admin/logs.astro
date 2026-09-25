@@ -1,0 +1,69 @@
+---
+import Panel from '../../layouts/Panel.astro';
+---
+<Panel titulo="Logs" seccion="admin" activo="logs">
+  <div class="encabezado">
+    <div><h1>Logs del sistema</h1><p class="sub">Eventos de auditoría y accesos, para monitoreo.</p></div>
+    <a class="btn btn-primario" data-reporte href="/api/admin/reporte" download>Exportar CSV</a>
+  </div>
+  <div class="card">
+    <form class="card-cabecera" data-filtros style="flex-wrap:wrap;justify-content:flex-start">
+      <label class="small">Desde <input type="date" data-desde style="width:auto" /></label>
+      <label class="small">Hasta <input type="date" data-hasta style="width:auto" /></label>
+      <select data-tipo style="width:auto">
+        <option value="">Todos los tipos</option><option value="auditoria">Auditoría</option><option value="seguridad">Seguridad</option>
+        <option value="error">Error</option><option value="advertencia">Advertencia</option><option value="info">Info</option>
+        <option value="acceso">Acceso exitoso</option><option value="acceso_fallido">Acceso fallido</option>
+      </select>
+      <button class="btn btn-sm">Filtrar</button>
+    </form>
+    <div class="tabla-scroll">
+      <table class="tabla">
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Acción</th><th>Usuario</th><th>IP</th><th>Descripción</th></tr></thead>
+        <tbody data-lista></tbody>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+      <span class="muted small" data-total></span>
+      <div style="display:flex;gap:8px"><button class="btn btn-sm" data-ant>Anterior</button><button class="btn btn-sm" data-sig>Siguiente</button></div>
+    </div>
+  </div>
+</Panel>
+<script>
+  import { api, requerirSesion } from '../../lib/api';
+  import { esc, fecha } from '../../lib/ui';
+
+  await requerirSesion('administrador');
+  const desde = document.querySelector('[data-desde]') as HTMLInputElement;
+  const hasta = document.querySelector('[data-hasta]') as HTMLInputElement;
+  const tipo = document.querySelector('[data-tipo]') as HTMLSelectElement;
+  const hoy = new Date();
+  hasta.value = hoy.toISOString().slice(0, 10);
+  desde.value = new Date(hoy.getTime() - 7 * 86_400_000).toISOString().slice(0, 10);
+  let pagina = 1;
+  let total = 0;
+  const POR = 50;
+  const CLASE: Record<string, string> = { error: 'pill-error', acceso_fallido: 'pill-error', seguridad: 'pill-aviso', advertencia: 'pill-aviso', acceso: 'pill-ok', auditoria: 'pill-ok' };
+
+  async function cargar() {
+    const q = new URLSearchParams({ desde: desde.value, hasta: hasta.value, pagina: String(pagina), por_pagina: String(POR) });
+    if (tipo.value) q.set('tipo', tipo.value);
+    (document.querySelector('[data-reporte]') as HTMLAnchorElement).href = `/api/admin/reporte?${q}`;
+    const r = await api(`/admin/logs?${q}`);
+    total = r.total;
+    (document.querySelector('[data-lista]') as HTMLElement).innerHTML = r.registros.length
+      ? r.registros
+          .map(
+            (l: any) => `<tr><td class="small" style="white-space:nowrap">${fecha(l.fecha, true)}</td><td><span class="pill ${CLASE[l.tipo] ?? ''}">${esc(l.tipo)}</span></td>
+            <td class="small">${esc(l.accion ?? '')}</td><td class="small">${esc(l.usuario ?? '—')}</td><td class="mono small">${esc(l.ip ?? '')}</td>
+            <td class="small" style="max-width:420px;overflow-wrap:anywhere">${esc((l.descripcion ?? '').slice(0, 220))}</td></tr>`,
+          )
+          .join('')
+      : '<tr><td colspan="6" class="muted">No hay registros en el periodo.</td></tr>';
+    (document.querySelector('[data-total]') as HTMLElement).textContent = `${total} registro(s) · página ${pagina} de ${Math.max(1, Math.ceil(total / POR))}`;
+  }
+  document.querySelector('[data-filtros]')!.addEventListener('submit', (e) => (e.preventDefault(), (pagina = 1), cargar()));
+  document.querySelector('[data-ant]')!.addEventListener('click', () => pagina > 1 && (pagina--, cargar()));
+  document.querySelector('[data-sig]')!.addEventListener('click', () => pagina * POR < total && (pagina++, cargar()));
+  await cargar();
+</script>

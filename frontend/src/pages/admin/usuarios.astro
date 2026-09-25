@@ -1,0 +1,230 @@
+---
+import Panel from '../../layouts/Panel.astro';
+---
+<Panel titulo="Usuarios" seccion="admin" activo="usuarios">
+  <div class="encabezado">
+    <div><h1>Usuarios</h1><p class="sub">Alta, consulta, edición y baja de cuentas.</p></div>
+    <button class="btn btn-primario" data-nuevo>+ Nuevo usuario</button>
+  </div>
+  <div class="card">
+    <form class="card-cabecera" data-filtros style="flex-wrap:wrap">
+      <input type="search" placeholder="Buscar por correo o nombre" data-buscar style="max-width:340px" />
+      <select data-estado style="width:auto">
+        <option value="todos">Todos</option><option value="activos">Activos</option>
+        <option value="inactivos">Deshabilitados</option><option value="pendientes">Registro incompleto</option>
+      </select>
+    </form>
+    <div class="tabla-scroll">
+      <table class="tabla">
+        <thead><tr><th>Correo</th><th>Nombre</th><th>Rol</th><th>Documentos</th><th>Registro</th><th>Estado</th></tr></thead>
+        <tbody data-lista></tbody>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+      <span class="muted small" data-total></span>
+      <div style="display:flex;gap:8px"><button class="btn btn-sm" data-ant>Anterior</button><button class="btn btn-sm" data-sig>Siguiente</button></div>
+    </div>
+  </div>
+</Panel>
+<script>
+  import { api, requerirSesion } from '../../lib/api';
+  import { abrirModal, confirmar, esc, estadoHtml, fecha, mostrarError, toast } from '../../lib/ui';
+
+  const yo = await requerirSesion('administrador');
+  let pagina = 1;
+  let total = 0;
+  const POR = 20;
+  const buscar = document.querySelector('[data-buscar]') as HTMLInputElement;
+  const estado = document.querySelector('[data-estado]') as HTMLSelectElement;
+  const tbody = document.querySelector('[data-lista]') as HTMLElement;
+
+  const estadoUsuario = (u: any) =>
+    !u.activo ? '<span class="pill pill-error">Deshabilitado</span>' : !u.registro_completo ? '<span class="pill pill-aviso">Incompleto</span>' : '<span class="pill pill-ok">Activo</span>';
+  const isoADmy = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? `${v.slice(8, 10)}/${v.slice(5, 7)}/${v.slice(0, 4)}` : '');
+
+  async function cargar() {
+    const q = new URLSearchParams({ pagina: String(pagina), por_pagina: String(POR), estado: estado.value });
+    if (buscar.value.trim()) q.set('buscar', buscar.value.trim());
+    const r = await api(`/admin/usuarios?${q}`);
+    total = r.total;
+    tbody.innerHTML = r.usuarios.length
+      ? r.usuarios
+          .map(
+            (u: any) => `<tr class="clic" data-id="${u.id}"><td>${esc(u.correo)}</td><td>${esc([u.nombre, u.apellido_paterno].filter(Boolean).join(' ') || '—')}</td>
+            <td>${u.rol === 'administrador' ? '<span class="pill">admin</span>' : 'usuario'}</td><td>${u.documentos}</td><td>${fecha(u.creado_en)}</td><td>${estadoUsuario(u)}</td></tr>`,
+          )
+          .join('')
+      : '<tr><td colspan="6" class="muted">No hay usuarios que coincidan.</td></tr>';
+    (document.querySelector('[data-total]') as HTMLElement).textContent = `${total} usuario(s) · página ${pagina} de ${Math.max(1, Math.ceil(total / POR))}`;
+  }
+
+  // Campos de formulario compartidos por alta y edición
+  const camposPerfil = (u: any = {}) => `
+    <div class="form-validacion">
+      <div class="campo"><label>Nombre(s)</label><input name="nombre" value="${esc(u.nombre ?? '')}"></div>
+      <div class="campo"><label>Primer apellido</label><input name="apellido_paterno" value="${esc(u.apellido_paterno ?? '')}"></div>
+      <div class="campo"><label>Segundo apellido</label><input name="apellido_materno" value="${esc(u.apellido_materno ?? '')}"></div>
+      <div class="campo"><label>CURP</label><input name="curp" maxlength="18" placeholder="${esc(u.curp ?? '')}">
+        ${u.curp ? '<span class="ayuda">Enmascarada por privacidad. Déjala vacía para no cambiarla.</span>' : ''}</div>
+      <div class="campo"><label>Fecha de nacimiento</label><input name="fecha_nacimiento" placeholder="dd/mm/aaaa" value="${esc(isoADmy(u.fecha_nacimiento))}"></div>
+      <div class="campo"><label>Sexo</label><select name="sexo">
+        <option value="">Sin especificar</option><option value="H" ${u.sexo === 'H' ? 'selected' : ''}>Hombre</option><option value="M" ${u.sexo === 'M' ? 'selected' : ''}>Mujer</option></select></div>
+    </div>
+    <div class="campo"><label>Domicilio</label><input name="direccion" value="${esc(u.direccion ?? '')}"></div>`;
+
+  const camposCuenta = (u: any = {}, esYo = false) => `
+    <div class="form-validacion">
+      <div class="campo"><label>Correo</label><input name="correo" type="email" required value="${esc(u.correo ?? '')}"></div>
+      <div class="campo"><label>Rol</label><select name="rol" ${esYo ? 'disabled' : ''}>
+        <option value="usuario" ${u.rol !== 'administrador' ? 'selected' : ''}>Usuario</option>
+        <option value="administrador" ${u.rol === 'administrador' ? 'selected' : ''}>Administrador</option></select></div>
+    </div>
+    <label style="display:flex;gap:8px;align-items:center;margin-bottom:14px"><input type="checkbox" name="dosfa_activo" ${u.dosfa_activo ? 'checked' : ''}> Verificación en dos pasos por correo</label>`;
+
+  function leerFormulario(form: HTMLFormElement, original: any = {}): Record<string, unknown> {
+    const datos: Record<string, unknown> = {};
+    const val = (n: string) => ((form.elements.namedItem(n) as HTMLInputElement | null)?.value ?? '').trim();
+    for (const n of ['nombre', 'apellido_paterno', 'apellido_materno', 'direccion', 'sexo']) {
+      const v = val(n) || null;
+      if ((original[n] ?? null) !== v) datos[n] = v;
+    }
+    const fn = val('fecha_nacimiento') || null;
+    if (isoADmy(original.fecha_nacimiento) !== (fn ?? '')) datos.fecha_nacimiento = fn;
+    if (val('curp')) datos.curp = val('curp');
+    const correo = val('correo').toLowerCase();
+    if (correo && correo !== original.correo) datos.correo = correo;
+    const rol = form.elements.namedItem('rol') as HTMLSelectElement | null;
+    if (rol && !rol.disabled && rol.value !== original.rol) datos.rol = rol.value;
+    const dosfa = (form.elements.namedItem('dosfa_activo') as HTMLInputElement | null)?.checked;
+    if (dosfa !== undefined && dosfa !== !!original.dosfa_activo) datos.dosfa_activo = dosfa;
+    return datos;
+  }
+
+  // ── Alta ──────────────────────────────────────────────────────────────
+  document.querySelector('[data-nuevo]')!.addEventListener('click', () => {
+    const m = abrirModal(
+      `<div class="card-cabecera"><h2>Nuevo usuario</h2><button class="btn btn-borde btn-sm" data-cerrar>Cerrar</button></div>
+       <form data-form>
+         <div data-error></div>
+         ${camposCuenta({ rol: 'usuario' })}
+         <div class="campo"><label>Contraseña inicial</label><input name="password" type="password" autocomplete="new-password" required minlength="10">
+           <span class="ayuda">Mínimo 10 caracteres, con mayúscula, minúscula y número. Compártela de forma segura.</span></div>
+         <h3 style="margin:10px 0 12px">Datos personales (opcional)</h3>
+         ${camposPerfil()}
+         <div style="display:flex;justify-content:flex-end;gap:10px"><button class="btn btn-primario">Crear usuario</button></div>
+       </form>`,
+      true,
+    );
+    m.el.querySelector('[data-cerrar]')!.addEventListener('click', m.cerrar);
+    const form = m.el.querySelector('[data-form]') as HTMLFormElement;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const datos = leerFormulario(form, { rol: 'usuario' });
+      datos.password = (form.elements.namedItem('password') as HTMLInputElement).value;
+      datos.rol = (form.elements.namedItem('rol') as HTMLSelectElement).value;
+      try {
+        await api('/admin/usuarios', { cuerpo: datos });
+        toast('Usuario creado', 'ok');
+        m.cerrar();
+        cargar();
+      } catch (err) {
+        mostrarError(form.querySelector('[data-error]'), err);
+      }
+    });
+  });
+
+  // ── Consulta / edición / baja ────────────────────────────────────────
+  async function abrirUsuario(id: number) {
+    const u = await api(`/admin/usuarios/${id}`);
+    const esYo = u.id === yo.id;
+    const m = abrirModal(
+      `<div class="card-cabecera"><div><h2>${esc(u.correo)}</h2><p class="sub">${estadoUsuario(u)} · registrado ${fecha(u.creado_en)} · último acceso ${fecha(u.ultimo_acceso, true)}</p></div>
+        <button class="btn btn-borde btn-sm" data-cerrar>Cerrar</button></div>
+       <form data-form>
+         <div data-error></div>
+         <h3 style="margin:0 0 12px">Cuenta</h3>
+         ${camposCuenta(u, esYo)}
+         <h3 style="margin:6px 0 12px">Datos personales ${u.verificado ? '<span class="pill pill-ok">verificado</span>' : ''}</h3>
+         ${camposPerfil(u)}
+         <div style="display:flex;justify-content:flex-end;gap:10px"><button class="btn btn-primario">Guardar cambios</button></div>
+       </form>
+       <h3 style="margin:22px 0 8px">Documentos</h3>
+       <table class="tabla"><tbody>${u.documentos.map((d: any) => `<tr><td>${esc(d.tipo ?? '—')}</td><td>${estadoHtml(d.estado)}</td><td>${d.vigente ? 'vigente' : ''}</td><td>${fecha(d.creado_en)}</td></tr>`).join('') || '<tr><td class="muted">Sin documentos</td></tr>'}</tbody></table>
+       <h3 style="margin:20px 0 8px">Últimos accesos</h3>
+       <table class="tabla"><tbody>${u.accesos.map((a: any) => `<tr><td>${esc(a.tipo)}</td><td>${a.exito ? '<span class="estado-ok">éxito</span>' : '<span class="estado-error">fallido</span>'}</td><td class="mono small">${esc(a.ip ?? '')}</td><td>${fecha(a.fecha, true)}</td></tr>`).join('') || '<tr><td class="muted">Sin accesos</td></tr>'}</tbody></table>
+       ${esYo ? '' : `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:20px;border-top:1px solid var(--borde);padding-top:18px">
+         <button class="btn btn-borde" data-password>Restablecer contraseña</button>
+         <div style="display:flex;gap:10px;flex-wrap:wrap">
+           ${u.activo ? '<button class="btn btn-peligro" data-desactivar>Deshabilitar</button>' : '<button class="btn btn-primario" data-reactivar>Reactivar</button>'}
+           <button class="btn btn-peligro" data-eliminar>Eliminar definitivamente</button>
+         </div></div>`}`,
+      true,
+    );
+    const cerrarYRecargar = () => {
+      m.cerrar();
+      cargar();
+    };
+    m.el.querySelector('[data-cerrar]')!.addEventListener('click', m.cerrar);
+    const form = m.el.querySelector('[data-form]') as HTMLFormElement;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const datos = leerFormulario(form, u);
+      if (!Object.keys(datos).length) return toast('No hay cambios', 'info');
+      try {
+        await api(`/admin/usuarios/${u.id}`, { metodo: 'PUT', cuerpo: datos });
+        toast('Usuario actualizado', 'ok');
+        cerrarYRecargar();
+      } catch (err) {
+        mostrarError(form.querySelector('[data-error]'), err);
+      }
+    });
+    m.el.querySelector('[data-password]')?.addEventListener('click', () => {
+      const m2 = abrirModal(`<h2>Restablecer contraseña</h2><p class="muted">Se cerrarán las sesiones abiertas de ${esc(u.correo)}.</p>
+        <form data-f><div data-e></div><div class="campo"><label>Nueva contraseña</label><input type="password" name="p" required minlength="10" autocomplete="new-password"></div>
+        <div style="display:flex;justify-content:flex-end;gap:10px"><button type="button" class="btn btn-borde" data-no>Cancelar</button><button class="btn btn-primario">Guardar</button></div></form>`);
+      m2.el.querySelector('[data-no]')!.addEventListener('click', m2.cerrar);
+      m2.el.querySelector('[data-f]')!.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+          await api(`/admin/usuarios/${u.id}/password`, { cuerpo: { password: (m2.el.querySelector('input') as HTMLInputElement).value } });
+          toast('Contraseña restablecida', 'ok');
+          m2.cerrar();
+        } catch (err) {
+          mostrarError(m2.el.querySelector('[data-e]'), err);
+        }
+      });
+    });
+    m.el.querySelector('[data-desactivar]')?.addEventListener('click', async () => {
+      if (!(await confirmar('Deshabilitar cuenta', `La cuenta ${u.correo} no podrá iniciar sesión y se cerrarán sus sesiones. La información se conserva (baja lógica).`, 'Deshabilitar', true))) return;
+      await api(`/admin/usuarios/${u.id}`, { metodo: 'DELETE' });
+      toast('Cuenta deshabilitada', 'ok');
+      cerrarYRecargar();
+    });
+    m.el.querySelector('[data-reactivar]')?.addEventListener('click', async () => {
+      await api(`/admin/usuarios/${u.id}/reactivar`, { cuerpo: {} });
+      toast('Cuenta reactivada', 'ok');
+      cerrarYRecargar();
+    });
+    m.el.querySelector('[data-eliminar]')?.addEventListener('click', async () => {
+      if (!(await confirmar('Eliminar definitivamente', `Se borrarán la cuenta ${u.correo}, su perfil, sus documentos y archivos. Esta acción no se puede deshacer.`, 'Eliminar', true))) return;
+      await api(`/admin/usuarios/${u.id}?definitivo=true`, { metodo: 'DELETE' });
+      toast('Cuenta eliminada', 'ok');
+      cerrarYRecargar();
+    });
+  }
+
+  let t: any;
+  buscar.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => ((pagina = 1), cargar()), 300);
+  });
+  estado.addEventListener('change', () => ((pagina = 1), cargar()));
+  document.querySelector('[data-filtros]')!.addEventListener('submit', (e) => e.preventDefault());
+  document.querySelector('[data-ant]')!.addEventListener('click', () => pagina > 1 && (pagina--, cargar()));
+  document.querySelector('[data-sig]')!.addEventListener('click', () => pagina * POR < total && (pagina++, cargar()));
+  tbody.addEventListener('click', (e) => {
+    const tr = (e.target as HTMLElement).closest('tr[data-id]') as HTMLElement | null;
+    if (tr) abrirUsuario(Number(tr.dataset.id));
+  });
+  await cargar();
+</script>

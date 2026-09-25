@@ -1,0 +1,49 @@
+---
+import Panel from '../../layouts/Panel.astro';
+---
+<Panel titulo="Validar información" seccion="usuario" activo="validaciones">
+  <div class="encabezado">
+    <div>
+      <h1>Validar información</h1>
+      <p class="sub" data-sub>Revisa y confirma los datos extraídos antes de guardarlos.</p>
+    </div>
+    <button class="btn btn-borde" data-ver>Ver documento</button>
+  </div>
+  <div data-mensaje></div>
+  <div class="card" data-form-validacion><p class="muted">Cargando…</p></div>
+</Panel>
+<script>
+  import { api, requerirSesion } from '../../lib/api';
+  import { esc, mostrarError } from '../../lib/ui';
+  import { renderValidacion } from '../../lib/validacion';
+
+  await requerirSesion('usuario');
+  const q = new URLSearchParams(location.search);
+  const id = Number(q.get('id'));
+  const editar = q.get('modo') === 'editar';
+  if (editar) {
+    (document.querySelector('h1') as HTMLElement).textContent = 'Editar información';
+  }
+  const cont = document.querySelector('[data-form-validacion]') as HTMLElement;
+  try {
+    const doc = await api(`/documentos/${id}`);
+    (document.querySelector('[data-sub]') as HTMLElement).innerHTML = `${esc(doc.tipo_nombre ?? 'Documento')} · ${esc(doc.nombre_original)}`;
+    if (editar && doc.estado === 'validado') {
+      renderValidacion(cont, doc, () => (location.href = `/app/documentos?id=${doc.id}&editado=1`), 'Guardar cambios', 'editar');
+    } else if (doc.estado !== 'procesado') {
+      cont.innerHTML = `<p>Este documento está en estado <b>${esc(doc.estado)}</b> y no requiere validación.</p><a class="btn btn-borde" href="/app/documentos?id=${doc.id}">Ver detalle</a>`;
+    } else {
+      renderValidacion(cont, doc, (r) => {
+        const aviso = (r.advertencias ?? []).find((a: string) => a.includes('otra persona'));
+        location.href = `/app/documentos?id=${doc.id}&validado=1${aviso ? '&ajeno=1' : ''}`;
+      });
+    }
+  } catch (err) {
+    mostrarError(document.querySelector('[data-mensaje]'), err);
+    cont.innerHTML = '';
+  }
+  document.querySelector('[data-ver]')!.addEventListener('click', async () => {
+    const { url } = await api(`/documentos/${id}/archivo-url`);
+    window.open(url, '_blank', 'noopener');
+  });
+</script>

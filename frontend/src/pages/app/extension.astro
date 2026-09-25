@@ -1,0 +1,271 @@
+---
+import Panel from '../../layouts/Panel.astro';
+import Icono from '../../components/Icono.astro';
+---
+<Panel titulo="Extensión" seccion="usuario" activo="extension">
+  <div class="encabezado">
+    <div>
+      <h1>Extensión de navegador</h1>
+      <p class="sub">Tus documentos validados a la mano: consulta y copia sus datos desde cualquier página, sin entrar a la plataforma.</p>
+    </div>
+  </div>
+
+  <div class="card ext-estado" data-estado>
+    <span class="icono icono-grande" data-estado-icono></span>
+    <div style="flex:1;min-width:0">
+      <h2 data-estado-titulo>Buscando la extensión…</h2>
+      <p class="muted small" data-estado-texto style="margin:4px 0 0"></p>
+    </div>
+    <div class="ext-estado-acciones" data-estado-acciones></div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top:24px">
+    <div class="card" style="align-self:start">
+      <div class="card-cabecera"><h2>Instalar</h2></div>
+      <p class="muted small" style="margin-top:0">Generamos una extensión personalizada para tu cuenta. Al cargarla en el navegador se vincula sola (el archivo incluye un código que vence en 15 minutos).</p>
+      <button class="btn btn-primario btn-grande" data-descargar style="width:100%"><Icono nombre="descargar" tam={18} /> Descargar e instalar extensión</button>
+      <ol class="ext-pasos">
+        <li><b>Descomprime</b> el archivo <span class="mono small">ocr-platform-extension.zip</span> (doble clic).</li>
+        <li>Abre la página de extensiones: <button class="link-btn mono" data-copiar="chrome://extensions">chrome://extensions</button>
+          <span class="muted small">(Edge: <button class="link-btn mono" data-copiar="edge://extensions">edge://extensions</button>)</span>. Pégala en la barra de direcciones.</li>
+        <li>Activa <b>Modo de desarrollador</b> (arriba a la derecha).</li>
+        <li>Pulsa <b>Cargar descomprimida</b> y elige la carpeta <span class="mono small">ocr-platform-extension</span>.</li>
+        <li>Listo: esta página detectará la extensión. Fíjala con el ícono de pieza de rompecabezas para tenerla siempre visible.</li>
+      </ol>
+      <p class="muted small">Compatible con Chrome, Edge, Brave y Opera. Si ya la tenías instalada, basta con volver a cargarla o usar "Vincular ahora".</p>
+      <div class="alerta alerta-info small" style="margin-bottom:0">Si el navegador muestra una advertencia de certificado al abrir la plataforma, la extensión podría no conectarse.
+        Instala un certificado de confianza con <span class="mono">mkcert</span> (ver <span class="mono">nginx/README.md</span>).</div>
+    </div>
+
+    <div class="grid" style="align-content:start">
+      <div class="card">
+        <div class="card-cabecera"><h2>Qué verás en la extensión</h2></div>
+        <ul class="ext-lista">
+          <li>Las 4 categorías: <b>INE, CURP, acta de nacimiento y pasaporte</b>.</li>
+          <li>Solo documentos <b>ya validados</b> por ti, cada uno con un identificador como
+            <span class="mono"><b>0001_CSC</b></span>: el <b>0001</b> es el orden en que lo confirmaste y <b>CSC</b> las iniciales
+            del titular (p. ej. Carlos Saavedra Cinta).</li>
+          <li>Al abrir un documento, sus datos con botón para <b>copiar</b> cada uno, <b>copiar todo</b> o <b>descargar el .txt</b>.</li>
+          <li>Botón <b>Sincronizar</b> para traer los documentos que valides después.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-cabecera"><h2>Vincular con un código</h2></div>
+        <p class="muted small" style="margin-top:0">Si la vinculación automática no funcionó, genera un código y escríbelo en la extensión.</p>
+        <div data-codigo></div>
+        <button class="btn btn-borde" data-generar><Icono nombre="enlace" tam={16} /> Generar código</button>
+      </div>
+      <div class="card">
+        <div class="card-cabecera"><h2>Extensiones vinculadas</h2></div>
+        <div data-dispositivos><p class="muted">Cargando…</p></div>
+        <p class="muted small" style="margin-bottom:0">Cambiar tu contraseña o cerrar todas las sesiones también desvincula las extensiones.</p>
+      </div>
+    </div>
+  </div>
+</Panel>
+<script>
+  import { api, requerirSesion } from '../../lib/api';
+  import { icono } from '../../lib/iconos';
+  import { confirmar, esc, fecha, haceTiempo, pedirPassword, toast } from '../../lib/ui';
+
+  await requerirSesion('usuario');
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector(s) as T;
+  const info: { extension_id: string | null; version: string | null; url: string } = await api('/extension/info');
+
+  // ── Comunicación con la extensión (externally_connectable) ─────────────────
+  type EstadoExt = { ok: boolean; instalada?: boolean; vinculada?: boolean; correo?: string | null; documentos?: number; sincronizado_en?: string | null; version?: string; error?: string };
+
+  function mensaje(datos: Record<string, unknown>, ms = 4000): Promise<EstadoExt | null> {
+    const rt = (window as any).chrome?.runtime;
+    if (!info.extension_id || !rt?.sendMessage) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      const t = setTimeout(() => resolve(null), ms);
+      try {
+        rt.sendMessage(info.extension_id, datos, (r: EstadoExt) => {
+          clearTimeout(t);
+          void rt.lastError; // extensión no instalada
+          resolve(r ?? null);
+        });
+      } catch {
+        clearTimeout(t);
+        resolve(null);
+      }
+    });
+  }
+
+  let yoCorreo = '';
+  try {
+    yoCorreo = (await api('/auth/yo')).correo;
+  } catch {
+    /* sin correo */
+  }
+
+  async function pintarEstado() {
+    const e = await mensaje({ tipo: 'estado' });
+    const titulo = $('[data-estado-titulo]');
+    const texto = $('[data-estado-texto]');
+    const acciones = $('[data-estado-acciones]');
+    const ico = $('[data-estado-icono]');
+    const tarjeta = $('[data-estado]');
+    tarjeta.classList.remove('ext-ok', 'ext-aviso');
+    acciones.innerHTML = '';
+    if (!e?.instalada) {
+      ico.innerHTML = icono('extension', 30);
+      titulo.textContent = 'Extensión no detectada';
+      texto.textContent = 'Descárgala e instálala siguiendo los pasos. Esta página la detectará automáticamente.';
+      return false;
+    }
+    if (!e.vinculada || (e.correo && e.correo !== yoCorreo)) {
+      tarjeta.classList.add('ext-aviso');
+      ico.innerHTML = icono('enlace', 30);
+      titulo.textContent = e.vinculada ? 'Extensión vinculada a otra cuenta' : 'Extensión instalada, falta vincularla';
+      texto.textContent = e.vinculada
+        ? `Está vinculada a ${e.correo}. Puedes vincularla con tu cuenta.`
+        : 'Vincúlala con tu cuenta para ver tus documentos validados.';
+      acciones.innerHTML = `<button class="btn btn-primario" data-vincular>${icono('enlace', 16)} Vincular ahora</button>`;
+      acciones.querySelector('[data-vincular]')!.addEventListener('click', vincularAhora);
+      return true;
+    }
+    tarjeta.classList.add('ext-ok');
+    ico.innerHTML = icono('checkCirculo', 30);
+    titulo.textContent = 'Extensión instalada y vinculada';
+    texto.textContent = `${e.documentos ?? 0} documento(s) validados en la extensión · sincronizada ${e.sincronizado_en ? haceTiempo(e.sincronizado_en).replace(/^H/, 'h') : 'nunca'} · versión ${e.version ?? ''}`;
+    acciones.innerHTML = `<button class="btn btn-borde" data-sync>${icono('sincronizar', 16)} Sincronizar ahora</button>`;
+    acciones.querySelector('[data-sync]')!.addEventListener('click', async () => {
+      const r = await mensaje({ tipo: 'sincronizar' }, 15000);
+      if (r?.ok) toast('Extensión sincronizada', 'ok');
+      else toast(r?.error ?? 'No se pudo sincronizar', 'error');
+      pintarEstado();
+      cargarDispositivos();
+    });
+    return true;
+  }
+
+  async function vincularAhora() {
+    try {
+      const { codigo } = await api('/extension/codigo', { cuerpo: {} });
+      const r = await mensaje({ tipo: 'vincular', codigo }, 20000);
+      if (!r?.ok) throw new Error(r?.error ?? 'La extensión no respondió');
+      toast(`Extensión vinculada: ${r.documentos ?? 0} documento(s) sincronizados`, 'ok');
+    } catch (err: any) {
+      if (err.codigo !== 'CANCELADO') toast(err.message, 'error');
+    }
+    pintarEstado();
+    cargarDispositivos();
+  }
+
+  // ── Descarga del paquete personalizado ─────────────────────────────────────
+  async function descargarPaquete(): Promise<void> {
+    const r = await fetch('/api/extension/paquete', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    if (r.status === 428) {
+      if (await pedirPassword()) return descargarPaquete();
+      return;
+    }
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      throw new Error(d.error ?? `Error ${r.status}`);
+    }
+    const url = URL.createObjectURL(await r.blob());
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ocr-platform-extension.zip';
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast('Extensión descargada. Sigue los pasos para cargarla en el navegador.', 'ok', 7000);
+    esperarInstalacion();
+  }
+
+  let esperando = false;
+  async function esperarInstalacion() {
+    if (esperando) return;
+    esperando = true;
+    for (let i = 0; i < 100; i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      const e = await mensaje({ tipo: 'estado' }, 2500);
+      if (e?.instalada && e.vinculada) {
+        toast('Extensión detectada y vinculada', 'ok');
+        break;
+      }
+      if (e?.instalada) break;
+    }
+    esperando = false;
+    pintarEstado();
+    cargarDispositivos();
+  }
+
+  $('[data-descargar]').addEventListener('click', async (ev) => {
+    const b = ev.currentTarget as HTMLButtonElement;
+    b.disabled = true;
+    try {
+      await descargarPaquete();
+    } catch (err: any) {
+      toast(err.message, 'error');
+    } finally {
+      b.disabled = false;
+    }
+  });
+
+  document.querySelectorAll<HTMLElement>('[data-copiar]').forEach((b) =>
+    b.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(b.dataset.copiar!).catch(() => undefined);
+      toast(`Copiado: ${b.dataset.copiar}. Pégalo en la barra de direcciones.`, 'ok');
+    }),
+  );
+
+  // ── Código manual ───────────────────────────────────────────────────────────
+  let reloj: number | undefined;
+  $('[data-generar]').addEventListener('click', async () => {
+    try {
+      const r = await api('/extension/codigo', { cuerpo: {} });
+      const vence = new Date(r.expira_en).getTime();
+      const caja = $('[data-codigo]');
+      caja.innerHTML = `<div class="ext-codigo mono">${esc(r.codigo)}</div>
+        <p class="muted small" style="text-align:center">Plataforma: <span class="mono">${esc(r.url)}</span> · vence en <b data-restante></b></p>`;
+      clearInterval(reloj);
+      const tic = () => {
+        const s = Math.max(0, Math.round((vence - Date.now()) / 1000));
+        const el = caja.querySelector('[data-restante]');
+        if (el) el.textContent = s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : 'vencido';
+        if (!s) clearInterval(reloj);
+      };
+      tic();
+      reloj = window.setInterval(tic, 1000);
+      esperarInstalacion();
+    } catch (err: any) {
+      if (err.codigo !== 'CANCELADO') toast(err.message, 'error');
+    }
+  });
+
+  // ── Dispositivos vinculados ─────────────────────────────────────────────────
+  async function cargarDispositivos() {
+    const lista: any[] = await api('/extension/dispositivos');
+    const caja = $('[data-dispositivos]');
+    caja.innerHTML = lista.length
+      ? `<table class="tabla"><tbody>${lista
+          .map(
+            (d) => `<tr><td><b>${esc(d.nombre ?? 'Navegador')}</b><div class="muted small">vinculada ${fecha(d.creado_en)} · último uso ${d.ultimo_uso ? haceTiempo(d.ultimo_uso).replace(/^H/, 'h') : '—'}</div></td>
+              <td style="text-align:right"><button class="btn btn-sm btn-peligro" data-revocar="${d.id}">Desvincular</button></td></tr>`,
+          )
+          .join('')}</tbody></table>`
+      : '<p class="muted">No hay extensiones vinculadas.</p>';
+    caja.querySelectorAll<HTMLElement>('[data-revocar]').forEach((b) =>
+      b.addEventListener('click', async () => {
+        if (!(await confirmar('Desvincular extensión', 'La extensión borrará los datos guardados la próxima vez que se sincronice.', 'Desvincular', true))) return;
+        await api(`/extension/dispositivos/${b.dataset.revocar}`, { metodo: 'DELETE' });
+        await mensaje({ tipo: 'sincronizar' }, 8000); // si era la de este navegador, borra sus datos
+        toast('Extensión desvinculada', 'ok');
+        cargarDispositivos();
+        pintarEstado();
+      }),
+    );
+  }
+
+  await Promise.all([pintarEstado(), cargarDispositivos()]);
+</script>

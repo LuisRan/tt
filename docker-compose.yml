@@ -1,0 +1,189 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  TT · Plataforma de validación y procesamiento de documentos (OCR + IA)
+#  Arquitectura de 3 capas (Capítulo 4):
+#    web (Nginx + Astro) -> backend (Node.js) -> postgres / mongo
+#                                        \-> ia (Flask + Docling + Tesseract) -> Ollama
+#
+#  Arranque:   ./scripts/start.sh        (macOS / Linux)
+#              .\scripts\start.ps1       (Windows)
+#  o bien:     docker compose up -d --build
+#  Ollama en contenedor (Windows/Linux):  docker compose --profile ollama up -d --build
+# ═══════════════════════════════════════════════════════════════════════════
+name: tt-ocr
+
+x-reinicio: &reinicio
+  restart: unless-stopped
+
+services:
+  postgres:
+    <<: *reinicio
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tt_ocr}
+      POSTGRES_USER: ${POSTGRES_USER:-tt_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD en .env}
+      TZ: ${TZ:-America/Mexico_City}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # Sin puertos publicados: solo el backend accede (sección 4.3).
+    # Para inspeccionar la BD desde tu equipo descomenta:
+    # ports: ["127.0.0.1:5432:5432"]
+
+  mongo:
+    <<: *reinicio
+    image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-tt_app}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?define MONGO_PASSWORD en .env}
+    volumes:
+      - mongodata:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    # ports: ["127.0.0.1:27017:27017"]
+
+  ia:
+    <<: *reinicio
+    # Perfil "ia": activo por defecto vía COMPOSE_PROFILES en .env. En Mac puedes
+    # correr el módulo de IA NATIVO (ocrmac + GPU Metal) con ./scripts/start.sh --ia-nativa
+    profiles: ["ia"]
+    build:
+      context: ./ia_documentos
+      args:
+        PRELOAD_DOCLING_MODELS: ${PRELOAD_DOCLING_MODELS:-true}
+    environment:
+      IA_API_KEY: ${IA_API_KEY:?define IA_API_KEY en .env}
+      IA_API_PORT: 5001
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-30m}
+      EXTRACTION_STRATEGY: ${EXTRACTION_STRATEGY:-llm_first}
+      ANTI_HALLUCINATION: "true"
+      OCR_ENGINE: ${OCR_ENGINE:-auto}
+      DOCLING_DEVICE: ${DOCLING_DEVICE:-auto}
+      DOCLING_TABLES: ${DOCLING_TABLES:-auto}
+      IA_REQUEST_TIMEOUT: 600
+      LOG_LEVEL: ${LOG_LEVEL_IA:-INFO}
+      TZ: ${TZ:-America/Mexico_City}
+    volumes:
+      - iadata:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # Ollama nativo del equipo anfitrión
+    # Docling + modelos: dale memoria suficiente en Docker Desktop (>= 6 GB)
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 15s
+      start_period: 60s
+      retries: 5
+
+  backend:
+    <<: *reinicio
+    build: ./backend
+    depends_on:
+      postgres: { condition: service_healthy }
+      mongo: { condition: service_healthy }
+      ia: { condition: service_started, required: false }
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # módulo de IA nativo (modo --ia-nativa)
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      APP_NAME: ${APP_NAME:-OCR Platform}
+      PUBLIC_URL: ${PUBLIC_URL:-https://localhost:8443}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-tt_app}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-tt_ocr}
+      MONGO_URL: mongodb://${MONGO_USER:-tt_app}:${MONGO_PASSWORD}@mongo:27017/?authSource=admin
+      MONGO_DB: ${MONGO_DB:-tt_ocr}
+      JWT_SECRET: ${JWT_SECRET:?define JWT_SECRET en .env}
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?define DATA_ENCRYPTION_KEY en .env}
+      COOKIE_SECURE: "true"
+      REGISTRO_VERIFICAR_CORREO: ${REGISTRO_VERIFICAR_CORREO:-true}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      MAIL_PROVIDER: ${MAIL_PROVIDER:-console}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-OCR Platform <onboarding@resend.dev>}
+      MAIL_REPLY_TO: ${MAIL_REPLY_TO:-}
+      IA_URL: ${IA_URL:-http://ia:5001}
+      IA_API_KEY: ${IA_API_KEY}
+      IA_CONCURRENCIA: ${IA_CONCURRENCIA:-1}
+      STORAGE_DIR: /data/storage
+      EXTENSION_DIR: /app/extension         # código de la extensión (se empaqueta por usuario)
+      CURP_MAX_DIAS: ${CURP_MAX_DIAS:-90}
+      ALERTAS_DIAS: ${ALERTAS_DIAS:-90,30,7,0}
+      TZ: ${TZ:-America/Mexico_City}
+    volumes:
+      - storage:/data/storage
+      - ./extension:/app/extension:ro
+
+  web:
+    <<: *reinicio
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    depends_on:
+      - backend
+    environment:
+      HTTPS_PORT: ${HTTPS_PORT:-8443}
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+      - "${HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./nginx/certs:/etc/nginx/certs
+
+  backup:
+    <<: *reinicio
+    build: ./backup
+    depends_on:
+      postgres: { condition: service_healthy }
+      mongo: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-tt_app}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-tt_ocr}
+      MONGO_URL: mongodb://${MONGO_USER:-tt_app}:${MONGO_PASSWORD}@mongo:27017/?authSource=admin
+      BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY:?define BACKUP_ENCRYPTION_KEY en .env}
+      BACKUP_INTERVALO_HORAS: ${BACKUP_INTERVALO_HORAS:-24}
+      BACKUP_RETENCION: ${BACKUP_RETENCION:-7}
+      TZ: ${TZ:-America/Mexico_City}
+    volumes:
+      - ./backups:/backups
+      - storage:/storage:ro
+
+  # ── Ollama en contenedor (opcional) ─────────────────────────────────────────
+  # En Mac se recomienda Ollama NATIVO (usa la GPU Metal; Docker no puede).
+  # En Windows/Linux puedes usar este servicio con:  --profile ollama
+  # y OLLAMA_HOST=http://ollama:11434 en .env (los scripts lo hacen solos).
+  ollama:
+    <<: *reinicio
+    image: ollama/ollama:latest
+    profiles: ["ollama"]
+    volumes:
+      - ollama:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    profiles: ["ollama"]
+    depends_on:
+      ollama: { condition: service_healthy }
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "-c", "ollama pull ${OLLAMA_MODEL:-qwen3:4b-instruct-2507-q4_K_M}"]
+    restart: "no"
+
+volumes:
+  pgdata:
+  mongodata:
+  iadata:
+  storage:
+  ollama:

@@ -1,0 +1,173 @@
+---
+import Panel from '../../layouts/Panel.astro';
+---
+<Panel titulo="Configuración" seccion="usuario" activo="perfil">
+  <div class="encabezado">
+    <div>
+      <h1>Configuración</h1>
+      <p class="sub">Tu información personal, seguridad y notificaciones.</p>
+    </div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card" style="align-self:start">
+      <div class="card-cabecera">
+        <h2>Mi información</h2>
+        <button class="btn btn-sm btn-borde" data-editar>Editar</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:-4px 0 14px" data-verificado></div>
+      <div data-msg-perfil></div>
+      <div data-perfil><p class="muted">Cargando…</p></div>
+      <form data-form-perfil class="oculto">
+        <div class="form-validacion">
+          <div class="campo"><label for="pf-nombre">Nombre(s)</label><input id="pf-nombre" name="nombre" /></div>
+          <div class="campo"><label for="pf-ap1">Primer apellido</label><input id="pf-ap1" name="apellido_paterno" /></div>
+          <div class="campo"><label for="pf-ap2">Segundo apellido</label><input id="pf-ap2" name="apellido_materno" /></div>
+          <div class="campo"><label for="pf-curp">CURP</label><input id="pf-curp" name="curp" maxlength="18" /></div>
+          <div class="campo"><label for="pf-fn">Fecha de nacimiento</label><input id="pf-fn" name="fecha_nacimiento" placeholder="dd/mm/aaaa" /></div>
+          <div class="campo"><label for="pf-sexo">Sexo</label>
+            <select id="pf-sexo" name="sexo"><option value="">Sin especificar</option><option value="H">Hombre</option><option value="M">Mujer</option></select></div>
+        </div>
+        <div class="campo"><label for="pf-dir">Domicilio</label><input id="pf-dir" name="direccion" /></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button type="button" class="btn btn-borde" data-cancelar>Cancelar</button>
+          <button class="btn btn-primario">Guardar cambios</button>
+        </div>
+      </form>
+      <p class="muted small" style="margin-top:14px">Los datos se completan automáticamente al validar tu INE o pasaporte. También puedes editarlos aquí; por seguridad te pediremos tu contraseña.</p>
+    </div>
+    <div class="grid" style="align-content:start">
+      <div class="card">
+        <h2 style="margin-bottom:10px">Verificación en dos pasos</h2>
+        <div class="interruptor">
+          <p class="muted small" style="margin:0">Al iniciar sesión, además de tu contraseña te pediremos un código de 6 dígitos enviado a tu correo.</p>
+          <label style="display:flex;gap:8px;align-items:center;white-space:nowrap"><input type="checkbox" data-dosfa /> <span data-dosfa-texto>Desactivada</span></label>
+        </div>
+      </div>
+      <div class="card">
+        <h2 style="margin-bottom:14px">Alertas de vigencia</h2>
+        <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" data-alertas /> Enviarme correos antes de que venzan mis documentos (90, 30 y 7 días).</label>
+      </div>
+      <div class="card">
+        <h2 style="margin-bottom:14px">Cambiar contraseña</h2>
+        <div data-msg-pass></div>
+        <form data-form-pass>
+          <div class="campo"><label for="p-actual">Contraseña actual</label><input id="p-actual" type="password" autocomplete="current-password" required /></div>
+          <div class="campo"><label for="p-nueva">Nueva contraseña</label><input id="p-nueva" type="password" autocomplete="new-password" minlength="10" required /><span class="ayuda">Mínimo 10 caracteres, con mayúscula, minúscula y número.</span></div>
+          <button class="btn btn-primario">Actualizar contraseña</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2 style="margin-bottom:10px">Sesiones</h2>
+        <p class="muted small">Si usaste tu cuenta en otro equipo, puedes cerrar todas las sesiones abiertas.</p>
+        <button class="btn btn-peligro" data-cerrar-todo>Cerrar todas las sesiones</button>
+      </div>
+    </div>
+  </div>
+</Panel>
+<script>
+  import { api, requerirSesion } from '../../lib/api';
+  import { confirmar, esc, fecha, limpiar, mostrarError, toast } from '../../lib/ui';
+
+  await requerirSesion('usuario');
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector(s) as T;
+  const form = $<HTMLFormElement>('[data-form-perfil]');
+  const vista = $('[data-perfil]');
+  let p: any = await api('/perfil');
+
+  const isoADmy = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? `${v.slice(8, 10)}/${v.slice(5, 7)}/${v.slice(0, 4)}` : v ?? '');
+
+  function pintar() {
+    const filas: [string, unknown][] = [
+      ['Nombre(s)', p.nombre],
+      ['Primer apellido', p.apellido_paterno],
+      ['Segundo apellido', p.apellido_materno],
+      ['CURP', p.curp],
+      ['Fecha de nacimiento', p.fecha_nacimiento ? fecha(p.fecha_nacimiento) : null],
+      ['Sexo', p.sexo === 'H' ? 'Hombre' : p.sexo === 'M' ? 'Mujer' : null],
+      ['Domicilio', p.direccion],
+      ['Correo', p.correo],
+      ['Miembro desde', fecha(p.creado_en)],
+    ];
+    vista.innerHTML = `<dl class="lista-datos">${filas.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v ?? '—')}</dd></div>`).join('')}</dl>`;
+    $('[data-verificado]').innerHTML = p.verificado
+      ? `<span class="pill pill-ok">Identidad verificada</span>${p.editado_manual ? '<span class="pill">Editado manualmente</span>' : ''}`
+      : '<span class="pill pill-aviso">Sin verificar</span>';
+    const dosfa = $<HTMLInputElement>('[data-dosfa]');
+    dosfa.checked = !!p.dosfa_activo;
+    $('[data-dosfa-texto]').textContent = p.dosfa_activo ? 'Activada' : 'Desactivada';
+    $<HTMLInputElement>('[data-alertas]').checked = !!p.alertas_vigencia;
+  }
+  pintar();
+
+  // ── Edición del perfil ──────────────────────────────────────────────
+  $('[data-editar]').addEventListener('click', () => {
+    const valores: Record<string, string> = {
+      nombre: p.nombre ?? '', apellido_paterno: p.apellido_paterno ?? '', apellido_materno: p.apellido_materno ?? '',
+      curp: p.curp ?? '', fecha_nacimiento: isoADmy(p.fecha_nacimiento), sexo: p.sexo ?? '', direccion: p.direccion ?? '',
+    };
+    for (const [k, v] of Object.entries(valores)) (form.elements.namedItem(k) as HTMLInputElement).value = v;
+    form.classList.remove('oculto');
+    vista.classList.add('oculto');
+  });
+  $('[data-cancelar]').addEventListener('click', () => {
+    form.classList.add('oculto');
+    vista.classList.remove('oculto');
+    limpiar($('[data-msg-perfil]'));
+  });
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const datos: Record<string, string | null> = {};
+    for (const campo of ['nombre', 'apellido_paterno', 'apellido_materno', 'curp', 'fecha_nacimiento', 'sexo', 'direccion']) {
+      const v = (form.elements.namedItem(campo) as HTMLInputElement).value.trim();
+      datos[campo] = v || null;
+    }
+    try {
+      p = { ...p, ...(await api('/perfil', { metodo: 'PUT', cuerpo: datos })) };
+      form.classList.add('oculto');
+      vista.classList.remove('oculto');
+      limpiar($('[data-msg-perfil]'));
+      pintar();
+      toast('Perfil actualizado', 'ok');
+    } catch (err) {
+      mostrarError($('[data-msg-perfil]'), err);
+    }
+  });
+
+  // ── Verificación en dos pasos ───────────────────────────────────────
+  $('[data-dosfa]').addEventListener('change', async (e) => {
+    const input = e.target as HTMLInputElement;
+    try {
+      await api('/perfil/seguridad', { metodo: 'PUT', cuerpo: { dosfa_activo: input.checked } });
+      p.dosfa_activo = input.checked;
+      toast(input.checked ? 'Verificación en dos pasos activada' : 'Verificación en dos pasos desactivada', 'ok');
+    } catch (err: any) {
+      input.checked = !input.checked;
+      if (err.codigo !== 'CANCELADO') toast(err.message, 'error');
+    }
+    pintar();
+  });
+
+  $('[data-alertas]').addEventListener('change', async (e) => {
+    await api('/perfil/preferencias', { metodo: 'PUT', cuerpo: { alertas_vigencia: (e.target as HTMLInputElement).checked } });
+    toast('Preferencias guardadas', 'ok');
+  });
+
+  $('[data-form-pass]').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/perfil/password', {
+        cuerpo: { actual: $<HTMLInputElement>('#p-actual').value, nueva: $<HTMLInputElement>('#p-nueva').value },
+      });
+      toast('Contraseña actualizada. Inicia sesión de nuevo.', 'ok');
+      setTimeout(() => (location.href = '/login'), 1500);
+    } catch (err) {
+      mostrarError($('[data-msg-pass]'), err);
+    }
+  });
+
+  $('[data-cerrar-todo]').addEventListener('click', async () => {
+    if (!(await confirmar('Cerrar todas las sesiones', 'Se cerrará la sesión en todos tus dispositivos, incluido este.', 'Cerrar sesiones', true))) return;
+    await api('/auth/logout-todo', { cuerpo: {} });
+    location.href = '/login';
+  });
+</script>
