@@ -8,14 +8,58 @@ Adaptadores de almacenamiento en sistema de archivos local.
 from __future__ import annotations
 import json
 import logging
+import os
+import threading
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Iterator, Optional
 
 from domain.entities.documento import TextoExtraido
 from domain.ports.interfaces import IDocumentoRepository, ITextStoragePort
 
 logger = logging.getLogger(__name__)
+
+try:  # fcntl no existe en Windows: allí el lock de archivo es no-op
+    import fcntl
+except ImportError:  # pragma: no cover
+    fcntl = None  # type: ignore[assignment]
+
+_LOCKS_PROCESO: dict[str, threading.Lock] = {}
+_LOCKS_GUARDA = threading.Lock()
+
+
+def escribir_privado(ruta: Path, contenido: str) -> None:
+    """Escribe con permisos 0600 desde la creación y reemplazo atómico."""
+    tmp = ruta.with_name(f".{ruta.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+    fd = os.open(str(tmp), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(contenido)
+        os.replace(tmp, ruta)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+
+
+@contextmanager
+def _bloqueo_archivo(ruta: Path) -> Iterator[None]:
+    """Lock exclusivo (hilos del proceso + flock entre procesos en posix)."""
+    with _LOCKS_GUARDA:
+        lock = _LOCKS_PROCESO.setdefault(str(ruta), threading.Lock())
+    with lock:
+        if fcntl is None:  # pragma: no cover
+            yield
+            return
+        fd = os.open(str(ruta) + ".lock", os.O_WRONLY | os.O_CREAT, 0o600)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX)
+            yield
+        finally:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+            finally:
+                os.close(fd)
 
 
 # ── Markdown ──────────────────────────────────────────────────────────────────
@@ -44,8 +88,7 @@ class MarkdownFileAdapter(ITextStoragePort):
 
         contenido = cabecera + texto_extraido.texto_crudo
 
-        ruta.write_text(contenido, encoding="utf-8")
-        ruta.chmod(0o600)
+        escribir_privado(ruta, contenido)
 
         logger.info(
             "texto_guardado",
@@ -87,11 +130,7 @@ class JsonFileAdapter(IDocumentoRepository):
     def guardar_resultado(self, resultado: dict, doc_id: str, user_id: str) -> Path:
         # Archivo por documento
         ruta_doc = self._dir / f"{doc_id}.json"
-        ruta_doc.write_text(
-            json.dumps(resultado, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-        ruta_doc.chmod(0o600)
+        escribir_privado(ruta_doc, json.dumps(resultado, ensure_ascii=False, indent=2))
 
         # Actualizar índice del usuario
         self._actualizar_indice_usuario(user_id, doc_id, resultado)
@@ -106,7 +145,12 @@ class JsonFileAdapter(IDocumentoRepository):
         self, user_id: str, doc_id: str, resultado: dict
     ) -> None:
         ruta_idx = self._indice_dir / f"{user_id}.json"
+        with _bloqueo_archivo(ruta_idx):
+            self._actualizar_indice_locked(ruta_idx, user_id, doc_id, resultado)
 
+    def _actualizar_indice_locked(
+        self, ruta_idx: Path, user_id: str, doc_id: str, resultado: dict
+    ) -> None:
         if ruta_idx.exists():
             indice = json.loads(ruta_idx.read_text(encoding="utf-8"))
         else:
@@ -126,11 +170,7 @@ class JsonFileAdapter(IDocumentoRepository):
             }
         )
 
-        ruta_idx.write_text(
-            json.dumps(indice, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-        ruta_idx.chmod(0o600)
+        escribir_privado(ruta_idx, json.dumps(indice, ensure_ascii=False, indent=2))
 
     # ── Lectura ───────────────────────────────────────────────────────────────
 

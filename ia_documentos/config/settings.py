@@ -67,6 +67,10 @@ for _d in [INPUT_DIR, RAW_TEXT_DIR, JSON_RESULTS_DIR, LOGS_DIR]:
 # ── Validacion de PDF ─────────────────────────────────────────────────────────
 PDF_MAX_SIZE_MB = _env_int("PDF_MAX_SIZE_MB", 10)
 PDF_MAX_PAGES   = _env_int("PDF_MAX_PAGES", 4)
+# Tope de pixeles por pagina al rasterizar (anti pixel-bomb). A4 a 300 dpi = ~8.7 MP.
+PDF_MAX_PIXELS  = _env_int("PDF_MAX_PIXELS", 50_000_000)
+# Dimension maxima de una pagina en puntos (1 pt = 1/72 in). 14400 pt = 200 in.
+PDF_MAX_DIM_PT  = _env_int("PDF_MAX_DIM_PT", 5000)
 
 # ── Ollama / LLM ──────────────────────────────────────────────────────────────
 # En Docker se usa http://ollama:11434 (contenedor) o
@@ -165,6 +169,8 @@ IA_API_PORT = _env_int("IA_API_PORT", 5001)
 # Clave compartida con el backend Node.js (cabecera X-API-Key).
 # Si esta vacia, la API no exige clave (solo recomendable en desarrollo local).
 IA_API_KEY = os.environ.get("IA_API_KEY", "").strip()
+# Si es true y IA_API_KEY esta vacia, la app NO arranca (default false: modo abierto).
+IA_REQUIRE_API_KEY = _env_bool("IA_REQUIRE_API_KEY", False)
 IA_WORKERS = _env_int("IA_WORKERS", 1)
 IA_REQUEST_TIMEOUT = _env_int("IA_REQUEST_TIMEOUT", 600)
 LOG_LEVEL = _env_str("LOG_LEVEL", "INFO")
