@@ -11,6 +11,7 @@ Etapas:
 """
 from __future__ import annotations
 import logging
+import os
 import re
 import tempfile
 import time
@@ -23,6 +24,7 @@ from typing import Any, Optional
 from application.validator import validar_campos
 from config.settings import (
     ANTI_HALLUCINATION,
+    DATA_DIR,
     EXTRACTION_STRATEGY,
     JSON_RESULTS_DIR,
     OLLAMA_HOST,
@@ -165,7 +167,7 @@ class DocumentPipeline:
             return self._procesar(ruta_procesada, user_id, doc_id, hash_sha256,
                                   num_paginas, inicio)
         finally:
-            # La copia corregida vive en /tmp: no dejar PDFs con datos personales
+            # La copia corregida vive en DATA_DIR/tmp: no dejar PDFs con datos personales
             if ruta_procesada != ruta_pdf:
                 try:
                     ruta_procesada.unlink(missing_ok=True)
@@ -345,8 +347,14 @@ class DocumentPipeline:
             raise
 
     def _corregir_orientacion_si_necesario(self, ruta_original: Path, doc_id: str) -> Path:
-        ruta_corregida = Path(tempfile.gettempdir()) / f"{doc_id}_corregido.pdf"
+        # Temporal impredecible (mkstemp, 0600) dentro de DATA_DIR, no en /tmp (R5)
+        ruta_corregida: Optional[Path] = None
         try:
+            dir_tmp = DATA_DIR / "tmp"
+            dir_tmp.mkdir(parents=True, exist_ok=True)
+            fd, nombre = tempfile.mkstemp(suffix="_corregido.pdf", prefix="ia_", dir=str(dir_tmp))
+            os.close(fd)
+            ruta_corregida = Path(nombre)
             corregida = corregir_orientacion(ruta_original, ruta_corregida)
             if corregida:
                 logger.info("orientacion_corregida_silenciosamente",
@@ -355,6 +363,11 @@ class DocumentPipeline:
         except Exception as e:
             logger.warning("orientacion_correccion_fallida",
                            extra={"doc_id": doc_id, "error": str(e)})
+            if ruta_corregida is not None:
+                try:
+                    ruta_corregida.unlink(missing_ok=True)
+                except OSError:
+                    pass
             return ruta_original
 
     def _etapa_ocr(self, documento: DocumentoIdentidad):

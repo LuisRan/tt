@@ -85,6 +85,8 @@ class DoclingAdapter(IOcrPort):
 
         try:
             from PIL import Image
+            from config.settings import PDF_MAX_PIXELS
+            Image.MAX_IMAGE_PIXELS = PDF_MAX_PIXELS  # anti pixel-bomb (R1)
             self._Image = Image
             self._pil_available = True
         except ImportError:

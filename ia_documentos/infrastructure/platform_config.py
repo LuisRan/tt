@@ -382,6 +382,11 @@ def renderizar_paginas(ruta_pdf: Path | str, primera: int = 1, ultima: int = 1,
     """
     dpi = dpi or settings.OCR_DPI
     info = detectar_plataforma()
+    try:
+        from PIL import Image as _Image
+        _Image.MAX_IMAGE_PIXELS = settings.PDF_MAX_PIXELS  # anti pixel-bomb (R1)
+    except ImportError:  # pragma: no cover
+        pass
 
     if info.renderizador_pdf == "poppler":
         try:
