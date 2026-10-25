@@ -139,6 +139,12 @@ OCR_MIN_CHARS_FALLBACK = _env_int("OCR_MIN_CHARS_FALLBACK", 300)
 # DEJA ESTO EN True. Si lo desactivas, los datos sensibles pueden ser inventados.
 ANTI_HALLUCINATION = _env_bool("ANTI_HALLUCINATION", True)
 
+# ── Reconciliacion de campos (postproceso determinista) ──────────────────────
+# Si True: tras el filtro anti-alucinacion se aplican reglas de validacion
+# cruzada/reasignacion (application/reconcile.py) usando SOLO candidatos que
+# aparecen en el texto crudo. Default False hasta pasar la campana de regresion.
+POSTPROCESS_RECONCILE = _env_bool("POSTPROCESS_RECONCILE", False)
+
 # ── API REST (Flask) ──────────────────────────────────────────────────────────
 IA_API_HOST = _env_str("IA_API_HOST", "0.0.0.0")
 IA_API_PORT = _env_int("IA_API_PORT", 5001)

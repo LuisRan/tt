@@ -20,6 +20,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
+from application.reconcile import reconcile
 from application.validator import validar_campos
 from config.settings import (
     ANTI_HALLUCINATION,
@@ -35,6 +36,7 @@ from config.settings import (
     PDF_MAX_PAGES,
     PDF_MAX_SIZE_MB,
     PIPELINE_VERSION,
+    POSTPROCESS_RECONCILE,
     RAW_TEXT_DIR,
 )
 from domain.entities.documento import (
@@ -219,6 +221,13 @@ class DocumentPipeline:
                     "doc_id": doc_id, "campos_descartados": campos_filtrados,
                 })
 
+        # Etapa 4b (opcional): reconciliacion determinista de campos
+        campos_reconciliados: list[dict] = []
+        if POSTPROCESS_RECONCILE:
+            rec = reconcile(texto_extraido.tipo_detectado.value, texto_extraido.texto_crudo, campos)
+            campos = rec.datos
+            campos_reconciliados = [{"campo": c.campo, "regla": c.regla} for c in rec.cambios]
+
         # Etapa 5: Validacion Pydantic + envelope
         campos_validados, errores_validacion = validar_campos(
             campos, texto_extraido.tipo_detectado
@@ -260,6 +269,9 @@ class DocumentPipeline:
         corregidos_finales = [c for c in corregidos_ocr if campos_validados.get(c)]
         if corregidos_finales:
             resultado_dict["metadatos"]["campos_corregidos_ocr"] = corregidos_finales
+
+        if campos_reconciliados:
+            resultado_dict["metadatos"]["campos_reconciliados"] = campos_reconciliados
 
         self._json_storage.guardar_resultado(resultado_dict, doc_id, user_id)
 
