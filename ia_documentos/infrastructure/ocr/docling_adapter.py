@@ -23,9 +23,16 @@ import unicodedata
 from pathlib import Path
 from typing import Optional
 
-from config.settings import OCR_DPI, OCR_MIN_CHARS_FALLBACK, OCR_MIN_CHARS_NORMAL
+from config.settings import (
+    CLASSIFIER_TOLERANT,
+    OCR_ACTA_ZONA_SUPERIOR,
+    OCR_DPI,
+    OCR_MIN_CHARS_FALLBACK,
+    OCR_MIN_CHARS_NORMAL,
+)
 from domain.entities.documento import DocumentoIdentidad, TextoExtraido, TipoDocumento
 from domain.ports.interfaces import IOcrPort
+from infrastructure.ocr.clasificador_tolerante import clasificar_tolerante
 from infrastructure.platform_config import (
     crear_conversor_docling,
     detectar_plataforma,
@@ -197,6 +204,18 @@ class DoclingAdapter(IOcrPort):
                     "zonas_capturadas": len(extras),
                 })
                 texto_final = self._normalizar(texto_docling + "\n\n" + "\n\n".join(extras))
+
+        elif tipo == TipoDocumento.ACTA_NACIMIENTO and OCR_ACTA_ZONA_SUPERIOR:
+            # Acta: el Folio de Impresion y el Identificador Electronico se imprimen en la
+            # franja superior (sobre fondo con marca de agua) y Docling los deja como
+            # '<!-- image -->'. OCR de esa franja (12% superior, ancho completo) AÑADIDO al
+            # texto: el regex/LLM/anti-alucinacion operan sobre el texto completo como siempre.
+            texto_top = self._ocr_zona(documento.ruta_pdf, top_pct=0.0, bottom_pct=0.12)
+            if texto_top and len(texto_top.strip()) > 10:
+                logger.info("ocr_acta_zona_superior_ok", extra={
+                    "doc_id": documento.doc_id, "chars_zona": len(texto_top),
+                })
+                texto_final = self._normalizar(texto_docling + "\n\n" + texto_top)
 
         elif tipo == TipoDocumento.PASAPORTE:
             # Para Pasaporte: Docling lia los layouts en columnas.
@@ -563,6 +582,15 @@ class DoclingAdapter(IOcrPort):
             return TipoDocumento.CURP
 
         mejor = max(puntuacion, key=lambda t: puntuacion[t])
+        if CLASSIFIER_TOLERANT and puntuacion[mejor] <= 1:
+            # Sin coincidencia exacta (o con UNA sola, fragil): senales combinadas tolerantes al
+            # ruido. Solo cambia el resultado con puntuacion y margen suficientes; si no, se
+            # conserva el comportamiento exacto (tipo con 1 coincidencia, o no detectado).
+            tolerante = clasificar_tolerante(texto)
+            if tolerante is not None:
+                if tolerante != mejor or puntuacion[mejor] == 0:
+                    logger.info("tipo_documento_detectado_tolerante", extra={"tipo": tolerante.value})
+                return tolerante
         if puntuacion[mejor] == 0:
             logger.warning("tipo_documento_no_detectado")
             return TipoDocumento.DESCONOCIDO

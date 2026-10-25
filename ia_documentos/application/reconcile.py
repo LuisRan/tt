@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import html
 import itertools
+import logging
 import re
 import unicodedata
 from dataclasses import dataclass, field
@@ -31,9 +32,10 @@ from typing import Any, Optional
 
 from infrastructure.regex.correccion_ocr import (
     curp_valida,
-    digito_verificador_curp,
     pistas_curp,
 )
+
+logger = logging.getLogger(__name__)
 
 
 # ── Resultado ─────────────────────────────────────────────────────────────────
@@ -195,10 +197,15 @@ def _reparar_curp(token: str) -> Optional[str]:
     return None
 
 
+_MAX_TOKENS_CURP = 400
+
+
 def _curps_en_texto(texto: str) -> list[tuple[int, str]]:
     """[(posición, CURP válida)] encontradas (literal o con confusiones OCR reparables)."""
     res = []
-    for m in _RE_CURP_TOKEN.finditer(texto):
+    for n, m in enumerate(_RE_CURP_TOKEN.finditer(texto)):
+        if n >= _MAX_TOKENS_CURP:  # cota de coste: un documento real tiene un puñado
+            break
         c = _reparar_curp(m.group(0))
         if c:
             res.append((m.start(), c))
@@ -344,13 +351,17 @@ def _resegmentar(words: list[str], curp: str) -> Optional[tuple[str, str, str]]:
 def _regla_nombres(ctx: _Ctx, tipo: str) -> None:
     d = ctx.datos
     # 1) apellido que es una etiqueta del formulario o una entidad federativa -> basura
+    # 1) EXCEPCIÓN: GUERRERO, HIDALGO, MORELOS, PUEBLA... son apellidos reales; si una CURP
+    #    válida confirma las letras que el valor aporta, se conserva (no es basura)
+    cur = str(d.get("curp") or "").strip().upper()
     for c in ("primer_apellido", "segundo_apellido"):
-        if not _vacio(d.get(c)) and _apellido_basura(d[c]):
+        if not _vacio(d.get(c)) and _apellido_basura(d[c]) \
+                and not (curp_valida(cur) and _componente_ok(cur, _CAMPO_ROL[c], d[c])):
             ctx.poner(c, None, "apellido_es_etiqueta_o_entidad")
-    if not _vacio(d.get("nombres")) and _es_etiqueta(d["nombres"]):
+    if not _vacio(d.get("nombres")) and _es_etiqueta(d["nombres"]) \
+            and not (curp_valida(cur) and _componente_ok(cur, "nom", d["nombres"])):
         ctx.poner("nombres", None, "nombres_es_etiqueta")
     # 2) reparto consistente con la CURP cuando los valores actuales la contradicen
-    cur = str(d.get("curp") or "").strip().upper()
     if curp_valida(cur) and not _vacio(d.get("nombres")) and not _vacio(d.get("primer_apellido")):
         dos_apellidos_juntos = _vacio(d.get("segundo_apellido")) and len(
             [t for t in _tokens(d.get("primer_apellido")) if t not in PARTICULAS]) >= 2
@@ -376,7 +387,15 @@ def _regla_nombres(ctx: _Ctx, tipo: str) -> None:
     if sorted(a) == sorted(e):
         if a != e:
             ctx.poner("nombre_completo", ensamblado, "nombre_completo_ensamblado")
-    elif curp_valida(cur) or _es_etiqueta(actual) or all(t in a for t in e) or all(t in e for t in a):
+        return
+    # El valor actual extiende `nombres` con 1-2 palabras plausibles ENTRE nombres y apellidos
+    # (p. ej. segundo nombre que `nombres` omitió): es más completo que el ensamblado -> se conserva.
+    tn, t1, t2 = _tokens(nombres), _tokens(ap1), _tokens(ap2)
+    medio = a[len(tn):len(a) - len(t1) - len(t2)] if len(a) > len(tn) + len(t1) + len(t2) else []
+    if medio and len(medio) <= 2 and a == tn + medio + t1 + t2 and not any(
+            _es_etiqueta(t) or _es_entidad(t) or not t.isalpha() or len(t) < 2 for t in medio):
+        return
+    if curp_valida(cur) or _es_etiqueta(actual) or all(t in a for t in e) or all(t in e for t in a):
         # contiene basura añadida / truncado: con CURP que confirma los componentes manda el ensamblado
         ctx.poner("nombre_completo", ensamblado, "nombre_completo_ensamblado")
 
@@ -390,6 +409,8 @@ _RE_TOK_MAYUS = re.compile(r"[A-ZÁÉÍÓÚÜÑ][A-ZÁÉÍÓÚÜÑ'.\-]*")
 
 def _valor_antes(texto: str, plano: str, m: re.Match) -> Optional[str]:
     """Valor impreso JUSTO ANTES de una etiqueta (diseño 'VALOR Etiqueta' de las actas)."""
+    if re.match(r"\s*:", texto[m.end():m.end() + 4]):
+        return None  # 'Etiqueta: VALOR' (diseño etiqueta-primero): lo previo es OTRO campo
     ini = texto.rfind("\n", 0, m.start()) + 1
     previo = texto[ini:m.start()].strip()
     if not previo:  # la etiqueta está sola en su línea -> el valor es la línea anterior
@@ -433,6 +454,10 @@ def _decidir_reemplazo(cur: Any, cand: Optional[str], otros: set, campo: str, ap
 
 def _regla_acta(ctx: _Ctx) -> None:
     d = ctx.datos
+    try:
+        _regla_folio_impresion_acta(ctx)  # independiente de la maquetación de la filiación
+    except Exception as e:
+        logger.warning("reconcile_regla_fallo", extra={"regla": "folio_impresion", "error": type(e).__name__})
     m_fil = _RE_FIL.search(ctx.plano)
     if not m_fil:
         return
@@ -480,6 +505,7 @@ def _regla_acta(ctx: _Ctx) -> None:
     curp_padre = por_sexo["H"][0] if len(por_sexo.get("H", [])) == 1 else None
     curp_madre = por_sexo["M"][0] if len(por_sexo.get("M", [])) == 1 else None
     # ¿la columna 0 es el padre? orden del texto, confirmado por el sexo de las CURP si se conocen
+    mismo_sexo = len(curps) == 2 and curps[0][1][10] == curps[1][1][10]  # familia homoparental
     padre_idx = 0
     if len(curps) == 2 and curps[0][1][10] == "M" and curps[1][1][10] == "H":
         padre_idx = 1
@@ -503,7 +529,9 @@ def _regla_acta(ctx: _Ctx) -> None:
         cur = d.get(campo_c)
         esperado = "H" if rol == "padre" else "M"
         cur_n = str(cur).strip().upper() if not _vacio(cur) else None
-        if curp_rol and cur_n != curp_rol:
+        if mismo_sexo:
+            pass  # el rol 'padre/madre' no implica sexo: no se reasigna ni se anula
+        elif curp_rol and cur_n != curp_rol:
             if cur_n is None or not curp_valida(cur_n) or cur_n[10] != esperado or _n(cur_n) != _n(curp_rol):
                 ctx.poner(campo_c, curp_rol, "acta_curp_progenitor_por_sexo")
         elif cur_n and curp_valida(cur_n) and cur_n[10] != esperado:
@@ -517,6 +545,23 @@ def _regla_acta(ctx: _Ctx) -> None:
     cur = d.get("identificador_electronico")
     if len(id20) == 1 and (_vacio(cur) or not re.fullmatch(r"\d{20}", str(cur).strip())):
         ctx.poner("identificador_electronico", id20.pop(), "acta_identificador_20_digitos")
+
+
+def _regla_folio_impresion_acta(ctx: _Ctx) -> None:
+    """
+    Folio de impresión del acta = número de 8 dígitos impreso justo tras la etiqueta
+    'Folio de Impresión' (la etiqueta puede salir ruidosa). Solo actúa si el valor actual
+    no es un número de 8 dígitos y hay UN único candidato en la ventana tras la etiqueta.
+    """
+    actual = ctx.datos.get("folio_impresion")
+    if not _vacio(actual) and re.fullmatch(r"\d{8}", re.sub(r"\s", "", str(actual))):
+        return
+    cands = set()
+    for m in re.finditer(r"Folio\s+de\s+Impres", ctx.plano, re.I):
+        ventana = ctx.texto[m.end(): m.end() + 70]
+        cands |= set(re.findall(r"(?<![\d/.\-])\d{8}(?![\d/.\-])", ventana))
+    if len(cands) == 1:
+        ctx.poner("folio_impresion", cands.pop(), "acta_folio_impresion_por_etiqueta")
 
 
 # ── Regla: constancia CURP (folio) ───────────────────────────────────────────
@@ -754,17 +799,24 @@ def reconcile(doc_type: str, raw_text: str, datos: dict, permitir_derivados: boo
     """
     Aplica las reglas de reconciliación. No modifica `datos` (trabaja sobre una copia).
     Sin `permitir_derivados` nunca se escribe un valor no literal del texto crudo en
-    mrz_*, sexo ni fecha_nacimiento (RNF-03).
+    mrz_*, sexo ni fecha_nacimiento (RNF-03). NUNCA lanza: ante cualquier fallo devuelve
+    los datos originales (o lo ya reconciliado por las reglas anteriores) y lo registra.
     """
-    copia = dict(datos or {})
-    ctx = _Ctx(raw_text, copia, permitir_derivados)
-    tipo = str(getattr(doc_type, "value", doc_type) or "").lower()
+    original = dict(datos) if isinstance(datos, dict) else {}
+    try:
+        if isinstance(raw_text, bytes):
+            raw_text = raw_text.decode("utf-8", errors="replace")
+        ctx = _Ctx(raw_text if isinstance(raw_text, str) else "", dict(original), permitir_derivados)
+        tipo = str(getattr(doc_type, "value", doc_type) or "").lower()
+    except Exception as e:  # entrada basura
+        logger.warning("reconcile_entrada_invalida", extra={"error": type(e).__name__})
+        return ReconcileResult(original, [])
 
     def _seguro(fn, *args):
         try:
             fn(*args)
-        except Exception:  # una regla defectuosa nunca debe romper el pipeline
-            pass
+        except Exception as e:  # una regla defectuosa nunca debe romper el pipeline
+            logger.warning("reconcile_regla_fallo", extra={"regla": fn.__name__, "error": type(e).__name__})
 
     if tipo == "acta_nacimiento":
         _seguro(_regla_acta, ctx)
@@ -783,4 +835,4 @@ def reconcile(doc_type: str, raw_text: str, datos: dict, permitir_derivados: boo
         _seguro(_regla_ine, ctx)
     if tipo == "curp":
         _seguro(_regla_folio_curp, ctx)
-    return ReconcileResult(copia, ctx.cambios)
+    return ReconcileResult(ctx.datos, ctx.cambios)

@@ -225,13 +225,8 @@ class DocumentPipeline:
         # Etapa 4b (opcional): reconciliacion determinista de campos
         campos_reconciliados: list[dict] = []
         if POSTPROCESS_RECONCILE:
-            rec = reconcile(texto_extraido.tipo_detectado.value, texto_extraido.texto_crudo, campos,
-                        permitir_derivados=RECONCILE_ALLOW_DERIVED)
-            campos = rec.datos
-            campos_reconciliados = [
-                {"campo": c.campo, "regla": c.regla, **({"derivado": True} if c.derivado else {})}
-                for c in rec.cambios
-            ]
+            campos, campos_reconciliados = self._reconciliar(
+                texto_extraido.tipo_detectado.value, texto_extraido.texto_crudo, campos, doc_id)
 
         # Etapa 5: Validacion Pydantic + envelope
         campos_validados, errores_validacion = validar_campos(
@@ -320,6 +315,34 @@ class DocumentPipeline:
         base = encontrados / len(clave)
         penalizacion = 0.05 * n_errores + 0.05 * n_alucinados
         return round(max(0.0, min(1.0, base - penalizacion)), 2)
+
+    # ── Reconciliacion (etapa 4b) ─────────────────────────────────────────────
+
+    @staticmethod
+    def _reconciliar(tipo: str, texto_crudo: str, campos: dict, doc_id: str) -> tuple[dict, list[dict]]:
+        """
+        Aplica `reconcile` de forma SEGURA: nunca rompe el pipeline y respeta el filtro
+        anti-alucinacion. Un valor que reconcile escriba en un campo protegido (no derivado)
+        debe parecerse a algo que el OCR leyo (misma tolerancia que los campos corregidos);
+        si no, se revierte al valor previo. Los metadatos no contienen valores (sin PII).
+        """
+        try:
+            rec = reconcile(tipo, texto_crudo, campos, permitir_derivados=RECONCILE_ALLOW_DERIVED)
+            datos = rec.datos
+            aceptados = []
+            for c in rec.cambios:
+                if (ANTI_HALLUCINATION and not c.derivado and c.nuevo not in (None, "")
+                        and c.campo in _CAMPOS_PROTEGIDOS_CONTRA_ALUCINACION
+                        and not aparece_con_tolerancia(str(c.nuevo), texto_crudo)):
+                    datos[c.campo] = c.anterior
+                    logger.warning("reconcile_valor_descartado_por_alucinacion",
+                                   extra={"doc_id": doc_id, "campo": c.campo, "regla": c.regla})
+                    continue
+                aceptados.append({"campo": c.campo, "regla": c.regla, **({"derivado": True} if c.derivado else {})})
+            return datos, aceptados
+        except Exception as e:
+            logger.warning("reconcile_fallo", extra={"doc_id": doc_id, "error": type(e).__name__})
+            return campos, []
 
     # ── Anti-alucinacion ──────────────────────────────────────────────────────
 

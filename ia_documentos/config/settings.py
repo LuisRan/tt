@@ -149,6 +149,16 @@ POSTPROCESS_RECONCILE = _env_bool("POSTPROCESS_RECONCILE", False)
 # decision explicita. Sin efecto si POSTPROCESS_RECONCILE es False.
 RECONCILE_ALLOW_DERIVED = _env_bool("RECONCILE_ALLOW_DERIVED", False)
 
+# ── Clasificador de tipo tolerante al ruido (segunda revision) ───────────────
+# Si True: cuando el clasificador exacto no halla tipo (o solo UNA coincidencia fragil),
+# se consulta `clasificador_tolerante` (frases difusas + MRZ/clave de elector, con margen).
+# Nunca altera un tipo con >= 2 coincidencias exactas. Default False hasta medirlo en campana.
+CLASSIFIER_TOLERANT = _env_bool("CLASSIFIER_TOLERANT", False)
+# Si True y el documento es un acta: OCR (Tesseract/Apple Vision) de la franja superior de la
+# pagina, donde el diseno imprime Folio de Impresion e Identificador Electronico y que Docling
+# deja como imagen. El texto se ANADE al texto crudo (no sustituye nada). Default False.
+OCR_ACTA_ZONA_SUPERIOR = _env_bool("OCR_ACTA_ZONA_SUPERIOR", False)
+
 # ── API REST (Flask) ──────────────────────────────────────────────────────────
 IA_API_HOST = _env_str("IA_API_HOST", "0.0.0.0")
 IA_API_PORT = _env_int("IA_API_PORT", 5001)
