@@ -144,6 +144,10 @@ ANTI_HALLUCINATION = _env_bool("ANTI_HALLUCINATION", True)
 # cruzada/reasignacion (application/reconcile.py) usando SOLO candidatos que
 # aparecen en el texto crudo. Default False hasta pasar la campana de regresion.
 POSTPROCESS_RECONCILE = _env_bool("POSTPROCESS_RECONCILE", False)
+# Reglas de reconcile que CONSTRUYEN valores no literales del texto crudo (MRZ
+# reconstruida, sexo/fecha derivados de la CURP). Contradicen RNF-03: solo con
+# decision explicita. Sin efecto si POSTPROCESS_RECONCILE es False.
+RECONCILE_ALLOW_DERIVED = _env_bool("RECONCILE_ALLOW_DERIVED", False)
 
 # ── API REST (Flask) ──────────────────────────────────────────────────────────
 IA_API_HOST = _env_str("IA_API_HOST", "0.0.0.0")

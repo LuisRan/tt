@@ -4,7 +4,7 @@ Postproceso determinista (Python stdlib) que corrige errores de **asignación/ex
 (el valor correcto SÍ estaba en el texto crudo del OCR). No mejora el reconocimiento.
 
 ## Cómo activarlo
-`POSTPROCESS_RECONCILE=true` (variable de entorno; en `config/settings.py`, default **False**).
+`POSTPROCESS_RECONCILE=true` (variable de entorno; en `config/settings.py`, default **False**); `RECONCILE_ALLOW_DERIVED=true` adicional solo si se acepta escribir valores derivados (ver abajo).
 Con el flag apagado el pipeline y el contrato del modo web son idénticos a los anteriores
 (no se añade ninguna clave). Con el flag encendido y al menos un cambio, `metadatos`
 incluye `campos_reconciliados`: lista de `{"campo", "regla"}` (sin valores).
@@ -20,6 +20,19 @@ API: `reconcile(doc_type, raw_text, datos) -> ReconcileResult(datos, cambios)`; 
   inconsistencia con una estructura verificable (dígito verificador, fecha/sexo de la CURP).
 - Ante la duda no se cambia; candidatos ambiguos (más de uno) = sin cambio.
 - Cada regla va en `try/except`: una falla nunca rompe el pipeline.
+
+## Dos flags (RNF-03: ningún dato sensible puede ser inventado)
+- `POSTPROCESS_RECONCILE` (default false): reglas que ESCOGEN entre candidatos literales o REPARAN
+  confusiones OCR de un valor presente (CURP por dígito verificador, clave de elector, CURP de
+  progenitores, valores del acta por etiqueta, folio, identificador, apellidos de la lista de
+  palabras del texto). `nombre_completo`, `nombre_padre/madre` y `domicilio` solo concatenan partes
+  literales del texto (son campos no protegidos); se mantienen en este flag.
+- `RECONCILE_ALLOW_DERIVED` (default false; solo actúa con el anterior): reglas que CONSTRUYEN un valor
+  no literal: `mrz_linea1_normalizada` (relleno/reconstrucción desde apellidos y nombres),
+  `mrz_linea2_reparada_por_digitos_control`, `sexo_desde_mrz_o_curp`, `sexo_desde_curp`,
+  `fecha_nacimiento_desde_curp`, `acta_sexo_por_etiqueta` ('HOMBRE'->'H'). Sin este flag nunca se
+  escribe un valor no literal en mrz_*, sexo ni fecha_nacimiento. Los cambios derivados llevan
+  `"derivado": true` en `metadatos.campos_reconciliados`.
 
 ## Reglas
 | Regla | Justificación estructural |
@@ -40,34 +53,28 @@ API: `reconcile(doc_type, raw_text, datos) -> ReconcileResult(datos, cambios)`; 
 | `sexo_desde_mrz_o_curp` | Pasaporte (convención ICAO M/F): sexo de la MRZ válida o, si no, de la CURP (H->M, M->F). |
 | `sexo_desde_curp`, `fecha_nacimiento_desde_curp` | Solo RELLENAN valores ausentes con los que codifica una CURP válida. |
 
-## Resultados (exactitud de campos, línea base del run baseline-2026-2396f44c, evaluador `evaluate_sample`)
-Las reglas se derivaron mirando solo `dev`; `val` y `test` no se usaron para diseñar
-(salvo lo indicado abajo). Cero regresiones (campo correcto -> incorrecto) en dev y val.
+## Resultados (exactitud de campos, baseline-2026-2396f44c, evaluador `evaluate_sample`)
+Reglas derivadas mirando solo `dev`; 0 regresiones (correcto -> incorrecto) en dev y val en los 3 modos.
 
-| Split | Tipo | Antes | Después |
+| Split / tipo | Reconcile apagado | Sin derivados | Con derivados |
 |---|---|---|---|
-| dev | acta | 58.3% | 93.3% |
-| dev | curp | 88.9% | 96.8% |
-| dev | ine | 88.9% | 98.9% |
-| dev | pasaporte | 84.0% | 97.3% |
-| dev | total | 81.2% | 96.9% |
-| val | ine | 66.7% | 75.6% |
-| val | pasaporte | 91.1% | 97.8% |
-| val | total | 78.9% | 86.7% |
-| test (agregado, una sola medición, con `fecha_nacimiento_desde_curp` aún con reemplazo) | acta | 55.0% | 67.8% |
-| test | curp | 100% | 100% |
-| test | ine | 86.7% | 93.3% |
-| test | pasaporte | 77.8% | 93.3% |
-| test | total | 65.6% | 77.2% |
+| dev acta | 58.3% | 93.3% | 93.3% |
+| dev curp | 88.9% | 96.8% | 96.8% |
+| dev ine | 88.9% | 98.9% | 98.9% |
+| dev pasaporte | 84.0% | 86.7% | 97.3% |
+| dev total | 81.2% | 94.1% | 96.9% |
+| val ine | 66.7% | 75.6% | 75.6% |
+| val pasaporte | 91.1% | 95.6% | 97.8% |
+| val total | 78.9% | 85.6% | 86.7% |
 
-Campos críticos (aciertos antes -> después): dev curp 17/23->23/23 (acta+curp+ine+pasaporte),
-clave_elector 5/6->6/6, mrz_linea1 1/5->5/5, mrz_linea2 3/5->5/5, numero_pasaporte 5/5->5/5;
-val mrz_linea2 2/3->3/3, demás sin cambio; test curp_padre 4/9->7/9, curp_madre 3/9->8/9,
-curp (acta) 5/9->7/9, mrz_linea1 1/3->3/3, mrz_linea2 1/3->3/3, sin descensos netos.
+Campos críticos (aciertos apagado -> sin derivados -> con derivados): dev curp 17/23 -> 23/23 -> 23/23;
+clave_elector 5/6 -> 6/6 -> 6/6; folio (curp) 6/9 -> 8/9 -> 8/9; curp_padre/madre (acta) 1/3 -> 3/3 -> 3/3;
+mrz_linea1 1/5 -> 1/5 -> 5/5; mrz_linea2 3/5 -> 3/5 -> 5/5; numero_pasaporte 5/5 en todos.
+val: mrz_linea2 2/3 -> 2/3 -> 3/3; resto sin cambio.
 
-En test apareció 1 regresión bruta, en `fecha_nacimiento` (no crítico), atribuida (por conteo
-de reglas, sin inspeccionar la muestra) a la variante que SUSTITUÍA la fecha por la derivada
-de la CURP; esa variante se eliminó (ahora solo rellena) y no se volvió a medir en test.
+**Test no es una medición limpia**: se midió una vez (total 65.6% -> 77.2%), apareció una regresión en
+`fecha_nacimiento` y se ajustó la regla (ahora solo rellena) a la vista de ese resultado, por lo que
+esas cifras de test ya no se usan como evidencia. Hace falta un split nuevo o la campaña completa.
 
 ## Limitaciones
 - Conjunto muy pequeño (≈16 grupos; dev contiene un solo acta y val ninguno): las reglas del

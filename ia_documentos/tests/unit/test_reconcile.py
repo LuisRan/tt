@@ -159,7 +159,7 @@ def test_pasaporte_mrz_sexo_y_nombre_completo():
     l1_sucia = "P<MEXRODRIQUEZ<MEZA<<TANIA<<<<<<<<<< < < < <<<<"
     datos = {"primer_apellido": "RODRIQUEZ", "segundo_apellido": "MEZA", "nombres": "TANIA", "curp": CURP_PERSONA,
              "nombre_completo": "RODRIQUEZ MEZA MEX", "sexo": "M", "mrz_linea1": l1_sucia, "mrz_linea2": l2_sucia}
-    res = reconcile("pasaporte", "texto", datos)
+    res = reconcile("pasaporte", "texto", datos, permitir_derivados=True)
     assert res.datos["mrz_linea2"] == l2
     assert res.datos["mrz_linea1"] == "P<MEXRODRIQUEZ<MEZA<<TANIA".ljust(44, "<")
     assert res.datos["sexo"] == "F"
@@ -168,7 +168,7 @@ def test_pasaporte_mrz_sexo_y_nombre_completo():
 
 def test_pasaporte_mrz_irreparable_no_se_toca():
     datos = {"mrz_linea2": "G442704986MEX5504204M2906058<<<<C<<<<<<<<<99"}  # dígito de control erróneo
-    res = reconcile("pasaporte", "texto", datos)
+    res = reconcile("pasaporte", "texto", datos, permitir_derivados=True)
     assert res.datos["mrz_linea2"] == datos["mrz_linea2"]
 
 
@@ -222,7 +222,44 @@ def test_pipeline_flag_reconcile(monkeypatch, tmp_path, flag):
 
 
 def test_sexo_y_fecha_solo_se_rellenan_nunca_se_sustituyen():
-    vacio = reconcile("curp", "x", {"curp": CURP_PERSONA, "sexo": None, "fecha_nacimiento": None}).datos
+    vacio = reconcile("curp", "x", {"curp": CURP_PERSONA, "sexo": None, "fecha_nacimiento": None}, permitir_derivados=True).datos
     assert vacio["sexo"] == "M" and vacio["fecha_nacimiento"] == "01/07/1957"
-    previo = reconcile("curp", "x", {"curp": CURP_PERSONA, "sexo": "H", "fecha_nacimiento": "02/02/1990"}).datos
+    previo = reconcile("curp", "x", {"curp": CURP_PERSONA, "sexo": "H", "fecha_nacimiento": "02/02/1990"}, permitir_derivados=True).datos
     assert previo["sexo"] == "H" and previo["fecha_nacimiento"] == "02/02/1990"
+
+
+def test_sin_derivados_no_se_escribe_ningun_valor_no_literal():
+    l2 = _mrz2()
+    l2_sucia = l2[:28] + "<<<<C<<<<<<<<<" + l2[-2:]
+    datos = {"primer_apellido": "RODRIQUEZ", "segundo_apellido": "MEZA", "nombres": "TANIA", "curp": CURP_PERSONA,
+             "sexo": None, "fecha_nacimiento": None, "mrz_linea1": "P<MEXRODRIQUEZ<MEZA<<TANIA<<< <<",
+             "mrz_linea2": l2_sucia}
+    res = reconcile("pasaporte", "texto", datos)
+    for k in ("mrz_linea1", "mrz_linea2", "sexo", "fecha_nacimiento"):
+        assert res.datos[k] == datos[k]
+    assert not any(c.derivado for c in res.cambios)
+    acta = reconcile("acta_nacimiento", ACTA, {"sexo": None, "curp": CURP_PERSONA, "fecha_nacimiento": None})
+    assert acta.datos["sexo"] is None and acta.datos["fecha_nacimiento"] is None
+    con = reconcile("pasaporte", "texto", datos, permitir_derivados=True)
+    assert con.datos["mrz_linea2"] == l2 and any(c.derivado for c in con.cambios)
+
+
+def test_cambios_sin_derivados_son_literales_en_el_texto():
+    res = reconcile("acta_nacimiento", ACTA, {"nombres": "TANIA", "primer_apellido": "RODRIQUEZ",
+                    "segundo_apellido": "ZACATECAS", "curp": CURP_PADRE, "curp_madre": CURP_PADRE,
+                    "lugar_nacimiento": "Código QR"})
+    campos_literales = {"segundo_apellido", "lugar_nacimiento", "curp", "curp_padre", "curp_madre"}
+    for c in res.cambios:
+        if c.campo in campos_literales:
+            assert str(c.nuevo) in ACTA
+
+
+def test_pipeline_marca_derivado(monkeypatch, tmp_path):
+    monkeypatch.setattr(pipeline_mod, "POSTPROCESS_RECONCILE", True)
+    monkeypatch.setattr(pipeline_mod, "RECONCILE_ALLOW_DERIVED", True)
+    p = _pipeline_falso({"curp": CURP_PERSONA, "sexo": None}, f"CURP {CURP_PERSONA}")
+    out = p._procesar(tmp_path / "x.pdf", "u", "d", "h", 1, 0.0)
+    assert {"campo": "sexo", "regla": "sexo_desde_curp", "derivado": True} in out["metadatos"]["campos_reconciliados"]
+    monkeypatch.setattr(pipeline_mod, "RECONCILE_ALLOW_DERIVED", False)
+    out = p._procesar(tmp_path / "x.pdf", "u", "d", "h", 1, 0.0)
+    assert out["datos"]["sexo"] is None

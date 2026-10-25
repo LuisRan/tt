@@ -37,6 +37,7 @@ from config.settings import (
     PDF_MAX_SIZE_MB,
     PIPELINE_VERSION,
     POSTPROCESS_RECONCILE,
+    RECONCILE_ALLOW_DERIVED,
     RAW_TEXT_DIR,
 )
 from domain.entities.documento import (
@@ -224,9 +225,13 @@ class DocumentPipeline:
         # Etapa 4b (opcional): reconciliacion determinista de campos
         campos_reconciliados: list[dict] = []
         if POSTPROCESS_RECONCILE:
-            rec = reconcile(texto_extraido.tipo_detectado.value, texto_extraido.texto_crudo, campos)
+            rec = reconcile(texto_extraido.tipo_detectado.value, texto_extraido.texto_crudo, campos,
+                        permitir_derivados=RECONCILE_ALLOW_DERIVED)
             campos = rec.datos
-            campos_reconciliados = [{"campo": c.campo, "regla": c.regla} for c in rec.cambios]
+            campos_reconciliados = [
+                {"campo": c.campo, "regla": c.regla, **({"derivado": True} if c.derivado else {})}
+                for c in rec.cambios
+            ]
 
         # Etapa 5: Validacion Pydantic + envelope
         campos_validados, errores_validacion = validar_campos(

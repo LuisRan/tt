@@ -44,6 +44,7 @@ class Cambio:
     anterior: Any
     nuevo: Any
     regla: str
+    derivado: bool = False  # el valor nuevo NO es literal del texto crudo
 
 
 @dataclass
@@ -249,8 +250,16 @@ def _nombre_consistente(curp: str, nombres: Any, ap1: Any, ap2: Any) -> bool:
 
 # ── Contexto de reconciliación ────────────────────────────────────────────────
 
+# Reglas que CONSTRUYEN un valor no literal (solo con permitir_derivados=True)
+REGLAS_DERIVADAS = {
+    "mrz_linea1_normalizada", "mrz_linea2_reparada_por_digitos_control", "sexo_desde_mrz_o_curp",
+    "sexo_desde_curp", "fecha_nacimiento_desde_curp", "acta_sexo_por_etiqueta",
+}
+
+
 class _Ctx:
-    def __init__(self, raw: str, datos: dict):
+    def __init__(self, raw: str, datos: dict, derivados: bool = False):
+        self.derivados = derivados
         self.raw = raw or ""
         self.texto = _limpiar_raw(self.raw)
         self.plano = _plano(self.texto)
@@ -262,7 +271,7 @@ class _Ctx:
         if ant == nuevo or (isinstance(ant, str) and isinstance(nuevo, str) and ant.strip() == nuevo.strip()):
             return
         self.datos[campo] = nuevo
-        self.cambios.append(Cambio(campo, ant, nuevo, regla))
+        self.cambios.append(Cambio(campo, ant, nuevo, regla, regla in REGLAS_DERIVADAS))
 
 
 # ── Regla: CURP ───────────────────────────────────────────────────────────────
@@ -452,8 +461,8 @@ def _regla_acta(ctx: _Ctx) -> None:
     # sexo de la persona
     vs = _fuera_region(ctx, r"\bSexo\b", fil_ini, fil_fin)
     if len(vs) == 1 and vs[0] and _sexo_mx(vs[0]) and _sexo_mx(d.get("sexo")) != _sexo_mx(vs[0]):
-        if _vacio(d.get("sexo")) or _es_etiqueta(d.get("sexo")):
-            ctx.poner("sexo", _sexo_mx(vs[0]), "acta_valor_por_etiqueta")
+        if ctx.derivados and (_vacio(d.get("sexo")) or _es_etiqueta(d.get("sexo"))):
+            ctx.poner("sexo", _sexo_mx(vs[0]), "acta_sexo_por_etiqueta")
 
     # filiación: dos columnas (1ª y 2ª ocurrencia de cada etiqueta)
     sub = {"nombre": r"Nombre\(s\)", "ap1": r"Primer Apellido", "ap2": r"Segundo Apellido",
@@ -741,10 +750,14 @@ def _regla_pasaporte(ctx: _Ctx) -> None:
 
 # ── API pública ───────────────────────────────────────────────────────────────
 
-def reconcile(doc_type: str, raw_text: str, datos: dict) -> ReconcileResult:
-    """Aplica las reglas de reconciliación. No modifica `datos` (trabaja sobre una copia)."""
+def reconcile(doc_type: str, raw_text: str, datos: dict, permitir_derivados: bool = False) -> ReconcileResult:
+    """
+    Aplica las reglas de reconciliación. No modifica `datos` (trabaja sobre una copia).
+    Sin `permitir_derivados` nunca se escribe un valor no literal del texto crudo en
+    mrz_*, sexo ni fecha_nacimiento (RNF-03).
+    """
     copia = dict(datos or {})
-    ctx = _Ctx(raw_text, copia)
+    ctx = _Ctx(raw_text, copia, permitir_derivados)
     tipo = str(getattr(doc_type, "value", doc_type) or "").lower()
 
     def _seguro(fn, *args):
@@ -757,9 +770,9 @@ def reconcile(doc_type: str, raw_text: str, datos: dict) -> ReconcileResult:
         _seguro(_regla_acta, ctx)
     if tipo in ("ine", "curp", "pasaporte"):
         _seguro(_regla_curp, ctx, tipo)
-    if tipo == "pasaporte":
+    if tipo == "pasaporte" and permitir_derivados:
         _seguro(_regla_pasaporte, ctx)
-    if tipo in ("ine", "curp", "acta_nacimiento"):
+    if tipo in ("ine", "curp", "acta_nacimiento") and permitir_derivados:
         _seguro(_regla_sexo_fecha_desde_curp, ctx, tipo)
     if tipo in ("curp", "acta_nacimiento", "pasaporte"):
         _seguro(_regla_nombres, ctx, tipo)
