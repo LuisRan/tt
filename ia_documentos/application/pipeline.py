@@ -504,6 +504,10 @@ class DocumentPipeline:
 
     # ── Utilidades publicas ───────────────────────────────────────────────────
 
+    def precargar(self) -> bool:
+        """Carga el motor OCR (Docling) por adelantado; devuelve si quedo cargado."""
+        return self._ocr.precargar()
+
     def health_check(self) -> dict:
         llm_ok = self._llm.disponible and self._llm.verificar_conexion(usar_cache=False)
         ocr_ok = self._ocr.disponible

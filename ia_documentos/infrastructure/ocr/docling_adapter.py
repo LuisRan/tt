@@ -243,6 +243,11 @@ class DoclingAdapter(IOcrPort):
 
     # ── Lazy loaders ──────────────────────────────────────────────────────────
 
+    def precargar(self) -> bool:
+        """Carga Docling ahora (normalmente se hace en la 1a extraccion).
+        Permite medir el tiempo de carga aparte del de extraccion."""
+        return self._cargar_docling()
+
     def _cargar_docling(self) -> bool:
         if self._DocumentConverter is not None:
             return True
