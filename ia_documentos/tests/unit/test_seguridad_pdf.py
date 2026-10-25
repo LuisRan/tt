@@ -9,7 +9,7 @@ from infrastructure.ocr.pdf_validator import PdfValidationError, validar_pdf
 
 
 def _pdf(ruta: Path, ancho: float = 595, alto: float = 842, *, js=False,
-         cifrar=False, adjunto=False, launch=False) -> Path:
+         cifrar=False, user_pwd="clave", adjunto=False, launch=False) -> Path:
     w = pypdf.PdfWriter()
     w.add_blank_page(width=ancho, height=alto)
     if js:
@@ -23,7 +23,7 @@ def _pdf(ruta: Path, ancho: float = 595, alto: float = 842, *, js=False,
             NameObject("/F"): TextStringObject("calc.exe"),
         })
     if cifrar:
-        w.encrypt("clave")
+        w.encrypt(user_password=user_pwd, owner_password="x")
     with open(ruta, "wb") as f:
         w.write(f)
     return ruta
@@ -55,9 +55,21 @@ def test_a4_a_300dpi_cabe_en_tope_por_defecto(tmp_path, monkeypatch):
     validar_pdf(_pdf(tmp_path / "a4.pdf"))
 
 
-def test_pdf_cifrado_rechazado(tmp_path):
+def test_pdf_cifrado_con_contrasena_rechazado(tmp_path):
     with pytest.raises(PdfValidationError, match="cifrado"):
         validar_pdf(_pdf(tmp_path / "c.pdf", cifrar=True))
+
+
+def test_pdf_cifrado_con_clave_vacia_aceptado(tmp_path):
+    ruta = _pdf(tmp_path / "v.pdf", cifrar=True, user_pwd="")
+    assert pypdf.PdfReader(str(ruta)).is_encrypted
+    h, n = validar_pdf(ruta)
+    assert n == 1 and len(h) == 64
+
+
+def test_cifrado_vacio_con_js_sigue_rechazado(tmp_path):
+    with pytest.raises(PdfValidationError):
+        validar_pdf(_pdf(tmp_path / "vj.pdf", cifrar=True, user_pwd="", js=True))
 
 
 def test_javascript_rechazado(tmp_path):

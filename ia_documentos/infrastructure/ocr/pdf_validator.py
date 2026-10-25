@@ -68,8 +68,7 @@ def validar_pdf(ruta: Path, max_mb: int = 10, max_paginas: int = 4) -> Tuple[str
 
     try:
         reader = pypdf.PdfReader(str(ruta))
-        if reader.is_encrypted:
-            raise PdfValidationError("El PDF está cifrado; no se admite")
+        _abrir_si_cifrado(reader)
         num_paginas = len(reader.pages)
     except PdfValidationError:
         raise
@@ -123,10 +122,20 @@ def _buscar_activos(obj: Any, vistos: set, profundidad: int = 0) -> Optional[str
     return None
 
 
+def _abrir_si_cifrado(reader: "pypdf.PdfReader") -> None:
+    """R2: acepta PDFs cifrados solo si abren con contraseña de usuario vacía."""
+    if not reader.is_encrypted:
+        return
+    try:
+        resultado = reader.decrypt("")
+    except Exception as e:
+        raise PdfValidationError(f"El PDF está cifrado y no se puede abrir sin contraseña ({type(e).__name__})")
+    if not resultado or int(resultado) == 0:
+        raise PdfValidationError("El PDF está cifrado y requiere contraseña")
+
+
 def _verificar_seguridad(reader: "pypdf.PdfReader") -> None:
-    """R2: rechaza PDFs cifrados o con JavaScript/Launch/OpenAction/adjuntos."""
-    if reader.is_encrypted:
-        raise PdfValidationError("El PDF está cifrado; no se admite")
+    """R2: rechaza PDFs con JavaScript/Launch/adjuntos (el reader ya viene descifrado)."""
     try:
         raiz = reader.trailer["/Root"]
         hallado = _buscar_activos(raiz, set())
