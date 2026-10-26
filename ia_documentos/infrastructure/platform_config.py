@@ -304,9 +304,53 @@ def idiomas_pytesseract() -> str:
     return "+".join(_idiomas_tesseract())
 
 
-def crear_conversor_docling() -> Any:
+def _ajustes_docling(retry: bool) -> dict[str, Any]:
+    """Ajustes opcionales de Docling (settings.DOCLING_*). Vacio = comportamiento historico."""
+    if retry:
+        return {
+            "mode": settings.DOCLING_RETRY_OCR_MODE, "scale": settings.DOCLING_RETRY_OCR_SCALE,
+            "recognition": settings.DOCLING_OCR_RECOGNITION, "langs": settings.DOCLING_OCR_LANGS,
+            "images_scale": settings.DOCLING_IMAGES_SCALE,
+        }
+    return {
+        "mode": settings.DOCLING_OCR_MODE, "scale": settings.DOCLING_OCR_SCALE,
+        "recognition": settings.DOCLING_OCR_RECOGNITION, "langs": settings.DOCLING_OCR_LANGS,
+        "images_scale": settings.DOCLING_IMAGES_SCALE,
+    }
+
+
+def _aplicar_ajustes_docling(opciones: Any, ocr_opts: Any, retry: bool = False) -> list[str]:
+    """Aplica los ajustes no vacios sobre PdfPipelineOptions/ocr_options. Devuelve lo aplicado."""
+    aj = _ajustes_docling(retry)
+    aplicados: list[str] = []
+    try:
+        if aj["images_scale"] and aj["images_scale"] > 0:
+            opciones.images_scale = aj["images_scale"]
+            aplicados.append("images_scale")
+        if ocr_opts is None:
+            return aplicados
+        if aj["mode"] in {"full_page", "layout_regions"}:
+            from docling.datamodel.pipeline_options import OcrMode
+            ocr_opts.mode = OcrMode.FULL_PAGE if aj["mode"] == "full_page" else OcrMode.LAYOUT_REGIONS
+            aplicados.append("mode=" + aj["mode"])
+        if aj["scale"] and aj["scale"] > 0 and hasattr(ocr_opts, "scale"):
+            ocr_opts.scale = aj["scale"]
+            aplicados.append("scale")
+        if aj["recognition"] in {"accurate", "fast"} and hasattr(ocr_opts, "recognition"):
+            ocr_opts.recognition = aj["recognition"]
+            aplicados.append("recognition=" + aj["recognition"])
+        if aj["langs"] and hasattr(ocr_opts, "lang"):
+            ocr_opts.lang = [x.strip() for x in aj["langs"].split(",") if x.strip()]
+            aplicados.append("lang")
+    except Exception as e:
+        logger.warning("docling_ajustes_invalidos", extra={"error": str(e)})
+    return aplicados
+
+
+def crear_conversor_docling(retry: bool = False) -> Any:
     """
     Crea un DocumentConverter configurado para la plataforma actual.
+    `retry=True` crea el conversor de la 2a configuracion (DOCLING_RETRY_*).
     Si la configuracion avanzada falla (version vieja de docling, motor no
     instalado...) regresa el conversor por defecto para no romper el flujo.
     """
@@ -330,6 +374,7 @@ def crear_conversor_docling() -> Any:
         ocr_opts = _crear_opciones_ocr(info)
         if ocr_opts is not None:
             opciones.ocr_options = ocr_opts
+        _aplicar_ajustes_docling(opciones, opciones.ocr_options if ocr_opts is not None else None, retry)
 
         dispositivo = {
             "mps": AcceleratorDevice.MPS,

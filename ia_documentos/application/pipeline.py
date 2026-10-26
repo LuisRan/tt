@@ -266,6 +266,8 @@ class DocumentPipeline:
             "motor_ocr_docling": self._ocr.plataforma.get("motor_ocr_docling"),
             "docling": self._ocr.docling_disponible,
         }
+        if getattr(texto_extraido, "notas_ocr", None):
+            meta["docling_ocr"] = list(texto_extraido.notas_ocr)  # sin datos personales
         if campos_filtrados:
             resultado_dict["metadatos"]["campos_descartados_por_alucinacion"] = campos_filtrados
         corregidos_finales = [c for c in corregidos_ocr if campos_validados.get(c)]

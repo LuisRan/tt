@@ -19,12 +19,18 @@ import logging
 import os
 import re
 import tempfile
+import time
 import unicodedata
 from pathlib import Path
 from typing import Optional
 
 from config.settings import (
     CLASSIFIER_TOLERANT,
+    DOCLING_RETRY_MAX_SECONDS,
+    DOCLING_RETRY_ON_UNKNOWN,
+    DOCLING_RETRY_TRAVERSE_PICTURES,
+    DOCLING_TEXT_MODE,
+    DOCLING_TRAVERSE_PICTURES,
     OCR_ACTA_ZONA_SUPERIOR,
     OCR_DPI,
     OCR_MIN_CHARS_FALLBACK,
@@ -33,6 +39,7 @@ from config.settings import (
 from domain.entities.documento import DocumentoIdentidad, TextoExtraido, TipoDocumento
 from domain.ports.interfaces import IOcrPort
 from infrastructure.ocr.clasificador_tolerante import clasificar_tolerante
+from infrastructure.ocr.docling_text import exportar
 from infrastructure.platform_config import (
     crear_conversor_docling,
     detectar_plataforma,
@@ -134,8 +141,23 @@ class DoclingAdapter(IOcrPort):
         # Paso 1: Docling normal sobre todo el documento.
         # Si Docling falla por completo (p.ej. OOM de GPU en M1) o no esta
         # instalado, se invoca directamente Tesseract de pagina completa.
+        notas_ocr: list[str] = []
+        t_docling = time.monotonic()
         texto_docling = self._extraer_con_docling(documento.ruta_pdf)
+        t_docling = time.monotonic() - t_docling
         texto_docling = self._normalizar(texto_docling)
+        # Paso 1b (opcional, DOCLING_RETRY_ON_UNKNOWN): si Docling no detecto el tipo,
+        # reconvertir con una 2a configuracion de Docling ANTES de recurrir a Tesseract/Vision.
+        if DOCLING_RETRY_ON_UNKNOWN and self._docling_available \
+                and self.detectar_tipo(texto_docling) == TipoDocumento.DESCONOCIDO:
+            texto_r = self._reintentar_docling(documento.ruta_pdf, t_docling, notas_ocr)
+            if texto_r:
+                if self.detectar_tipo(texto_r) != TipoDocumento.DESCONOCIDO:
+                    texto_docling = texto_r
+                    notas_ocr.append("docling_reintento:tipo_recuperado")
+                else:
+                    notas_ocr.append("docling_reintento:sin_efecto")
+
         # Un escaneo/foto suele salir de Docling como "<!-- image -->": sin texto real
         texto_util = re.sub(r"<!--.*?-->", "", texto_docling).strip()
         if len(texto_util) < 80 and (self.tesseract_disponible or self._ocrmac_disponible()):
@@ -260,6 +282,7 @@ class DoclingAdapter(IOcrPort):
             doc_id=documento.doc_id,
             texto_crudo=texto_final,
             tipo_detectado=tipo_final,
+            notas_ocr=notas_ocr,
         )
 
     # ── Lazy loaders ──────────────────────────────────────────────────────────
@@ -309,10 +332,30 @@ class DoclingAdapter(IOcrPort):
         try:
             converter = self._converter or self._DocumentConverter()
             result = converter.convert(str(ruta_pdf))
-            return result.document.export_to_markdown()
+            return exportar(result.document, DOCLING_TRAVERSE_PICTURES, DOCLING_TEXT_MODE)
         except Exception as e:
             logger.warning("docling_fallo", extra={"error": str(e)})
             return ""
+
+    def _reintentar_docling(self, ruta_pdf: Path, t_primera: float, notas: list[str]) -> str:
+        """2a conversion de Docling con la configuracion DOCLING_RETRY_*. Devuelve el texto
+        normalizado ("" si se omite o falla). Solo registra conteos/tiempos en `notas`."""
+        if t_primera > DOCLING_RETRY_MAX_SECONDS:
+            notas.append("docling_reintento:omitido_por_tiempo")
+            return ""
+        t0 = time.monotonic()
+        try:
+            if getattr(self, "_converter_retry", None) is None:
+                self._converter_retry = crear_conversor_docling(retry=True)
+            result = self._converter_retry.convert(str(ruta_pdf))
+            texto = self._normalizar(
+                exportar(result.document, DOCLING_RETRY_TRAVERSE_PICTURES, DOCLING_TEXT_MODE))
+        except Exception as e:
+            logger.warning("docling_reintento_fallo", extra={"error": str(e)})
+            notas.append("docling_reintento:error")
+            return ""
+        notas.append(f"docling_reintento:{round(time.monotonic() - t0, 1)}s")
+        return texto
 
     # ── Utilidades de imagen para Tesseract ───────────────────────────────────
 

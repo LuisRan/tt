@@ -51,6 +51,8 @@ class TextoExtraido:
     ruta_md: Optional[Path] = None
     tipo_detectado: TipoDocumento = TipoDocumento.DESCONOCIDO
     timestamp: datetime = field(default_factory=datetime.utcnow)
+    # Notas de diagnostico del OCR (sin datos personales); vacio salvo que un flag las genere
+    notas_ocr: list = field(default_factory=list)
 
 
 @dataclass

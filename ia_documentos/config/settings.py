@@ -135,6 +135,33 @@ OCR_DPI       = _env_int("OCR_DPI", 200)  # 200 y no 300 para evitar OOM en M1
 OCR_MIN_CHARS_NORMAL   = _env_int("OCR_MIN_CHARS_NORMAL", 500)
 OCR_MIN_CHARS_FALLBACK = _env_int("OCR_MIN_CHARS_FALLBACK", 300)
 
+# ── Ajustes de Docling (todos APAGADOS por defecto = comportamiento historico) ───────────────
+# Ver docs_docling.md: medicion y causa raiz (en PDFs-imagen el layout, que corre a 72 dpi,
+# clasifica la tarjeta entera como "picture"; el OCR si lee dentro, pero el export a markdown
+# omite el texto hijo de las pictures).
+# Modo de OCR de Docling: "" (defecto de Docling) | full_page | layout_regions
+DOCLING_OCR_MODE = _env_str("DOCLING_OCR_MODE", "").lower()
+# Escala de render previa al OCR (OcrMacOptions.scale; 0 = defecto de Docling, 3.0)
+DOCLING_OCR_SCALE = _env_float("DOCLING_OCR_SCALE", 0.0)
+# Nivel de reconocimiento de ocrmac: "" (defecto, accurate) | accurate | fast
+DOCLING_OCR_RECOGNITION = _env_str("DOCLING_OCR_RECOGNITION", "").lower()
+# Idiomas del OCR de Docling separados por coma (p. ej. "es-ES,en-US"); "" = los de plataforma
+DOCLING_OCR_LANGS = _env_str("DOCLING_OCR_LANGS", "")
+# PdfPipelineOptions.images_scale (0 = defecto 1.0). No afecta al OCR en Docling 2.130.
+DOCLING_IMAGES_SCALE = _env_float("DOCLING_IMAGES_SCALE", 0.0)
+# Incluir en el markdown el texto leido dentro de regiones "picture" (export traverse_pictures)
+DOCLING_TRAVERSE_PICTURES = _env_bool("DOCLING_TRAVERSE_PICTURES", False)
+# Texto a partir de los items ordenados por posicion en vez del markdown: markdown | filas
+DOCLING_TEXT_MODE = _env_str("DOCLING_TEXT_MODE", "markdown").lower()
+# Reintento de Docling con una segunda configuracion si el tipo no se detecta, ANTES de los
+# niveles Tesseract/Apple Vision. La 2a configuracion usa DOCLING_RETRY_* (mismos significados).
+DOCLING_RETRY_ON_UNKNOWN = _env_bool("DOCLING_RETRY_ON_UNKNOWN", False)
+DOCLING_RETRY_OCR_MODE = _env_str("DOCLING_RETRY_OCR_MODE", "full_page").lower()
+DOCLING_RETRY_OCR_SCALE = _env_float("DOCLING_RETRY_OCR_SCALE", 0.0)
+DOCLING_RETRY_TRAVERSE_PICTURES = _env_bool("DOCLING_RETRY_TRAVERSE_PICTURES", True)
+# Tope de tiempo (s) para NO lanzar el reintento si la 1a conversion ya tardo mas que esto
+DOCLING_RETRY_MAX_SECONDS = _env_float("DOCLING_RETRY_MAX_SECONDS", 40.0)
+
 # ── Anti-alucinacion ──────────────────────────────────────────────────────────
 # Si True: cada valor que el LLM produzca para campos protegidos (CURP, clave
 # de elector, codigos numericos, fechas, etc.) DEBE aparecer literalmente en
