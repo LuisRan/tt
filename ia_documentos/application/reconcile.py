@@ -35,7 +35,12 @@ from infrastructure.regex.correccion_ocr import (
     pistas_curp,
 )
 
+from config.settings import RECONCILE_PASAPORTE
+
 logger = logging.getLogger(__name__)
+
+# Flag de las reglas propias del pasaporte (None = usar el ajuste; las pruebas/offline lo fuerzan)
+PASAPORTE_RULES_ON: Optional[bool] = None
 
 
 # ── Resultado ─────────────────────────────────────────────────────────────────
@@ -869,6 +874,9 @@ def reconcile(doc_type: str, raw_text: str, datos: dict, permitir_derivados: boo
         _seguro(_regla_curp, ctx, tipo)
     if tipo == "pasaporte" and permitir_derivados:
         _seguro(_regla_pasaporte, ctx)
+    if tipo == "pasaporte" and (RECONCILE_PASAPORTE if PASAPORTE_RULES_ON is None else PASAPORTE_RULES_ON):
+        from application.reconcile_pasaporte import aplicar_pasaporte
+        _seguro(aplicar_pasaporte, ctx)
     if tipo in ("ine", "curp", "acta_nacimiento") and permitir_derivados:
         _seguro(_regla_sexo_fecha_desde_curp, ctx, tipo)
     if tipo in ("curp", "acta_nacimiento", "pasaporte"):

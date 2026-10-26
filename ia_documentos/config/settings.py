@@ -181,6 +181,9 @@ POSTPROCESS_RECONCILE = _env_bool("POSTPROCESS_RECONCILE", False)
 # reconstruida, sexo/fecha derivados de la CURP). Contradicen RNF-03: solo con
 # decision explicita. Sin efecto si POSTPROCESS_RECONCILE es False.
 RECONCILE_ALLOW_DERIVED = _env_bool("RECONCILE_ALLOW_DERIVED", False)
+# Reglas propias del pasaporte (application/reconcile_pasaporte.py). Las literales
+# se aplican con este flag; las derivadas ademas exigen RECONCILE_ALLOW_DERIVED.
+RECONCILE_PASAPORTE = _env_bool("RECONCILE_PASAPORTE", False)
 
 # ── Clasificador de tipo tolerante al ruido (segunda revision) ───────────────
 # Si True: cuando el clasificador exacto no halla tipo (o solo UNA coincidencia fragil),
