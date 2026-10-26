@@ -135,6 +135,21 @@ def resumen(res):
     return t, glob, (pct(ok, n), pct(nd_ok, nd_n))
 
 
+def regresiones(res_a, res_b):
+    """Campos correctos en A e incorrectos en B -> {campo: n} (B = candidato, A = referencia)."""
+    ok_a = {(r.sample_id, f.name) for _, r, _ in res_a for f in r.fields if f.scored and acierto(f)}
+    reg, gan = defaultdict(int), defaultdict(int)
+    for _, r, _ in res_b:
+        for f in r.fields:
+            if not f.scored:
+                continue
+            if acierto(f) and (r.sample_id, f.name) not in ok_a:
+                gan[f.name] += 1
+            if not acierto(f) and (r.sample_id, f.name) in ok_a:
+                reg[f.name] += 1
+    return dict(reg), dict(gan)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--campaign", default="/Users/luis/Documents/gen-ia/out/campaigns/mejoras-ocr-parcial")
@@ -167,6 +182,11 @@ def main(argv=None):
                 h = cp.get("heavy", {}).get(c, (0, 0))
                 fila += f"{ok:>6}/{n:<3}|{h[0]}/{h[1]:<3}"
             print(fila)
+    for m in modos[1:]:
+        for ref_m in ("base", "rec"):
+            if ref_m in res and ref_m != m:
+                reg, gan = regresiones(res[ref_m], res[m])
+                print(f"regresiones {ref_m}->{m}: {sum(reg.values())} {reg}  ganancias: {sum(gan.values())}")
     if a.json:
         Path(a.json).write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
 
