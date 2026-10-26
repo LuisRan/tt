@@ -188,6 +188,9 @@ RECONCILE_INE = _env_bool("RECONCILE_INE", False)
 # Reglas propias del pasaporte (application/reconcile_pasaporte.py). Las literales
 # se aplican con este flag; las derivadas ademas exigen RECONCILE_ALLOW_DERIVED.
 RECONCILE_PASAPORTE = _env_bool("RECONCILE_PASAPORTE", False)
+# Reglas propias del acta de nacimiento (application/reconcile_acta.py). Las literales
+# se aplican con este flag; las derivadas ademas exigen RECONCILE_ALLOW_DERIVED.
+RECONCILE_ACTA = _env_bool("RECONCILE_ACTA", False)
 
 # ── Clasificador de tipo tolerante al ruido (segunda revision) ───────────────
 # Si True: cuando el clasificador exacto no halla tipo (o solo UNA coincidencia fragil),
