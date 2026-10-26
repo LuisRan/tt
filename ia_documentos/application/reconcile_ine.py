@@ -22,10 +22,14 @@ import re
 from difflib import SequenceMatcher
 from typing import Any, Optional
 
+from application import reconcile as _rec
 from config import settings
 from infrastructure.regex.correccion_ocr import curp_valida, pistas_curp
 
-REGLAS_DERIVADAS_INE: set[str] = set()
+REGLAS_DERIVADAS_INE: set[str] = {"ine_enie_por_curp"}
+
+
+_rec.REGLAS_DERIVADAS.update(REGLAS_DERIVADAS_INE)  # Cambio.derivado / anti-alucinacion de pipeline
 
 
 def _activo() -> bool:
@@ -81,8 +85,42 @@ def _nombres_ancla(lineas: list[str], etiquetas: set[str]) -> Optional[str]:
 
 
 # ── Regla: nombre y apellidos por ventana consecutiva consistente con la CURP ─
+#
+# Las letras 0,1,13 (ap1), 2,14 (ap2) y 3,15 (nombre) de la CURP validan la particion de las
+# palabras en (ap1, ap2, nombres). Se buscan en el flujo de palabras del texto ventanas
+# CONSECUTIVAS (el texto trae ap1 ap2 nombres en ese orden, con etiquetas/fechas de por medio
+# que se descartan) y se acepta solo una solucion unica. Si el texto trae una linea limpia de
+# nombres justo antes de la etiqueta DOMICILIO (segunda zona del OCR), ese es el ancla.
 
 _MAX_TOK = 300
+
+
+def _ventanas(toks: list[str], planas: list[str], cur: str, ancla: Optional[str]) -> dict:
+    sols: dict[tuple[str, str, str], int] = {}
+    n = len(toks)
+    for i in range(n):
+        if planas[i][0] != cur[0] or planas[i] in _PARTICULAS:
+            continue
+        for l1 in range(1, 4):
+            if i + l1 > n or planas[i + l1 - 1] in _PARTICULAS:
+                continue
+            j = i + l1
+            for l2 in range(1, 4):
+                if j + l2 > n or planas[j + l2 - 1] in _PARTICULAS:
+                    continue
+                if all(p in _PARTICULAS for p in planas[j:j + l2]):
+                    continue
+                k = j + l2
+                ap1, ap2 = " ".join(toks[i:j]), " ".join(toks[j:k])
+                if ancla is not None:  # nombres = la linea limpia (no tiene que ser contigua)
+                    cands = [ancla]
+                else:
+                    cands = [" ".join(toks[k:k + l3]) for l3 in range(1, 4) if k + l3 <= n]
+                for nom in cands:
+                    c = _coincidencias(cur, ap1, ap2, nom)
+                    if c >= _MIN_COINCIDENCIAS:
+                        sols[(ap1, ap2, nom)] = max(c, sols.get((ap1, ap2, nom), 0))
+    return sols
 
 
 def _regla_nombre(ctx) -> None:
@@ -94,44 +132,81 @@ def _regla_nombre(ctx) -> None:
     etiquetas = {_sin_acentos(e) for e in _PALABRAS_ETIQUETA} | _EXTRA_ETIQUETA
     toks = _tokens_nombre(ctx.texto, etiquetas)[:_MAX_TOK]
     ancla = _nombres_ancla(ctx.texto.splitlines(), etiquetas)
+    if ancla is not None:  # el ancla debe ser un 'nombres' creible: <=3 palabras y letras 3 y 15 de la CURP
+        pa = pistas_curp(_sin_acentos(ancla), "X", "X")
+        if len(ancla.split()) > 3 or pa.get(3) != cur[3] or pa.get(15) != cur[15]:
+            ancla = None
     planas = [_sin_acentos(t) for t in toks]
-    sols: dict[tuple[str, str, str], int] = {}
-    n = len(toks)
-    for i in range(n):
-        if planas[i][0] != cur[0] or planas[i] in _PARTICULAS:
-            continue
-        for l1 in range(1, 4):
-            if i + l1 > n or planas[i + l1 - 1] in _PARTICULAS:
-                continue
-            for l2 in range(1, 4):
-                j = i + l1
-                if j + l2 > n or planas[j + l2 - 1] in _PARTICULAS:
-                    continue
-                if all(p in _PARTICULAS for p in planas[j:j + l2]):
-                    continue
-                for l3 in range(1, 4):
-                    k = j + l2
-                    if k + l3 > n:
-                        continue
-                    ap1, ap2, nom = " ".join(toks[i:j]), " ".join(toks[j:k]), " ".join(toks[k:k + l3])
-                    c = _coincidencias(cur, ap1, ap2, nom)
-                    if c >= _MIN_COINCIDENCIAS:
-                        sols[(ap1, ap2, nom)] = max(c, sols.get((ap1, ap2, nom), 0))
-    if not sols:
-        return
+    sols = _ventanas(toks, planas, cur, None)
     if ancla is not None:
         con_ancla = {k: v for k, v in sols.items() if _sin_acentos(k[2]) == _sin_acentos(ancla)}
-        if con_ancla:
-            sols = con_ancla
-    mejor = max(sols.values())
-    finalistas = [k for k, v in sols.items() if v == mejor]
-    if len(finalistas) != 1:
+        sols = con_ancla or _ventanas(toks, planas, cur, ancla)
+    if not sols:
         return
-    ap1, ap2, nom = finalistas[0]
+    mejor = max(sols.values())
+    fin = [k for k, v in sols.items() if v == mejor]
+    if len(fin) > 1:  # empate (p. ej. 'nombres' que se prolonga sobre palabras sueltas): el valor actual
+        actual = [_sin_acentos(str(d.get(c) or "")).upper() for c in ("primer_apellido", "segundo_apellido", "nombres")]
+        punt = {k: (sum(_sin_acentos(a) == b for a, b in zip(k, actual)), -sum(len(a.split()) for a in k)) for k in fin}
+        top = max(punt.values())
+        fin = [k for k in fin if punt[k] == top]
+    if len(fin) != 1:
+        return
+    ap1, ap2, nom = fin[0]
+    a1, a2, nm = (str(d.get(c) or "").strip() for c in ("primer_apellido", "segundo_apellido", "nombres"))
+    con_ancla = ancla is not None and _sin_acentos(nom) == _sin_acentos(ancla)
+    if not con_ancla and a1 and a2 and nm and _coincidencias(cur, a1, a2, nm) >= mejor:
+        return  # el valor actual ya es tan consistente con la CURP como la solucion: no se toca
     ctx.poner("primer_apellido", ap1, "ine_nombre_por_ventana_curp")
     ctx.poner("segundo_apellido", ap2, "ine_nombre_por_ventana_curp")
     ctx.poner("nombres", nom, "ine_nombre_por_ventana_curp")
     ctx.poner("nombre_completo", f"{nom} {ap1} {ap2}", "ine_nombre_por_ventana_curp")
+
+
+# ── Regla (derivada): N -> Ñ cuando la CURP delata la Ñ ───────────────────────
+# La CURP codifica la Ñ interna como 'X'. Si la primera consonante interna del primer apellido
+# (pos. 13), segundo (14) o nombre (15) es 'N' y la CURP trae 'X', la Ñ se perdio en el OCR.
+# El valor resultante NO es literal del texto (un caracter cambiado) -> solo con derivados.
+
+_VOCALES = set("AEIOU")
+
+
+def _enie(componente: Any, letra_curp: str) -> Optional[str]:
+    if letra_curp != "X" or _vacio(componente):
+        return None
+    palabras = str(componente).split(" ")
+    for idx, w in enumerate(palabras):
+        if _sin_acentos(w).upper() in _PARTICULAS:
+            continue
+        pl = _sin_acentos(w).upper()
+        for k in range(1, len(pl)):
+            if pl[k] in _VOCALES or not pl[k].isalpha():
+                continue
+            if pl[k] == "N" and w[k].upper() == "N":
+                palabras[idx] = w[:k] + "Ñ" + w[k + 1:]
+                return " ".join(palabras)
+            return None
+        return None
+    return None
+
+
+def _regla_enie(ctx) -> None:
+    if not ctx.derivados:
+        return
+    d = ctx.datos
+    cur = str(d.get("curp") or "").strip().upper()
+    if not curp_valida(cur):
+        return
+    for campo, pos in (("primer_apellido", 13), ("segundo_apellido", 14), ("nombres", 15)):
+        nuevo = _enie(d.get(campo), cur[pos])
+        if nuevo:
+            ctx.poner(campo, nuevo, "ine_enie_por_curp")
+    nom, a1, a2 = d.get("nombres"), d.get("primer_apellido"), d.get("segundo_apellido")
+    if not (_vacio(nom) or _vacio(a1) or _vacio(a2)):
+        completo = f"{nom} {a1} {a2}"
+        if _sin_acentos(str(d.get("nombre_completo") or "")).upper() == _sin_acentos(completo).upper() \
+                and d.get("nombre_completo") != completo:
+            ctx.poner("nombre_completo", completo, "ine_enie_por_curp")
 
 
 # ── Regla: domicilio por roles (calle / colonia / municipio) ──────────────────
@@ -243,6 +318,38 @@ def _regla_domicilio(ctx) -> None:
     ctx.poner("domicilio", nuevo, "ine_domicilio_por_bloque")
 
 
+# ── Regla: clave de elector anclada a su etiqueta ─────────────────────────────
+# El OCR repite la clave en dos zonas con lecturas distintas; la regla existente se abstiene
+# si hay dos candidatos validos. El token pegado a la etiqueta "CLAVE DE ELECTOR" (segunda zona,
+# la limpia) desempata. Estructura: 6 letras + AAMMDD (= CURP[4:10]) + entidad (2) + sexo (= CURP[10]) + 3 digitos.
+
+_RE_CLAVE_ETQ = re.compile(r"CLAVE\s*(?:DE|BE|De)?\s*ELECTOR[,:;]?\s*([A-Za-z0-9]{18})(?![A-Za-z0-9])", re.I)
+
+
+def _regla_clave_etiqueta(ctx) -> None:
+    d = ctx.datos
+    cur = str(d.get("curp") or "").strip().upper()
+    if not curp_valida(cur):
+        return
+    ymd, sx = cur[4:10], cur[10]
+
+    def ok(c: str) -> bool:
+        return bool(re.fullmatch(r"[A-Z]{6}\d{6}\d{2}[HM]\d{3}", c)) and c[6:12] == ymd and c[14] == sx
+
+    actual = str(d.get("clave_elector") or "").strip().upper()
+    if ok(actual):
+        return
+    cands = set()
+    for m in _RE_CLAVE_ETQ.finditer(ctx.plano):
+        t = m.group(1).upper()
+        c = "".join((_rec._A_LETRA.get(ch, ch) if i < 6 else _rec._A_DIGITO.get(ch, ch) if i != 14 else ch)
+                    for i, ch in enumerate(t))
+        if ok(c):
+            cands.add(c)
+    if len(cands) == 1:
+        ctx.poner("clave_elector", cands.pop(), "ine_clave_por_etiqueta")
+
+
 # ── Punto de entrada (llamado desde reconcile.reconcile) ──────────────────────
 
 def aplicar_reglas_ine(ctx, seguro) -> None:
@@ -250,4 +357,6 @@ def aplicar_reglas_ine(ctx, seguro) -> None:
     if not _activo():
         return
     seguro(_regla_nombre, ctx)
+    seguro(_regla_enie, ctx)
+    seguro(_regla_clave_etiqueta, ctx)
     seguro(_regla_domicilio, ctx)
