@@ -35,7 +35,12 @@ from infrastructure.regex.correccion_ocr import (
     pistas_curp,
 )
 
+from config.settings import RECONCILE_ACTA
+
 logger = logging.getLogger(__name__)
+
+# Flag de las reglas propias del acta (None = usar el ajuste; las pruebas/offline lo fuerzan)
+ACTA_RULES_ON: Optional[bool] = None
 
 
 # ── Resultado ─────────────────────────────────────────────────────────────────
@@ -873,6 +878,9 @@ def reconcile(doc_type: str, raw_text: str, datos: dict, permitir_derivados: boo
         _seguro(_regla_sexo_fecha_desde_curp, ctx, tipo)
     if tipo in ("curp", "acta_nacimiento", "pasaporte"):
         _seguro(_regla_nombres, ctx, tipo)
+    if tipo == "acta_nacimiento" and (RECONCILE_ACTA if ACTA_RULES_ON is None else ACTA_RULES_ON):
+        from application.reconcile_acta import aplicar_acta
+        _seguro(aplicar_acta, ctx)
     if tipo == "ine":
         _seguro(_regla_nombre_por_pool, ctx)
         _seguro(_regla_nombres, ctx, tipo)
