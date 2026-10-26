@@ -319,10 +319,12 @@ def cargar_manifest(campana: Path) -> list[dict]:
 
 
 def seleccionar(manifest: list[dict], split: str, por_tipo: Optional[int],
-                preset: Optional[str] = None) -> list[dict]:
+                preset: Optional[str] = None, tipos: Optional[list[str]] = None) -> list[dict]:
     """Determinista: por tipo, ordena por sample_id y reparte los presets en round-robin."""
     sel: list[dict] = []
     for dt in sorted(GEN_TO_OCR):
+        if tipos and GEN_TO_OCR[dt] not in tipos:
+            continue
         xs = sorted((m for m in manifest if m["doc_type"] == dt and m["split"] == split
                      and (preset is None or m["degradation_preset"] == preset)),
                     key=lambda m: m["sample_id"])
@@ -417,7 +419,11 @@ def correr(args: argparse.Namespace) -> int:
     from infrastructure.ocr.docling_adapter import DoclingAdapter
 
     campana = Path(args.campaign)
-    muestras = seleccionar(cargar_manifest(campana), args.split, args.per_type, args.preset)
+    muestras = seleccionar(cargar_manifest(campana), args.split, args.per_type, args.preset, args.tipo)
+    if args.fallos:  # solo las muestras que la campana base dejo como error (DOCUMENTO_NO_SOPORTADO)
+        ok = set(tiempos_baseline(campana))
+        muestras = [m for m in seleccionar(cargar_manifest(campana), args.split, None, args.preset, args.tipo)
+                    if m["sample_id"] not in ok]
     out_dir = Path(args.out) / args.name
     out_dir.mkdir(parents=True, exist_ok=True)
     destino = out_dir / "run.jsonl"
@@ -461,6 +467,74 @@ def correr(args: argparse.Namespace) -> int:
             fh.flush()
             print(f"[bench] {i}/{len(muestras)} {GEN_TO_OCR[m['doc_type']]} {m['degradation_preset']} {dt:.1f}s",
                   flush=True)
+    return 0
+
+
+def _valor(v: str) -> Any:
+    if v.lower() in {"1", "true"}:
+        return True
+    if v.lower() in {"0", "false"}:
+        return False
+    return v
+
+
+def correr_ab(args: argparse.Namespace) -> int:
+    """A/B intercalado en el MISMO proceso y por documento (tiempos comparables). Solo flags a
+    nivel adaptador/exportacion (constantes de infrastructure.ocr.docling_adapter), p. ej.
+    --ab filas=DOCLING_TEXT_MODE:filas --ab trav=DOCLING_TRAVERSE_PICTURES:1.
+    La variante `ctl` (sin cambios) siempre se corre."""
+    sys.path.insert(0, str(ROOT))
+    from domain.entities.documento import DocumentoIdentidad
+    from infrastructure.ocr import docling_adapter as da
+
+    variantes: dict[str, dict[str, Any]] = {"ctl": {}}
+    for spec in args.ab:
+        nombre, _, kvs = spec.partition("=")
+        variantes[nombre] = {kv.split(":")[0]: _valor(kv.split(":", 1)[1]) for kv in kvs.split(",")}
+    campana = Path(args.campaign)
+    muestras = seleccionar(cargar_manifest(campana), args.split, args.per_type, args.preset, args.tipo)
+    if args.fallos:
+        ok = set(tiempos_baseline(campana))
+        muestras = [m for m in seleccionar(cargar_manifest(campana), args.split, None, args.preset, args.tipo)
+                    if m["sample_id"] not in ok]
+    ad = da.DoclingAdapter()
+    ad.precargar()
+    plat = ad.plataforma
+    fhs, hechos = {}, {}
+    for nombre, cambios in variantes.items():
+        d = Path(args.out) / f"{args.name}_{nombre}"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "meta.json").write_text(json.dumps({
+            "name": f"{args.name}_{nombre}", "mode": "adapter(ab)", "env": [f"{k}={v}" for k, v in cambios.items()],
+            "split": args.split, "motor_ocr_docling": plat.get("motor_ocr_docling"),
+            "dispositivo": plat.get("dispositivo"), "so": plat.get("sistema")}, indent=1))
+        hechos[nombre] = _leer_jsonl(d / "run.jsonl")
+        fhs[nombre] = (d / "run.jsonl").open("a")
+    print(f"[ab] {len(muestras)} muestras, variantes={list(variantes)} motor={plat.get('motor_ocr_docling')} "
+          f"dispositivo={plat.get('dispositivo')}", flush=True)
+    nombres = list(variantes)
+    for i, m in enumerate(muestras, 1):
+        orden = nombres if i % 2 else nombres[::-1]  # alterna el orden para no sesgar tiempos/cache
+        for nombre in orden:
+            if m["sample_id"] in hechos[nombre]:
+                continue
+            previos = {k: getattr(da, k) for k in variantes[nombre]}
+            for k, v in variantes[nombre].items():
+                setattr(da, k, v)
+            try:
+                doc = DocumentoIdentidad(ruta_pdf=campana / m["submitted_pdf_path"], user_id="bench",
+                                         doc_id=m["sample_id"])
+                t0 = time.perf_counter()
+                te = ad.extraer_texto(doc)
+                dt = time.perf_counter() - t0
+            finally:
+                for k, v in previos.items():
+                    setattr(da, k, v)
+            fhs[nombre].write(json.dumps({"sample_id": m["sample_id"], "texto": te.texto_crudo,
+                                          "tipo": te.tipo_detectado.value, "notas": te.notas_ocr,
+                                          "variantes": {}, "segundos": round(dt, 3)}, ensure_ascii=False) + "\n")
+            fhs[nombre].flush()
+        print(f"[ab] {i}/{len(muestras)}", flush=True)
     return 0
 
 
@@ -540,9 +614,22 @@ def main(argv: Optional[list[str]] = None) -> int:
     r.add_argument("--per-type", type=int, default=8)
     r.add_argument("--preset", default=None, choices=["none", "default", "heavy"])
     r.add_argument("--mode", choices=["docling", "adapter"], default="docling")
+    r.add_argument("--tipo", action="append", choices=sorted(GEN_TO_OCR.values()),
+                   help="limitar a estos tipos OCR (repetible)")
+    r.add_argument("--fallos", action="store_true", help="solo muestras que fallaron en la campana base")
     r.add_argument("--env", action="append")
     r.add_argument("--out", default=str(ROOT.parent / "bench_runs"))
     r.set_defaults(fn=correr)
+    a = sub.add_parser("ab", help="A/B intercalado de flags de adaptador (tiempos comparables)")
+    a.add_argument("--name", required=True)
+    a.add_argument("--split", default="dev")
+    a.add_argument("--per-type", type=int, default=None)
+    a.add_argument("--preset", default=None, choices=["none", "default", "heavy"])
+    a.add_argument("--tipo", action="append", choices=sorted(GEN_TO_OCR.values()))
+    a.add_argument("--fallos", action="store_true")
+    a.add_argument("--ab", action="append", required=True, help="nombre=FLAG:valor[,FLAG:valor]")
+    a.add_argument("--out", default=str(ROOT.parent / "bench_runs"))
+    a.set_defaults(fn=correr_ab)
     p = sub.add_parser("report")
     p.add_argument("runs", nargs="+")
     p.add_argument("--split", default="dev")
