@@ -181,6 +181,10 @@ POSTPROCESS_RECONCILE = _env_bool("POSTPROCESS_RECONCILE", False)
 # reconstruida, sexo/fecha derivados de la CURP). Contradicen RNF-03: solo con
 # decision explicita. Sin efecto si POSTPROCESS_RECONCILE es False.
 RECONCILE_ALLOW_DERIVED = _env_bool("RECONCILE_ALLOW_DERIVED", False)
+# Reglas adicionales de INE (application/reconcile_ine.py): nombre por ventana consistente con la CURP,
+# domicilio por roles, clave de elector por etiqueta. Solo actuan con POSTPROCESS_RECONCILE; las que
+# construyen valores no literales (N->Ñ por CURP) ademas exigen RECONCILE_ALLOW_DERIVED. Ver docs_ine.md.
+RECONCILE_INE = _env_bool("RECONCILE_INE", False)
 
 # ── Clasificador de tipo tolerante al ruido (segunda revision) ───────────────
 # Si True: cuando el clasificador exacto no halla tipo (o solo UNA coincidencia fragil),

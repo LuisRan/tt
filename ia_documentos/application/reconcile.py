@@ -878,6 +878,8 @@ def reconcile(doc_type: str, raw_text: str, datos: dict, permitir_derivados: boo
         _seguro(_regla_nombres, ctx, tipo)
         _seguro(_regla_clave_elector, ctx)
         _seguro(_regla_ine, ctx)
+        from application.reconcile_ine import aplicar_reglas_ine  # reglas extra (flag RECONCILE_INE)
+        aplicar_reglas_ine(ctx, _seguro)  # (sus reglas derivadas se registran en REGLAS_DERIVADAS al importar)
     if tipo == "curp":
         _seguro(_regla_folio_curp, ctx)
     return ReconcileResult(ctx.datos, ctx.cambios)
