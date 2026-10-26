@@ -39,7 +39,7 @@ from config.settings import (
 from domain.entities.documento import DocumentoIdentidad, TextoExtraido, TipoDocumento
 from domain.ports.interfaces import IOcrPort
 from infrastructure.ocr.clasificador_tolerante import clasificar_tolerante
-from infrastructure.ocr.docling_text import exportar
+from infrastructure.ocr.docling_text import exportar, texto_por_filas
 from infrastructure.platform_config import (
     crear_conversor_docling,
     detectar_plataforma,
@@ -142,10 +142,12 @@ class DoclingAdapter(IOcrPort):
         # Si Docling falla por completo (p.ej. OOM de GPU en M1) o no esta
         # instalado, se invoca directamente Tesseract de pagina completa.
         notas_ocr: list[str] = []
+        self._doc_docling = None  # DoclingDocument de la 1a conversion (solo modo filas_acta)
         t_docling = time.monotonic()
         texto_docling = self._extraer_con_docling(documento.ruta_pdf)
         t_docling = time.monotonic() - t_docling
         texto_docling = self._normalizar(texto_docling)
+        texto_md_primero = texto_docling
         # Paso 1b (opcional, DOCLING_RETRY_ON_UNKNOWN): si Docling no detecto el tipo,
         # reconvertir con una 2a configuracion de Docling ANTES de recurrir a Tesseract/Vision.
         if DOCLING_RETRY_ON_UNKNOWN and self._docling_available \
@@ -191,6 +193,20 @@ class DoclingAdapter(IOcrPort):
                     })
 
         # Paso 3: estrategia especifica por tipo
+        # Modo filas_acta: SOLO si es acta y el texto base sigue siendo el markdown de la 1a
+        # conversion, se sustituye por el texto por filas del MISMO resultado (sin reconvertir).
+        if (DOCLING_TEXT_MODE == "filas_acta" and tipo == TipoDocumento.ACTA_NACIMIENTO
+                and self._doc_docling is not None and texto_docling == texto_md_primero):
+            try:
+                filas = self._normalizar(texto_por_filas(self._doc_docling))
+            except Exception as e:
+                logger.warning("docling_filas_acta_fallo", extra={"error": str(e)})
+                filas = ""
+            if filas:
+                texto_docling = filas
+                notas_ocr.append("docling_texto:filas_acta")
+        self._doc_docling = None
+
         texto_final = texto_docling
 
         if tipo == TipoDocumento.CURP:
@@ -332,6 +348,8 @@ class DoclingAdapter(IOcrPort):
         try:
             converter = self._converter or self._DocumentConverter()
             result = converter.convert(str(ruta_pdf))
+            if DOCLING_TEXT_MODE == "filas_acta":
+                self._doc_docling = result.document
             return exportar(result.document, DOCLING_TRAVERSE_PICTURES, DOCLING_TEXT_MODE)
         except Exception as e:
             logger.warning("docling_fallo", extra={"error": str(e)})

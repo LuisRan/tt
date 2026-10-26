@@ -96,3 +96,12 @@ $PY scripts/docling_bench.py report /tmp/runs/val_filas --split val
 ```
 Activar: `DOCLING_TEXT_MODE=filas` (o `DOCLING_TRAVERSE_PICTURES=1`) en el entorno / `.env`.
 No medido: LLM, RapidOCR/EasyOCR (no instalados), TableFormer, layouts egret (no estan en cache), preprocesado de imagen.
+
+## Modo filas_acta
+
+Activar con `DOCLING_TEXT_MODE=filas_acta` (por defecto `markdown`; cualquier valor desconocido equivale a `markdown`).
+
+- La detección de tipo y todo el flujo previo usan el markdown de siempre. Solo si el tipo detectado es acta de nacimiento, y el texto base sigue siendo el markdown de la 1ª conversión (sin reintento ni OCR añadido), el texto del acta pasa a ser el texto por filas del MISMO resultado de Docling (se conserva el `DoclingDocument` en memoria; no hay segunda llamada a `convert`). `OCR_ACTA_ZONA_SUPERIOR` sigue añadiendo la franja superior después. Si no se puede construir el texto por filas, se usa el markdown. Se anota `docling_texto:filas_acta` en `notas_ocr`.
+- INE, CURP, pasaporte y desconocidos producen el mismo texto que con `markdown` (verificado por prueba unitaria).
+- Por qué solo acta (medición del orquestador con LLM real, 27 actas y 54 pasaportes de val+test): actas con `filas` 59.0 % -> 81.9 % de campos correctos (17 de 18 campos mejoran); pasaportes 87.2 % -> 80.6 % (la MRZ colapsa: mrz_linea2 57->22, mrz_linea1 29->11 aciertos). INE y CURP no se midieron con LLM.
+- `numero_acta` (única baja en actas con LLM: 76 -> 70 de 101), medido SOLO a nivel OCR en dev (75 actas, `docling_bench.py ab`, adaptador completo): recall en texto crudo 67/75 con markdown y 67/75 con `filas_acta` (idéntico; por preset none 25/25, default 25/25, heavy 17/25 en ambos). La pérdida no está en el texto sino en cómo lo lee el LLM: con filas, la etiqueta y el valor quedan en renglones distintos (cabecera "Oficialía Fecha de Registro Libro Número de Acta" y debajo la fila de valores, con el número al final); el número aparece a menos de 70 caracteres de su etiqueta en 46 documentos con filas frente a 55 con markdown. No se aplicó ninguna corrección en `docling_text.py`: no hay pérdida a nivel OCR que medir y reubicar valores bajo etiquetas sería una heurística frágil.

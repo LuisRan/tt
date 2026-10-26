@@ -286,3 +286,83 @@ def test_bench_p95_y_resumen():
     res = b.resumen_por_tipo([r, r2])["curp"]
     assert res["det_exacta"] == 1 and res["tipo_equivocado"] == 0
     assert res["recall"] == 0.25 and res["recall_critico"] == 0.25 and res["t_medio"] == 3.0
+
+
+# ── modo filas_acta ──────────────────────────────────────────────────────────
+
+class _DocFalso:
+    """Doc con markdown fijo y dos items de texto en la misma fila (bbox top-left)."""
+    def __init__(self, md):
+        self.md = md
+        self.texts = [
+            SimpleNamespace(text="Clave", prov=[SimpleNamespace(page_no=1, bbox=SimpleNamespace(
+                coord_origin=SimpleNamespace(value="TOPLEFT"), l=0, t=0, r=10, b=5))]),
+            SimpleNamespace(text="valor-fila", prov=[SimpleNamespace(page_no=1, bbox=SimpleNamespace(
+                coord_origin=SimpleNamespace(value="TOPLEFT"), l=20, t=0, r=30, b=5))]),
+        ]
+
+    def export_to_markdown(self, **kw):
+        return self.md
+
+
+def _adaptador_filas(monkeypatch, modo, md, tipo):
+    monkeypatch.setattr(da, "DOCLING_TEXT_MODE", modo)
+    monkeypatch.setattr(da, "OCR_ACTA_ZONA_SUPERIOR", False)
+    ad = da.DoclingAdapter()
+    llamadas = []
+    doc = _DocFalso(md)
+
+    class Conv:
+        def convert(self, ruta):
+            llamadas.append(ruta)
+            return SimpleNamespace(document=doc)
+    ad._converter = Conv()
+    monkeypatch.setattr(ad, "_cargar_docling", lambda: True)
+    monkeypatch.setattr(ad, "_docling_available", True)
+    monkeypatch.setattr(ad, "_pytesseract_available", False)
+    monkeypatch.setattr(ad, "_ocrmac_disponible", lambda: False)
+    monkeypatch.setattr(ad, "_ocr_zona", lambda *a, **k: None)
+    monkeypatch.setattr(ad, "_ocr_pagina_completa", lambda *a, **k: None)
+    monkeypatch.setattr(ad, "detectar_tipo", lambda t: tipo)
+    return ad, llamadas
+
+
+_MD = "markdown del documento " * 30
+
+
+def _extraer_modo(monkeypatch, modo, tipo):
+    ad, llamadas = _adaptador_filas(monkeypatch, modo, _MD, tipo)
+    d = DocumentoIdentidad(ruta_pdf=Path("x.pdf"), user_id="u", doc_id="d")
+    return ad.extraer_texto(d), llamadas
+
+
+def test_filas_acta_no_acta_identico_a_markdown(monkeypatch):
+    for tipo in (TipoDocumento.INE, TipoDocumento.PASAPORTE, TipoDocumento.CURP, TipoDocumento.DESCONOCIDO):
+        base, _ = _extraer_modo(monkeypatch, "markdown", tipo)
+        fa, _ = _extraer_modo(monkeypatch, "filas_acta", tipo)
+        assert fa.texto_crudo == base.texto_crudo and fa.notas_ocr == base.notas_ocr
+
+
+def test_filas_acta_usa_filas_en_acta_sin_reconvertir(monkeypatch):
+    fa, llamadas = _extraer_modo(monkeypatch, "filas_acta", TipoDocumento.ACTA_NACIMIENTO)
+    assert fa.texto_crudo == "Clave valor-fila"
+    assert "docling_texto:filas_acta" in fa.notas_ocr
+    assert len(llamadas) == 1
+
+
+def test_modo_markdown_y_desconocido_en_acta_usan_markdown(monkeypatch):
+    for modo in ("markdown", "loquesea"):
+        r, _ = _extraer_modo(monkeypatch, modo, TipoDocumento.ACTA_NACIMIENTO)
+        assert r.texto_crudo.startswith("markdown del documento")
+
+
+def test_filas_acta_sin_filas_cae_a_markdown(monkeypatch):
+    ad, _ = _adaptador_filas(monkeypatch, "filas_acta", _MD, TipoDocumento.ACTA_NACIMIENTO)
+    monkeypatch.setattr(da, "texto_por_filas", lambda d: "")
+    d = DocumentoIdentidad(ruta_pdf=Path("x.pdf"), user_id="u", doc_id="d")
+    assert ad.extraer_texto(d).texto_crudo.startswith("markdown del documento")
+
+
+def test_exportar_filas_acta_y_desconocido_son_markdown():
+    assert exportar(_DocFalso("MD"), modo="filas_acta") == "MD"
+    assert exportar(_DocFalso("MD"), modo="xyz") == "MD"

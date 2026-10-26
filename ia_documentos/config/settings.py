@@ -151,7 +151,9 @@ DOCLING_OCR_LANGS = _env_str("DOCLING_OCR_LANGS", "")
 DOCLING_IMAGES_SCALE = _env_float("DOCLING_IMAGES_SCALE", 0.0)
 # Incluir en el markdown el texto leido dentro de regiones "picture" (export traverse_pictures)
 DOCLING_TRAVERSE_PICTURES = _env_bool("DOCLING_TRAVERSE_PICTURES", False)
-# Texto a partir de los items ordenados por posicion en vez del markdown: markdown | filas
+# Texto de Docling: markdown (defecto) | filas (items por posicion, todos los tipos) |
+# filas_acta (filas SOLO si el documento es un acta de nacimiento; el resto, markdown).
+# Cualquier otro valor equivale a markdown.
 DOCLING_TEXT_MODE = _env_str("DOCLING_TEXT_MODE", "markdown").lower()
 # Reintento de Docling con una segunda configuracion si el tipo no se detecta, ANTES de los
 # niveles Tesseract/Apple Vision. La 2a configuracion usa DOCLING_RETRY_* (mismos significados).
