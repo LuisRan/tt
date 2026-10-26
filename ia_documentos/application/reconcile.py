@@ -384,6 +384,9 @@ def _regla_nombres(ctx: _Ctx, tipo: str) -> None:
         ctx.poner("nombre_completo", ensamblado, "nombre_completo_ensamblado")
         return
     a, e = _tokens(actual), _tokens(ensamblado)
+    ec = [t for i, t in enumerate(e) if i == 0 or t != e[i - 1]]
+    if ec != e and a == ec:  # el ensamblado duplicaría un apellido que el valor actual no repite
+        return
     if sorted(a) == sorted(e):
         if a != e:
             ctx.poner("nombre_completo", ensamblado, "nombre_completo_ensamblado")
@@ -422,6 +425,9 @@ def _valor_antes(texto: str, plano: str, m: re.Match) -> Optional[str]:
     toks = []
     for t in reversed(previo.split()):
         t = t.strip("·.,;:")
+        # una etiqueta del formulario ('CURP', 'Nacionalidad'...) nunca es parte del valor
+        if re.sub(r"[^A-Z0-9]", "", _plano(t).upper()) in _PALABRAS_ETIQUETA:
+            break
         if _RE_TOK_MAYUS.fullmatch(t) and len(toks) < 6:
             toks.append(t)
         else:
@@ -450,6 +456,32 @@ def _decidir_reemplazo(cur: Any, cand: Optional[str], otros: set, campo: str, ap
         return True  # asignado al campo equivocado / basura identificable
     tc, tk = _tokens(cur), _tokens(cand)
     return len(tc) < len(tk) and tk[:len(tc)] == tc or (len(tc) < len(tk) and all(t in tk for t in tc))
+
+
+_CAMPOS_PERSONA = ("nombres", "primer_apellido", "segundo_apellido")
+
+
+def _persona_protegida(d: dict, campo: str, cand: str) -> bool:
+    """
+    No reemplazar un componente del nombre que ya es correcto (en la duda, no cambiar):
+    - la CURP válida del propio documento confirma sus letras (el candidato aportaría lo mismo
+      o lo estaría tomando de la celda contigua), o
+    - el candidato AMPLÍA el valor actual solo con palabras que ya son el valor de OTRO
+      componente (p. ej. 'GILBERTO' -> 'GILBERTO COLON' con primer_apellido='COLON').
+    """
+    cur_v = d.get(campo)
+    if _vacio(cur_v) or campo not in _CAMPOS_PERSONA:
+        return False
+    cur = str(d.get("curp") or "").strip().upper()
+    if curp_valida(cur) and _componente_ok(cur, _CAMPO_ROL[campo], cur_v) and not _es_etiqueta(cur_v) \
+            and not _apellido_basura(cur_v):
+        return True
+    otros = [t for c in _CAMPOS_PERSONA if c != campo for t in _tokens(d.get(c))]
+    tc, tk = _tokens(cur_v), _tokens(cand)
+    if not all(t in tk for t in tc):  # no es una ampliación (p. ej. un intercambio de apellidos): no aplica
+        return False
+    anadidos = [t for t in tk if t not in tc]
+    return bool(anadidos) and all(t in otros for t in anadidos)
 
 
 def _regla_acta(ctx: _Ctx) -> None:
@@ -481,6 +513,8 @@ def _regla_acta(ctx: _Ctx) -> None:
         ap = campo.endswith("apellido")
         if ap and _apellido_basura(cand):
             continue
+        if _persona_protegida(d, campo, cand):
+            continue
         if _decidir_reemplazo(d.get(campo), cand, otros, campo, ap):
             ctx.poner(campo, cand, "acta_valor_por_etiqueta")
     # sexo de la persona
@@ -497,13 +531,20 @@ def _regla_acta(ctx: _Ctx) -> None:
         vals = [_valor_antes(ctx.texto, ctx.plano, m)
                 for m in re.finditer(pat, ctx.plano, re.I) if fil_ini <= m.start() < fil_fin]
         col[k] = vals if len(vals) == 2 else [None, None]
-    curps = _curps_en_texto(ctx.texto[fil_ini:fil_fin])
+    propia = str(d.get("curp") or "").strip().upper()
+    # solo es "la CURP de la persona" si coincide con SU fecha de nacimiento y sexo (la extraída
+    # como propia puede ser en realidad la de un progenitor)
+    if not (curp_valida(propia) and not _vacio(d.get("fecha_nacimiento")) and _curp_consistente(propia, d)):
+        propia = ""
+    # la CURP de la persona registrada nunca es la de un progenitor
+    curps = [(i, c) for i, c in _curps_en_texto(ctx.texto[fil_ini:fil_fin]) if c != propia]
     # CURP por sexo: H -> padre, M -> madre (estructura de la CURP)
     por_sexo = {}
     for _, c in curps:
         por_sexo.setdefault(c[10], []).append(c)
     curp_padre = por_sexo["H"][0] if len(por_sexo.get("H", [])) == 1 else None
     curp_madre = por_sexo["M"][0] if len(por_sexo.get("M", [])) == 1 else None
+    en_texto = {c for _, c in _curps_en_texto(ctx.texto)}
     # ¿la columna 0 es el padre? orden del texto, confirmado por el sexo de las CURP si se conocen
     mismo_sexo = len(curps) == 2 and curps[0][1][10] == curps[1][1][10]  # familia homoparental
     padre_idx = 0
@@ -532,7 +573,11 @@ def _regla_acta(ctx: _Ctx) -> None:
         if mismo_sexo:
             pass  # el rol 'padre/madre' no implica sexo: no se reasigna ni se anula
         elif curp_rol and cur_n != curp_rol:
-            if cur_n is None or not curp_valida(cur_n) or cur_n[10] != esperado or _n(cur_n) != _n(curp_rol):
+            # una CURP presente, válida, con el sexo del rol, distinta de la de la persona y que
+            # figura en el texto NO se sustituye (en la duda, no cambiar)
+            if cur_n is None or not curp_valida(cur_n) or cur_n[10] != esperado \
+                    or cur_n == propia or cur_n not in en_texto \
+                    or (_yymmdd(d.get("fecha_nacimiento")) or "-") == cur_n[4:10]:  # nace el mismo día que la persona
                 ctx.poner(campo_c, curp_rol, "acta_curp_progenitor_por_sexo")
         elif cur_n and curp_valida(cur_n) and cur_n[10] != esperado:
             ctx.poner(campo_c, None, "acta_curp_progenitor_sexo_incoherente")
