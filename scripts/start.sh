@@ -2,10 +2,11 @@
 # ═══════════════════════════════════════════════════════════════════════════
 #  Arranque del sistema completo en macOS / Linux
 #
-#  ./scripts/start.sh               todo en Docker (IA en contenedor Linux)
-#  ./scripts/start.sh --ia-nativa   (recomendado en Mac) el módulo de IA corre
-#                                   nativo en macOS: Docling usa ocrmac (Vision)
-#                                   y la GPU Metal (MPS); el resto en Docker.
+#  ./scripts/start.sh               en Mac: IA NATIVA (Apple Vision + GPU Metal, el motor
+#                                   con el que se validó >= 90 %); en Linux: todo en Docker
+#  ./scripts/start.sh --ia-nativa   fuerza el módulo de IA nativo (macOS: Docling usa
+#                                   ocrmac/Vision y MPS; el resto en Docker)
+#  ./scripts/start.sh --ia-docker   fuerza la IA en contenedor Linux (Docling + Tesseract)
 #  ./scripts/start.sh --sin-llm     no configura Ollama (solo extracción regex)
 #
 #  Detecta el sistema operativo y configura automáticamente:
@@ -18,10 +19,12 @@ cd "$(dirname "$0")/.."
 RAIZ="$(pwd)"
 
 IA_NATIVA=false
+IA_DOCKER=false
 CON_LLM=true
 for arg in "$@"; do
   case "$arg" in
     --ia-nativa) IA_NATIVA=true ;;
+    --ia-docker) IA_DOCKER=true ;;
     --sin-llm)   CON_LLM=false ;;
     -h|--help)   sed -n '2,17p' "$0"; exit 0 ;;
     *) echo "Opción desconocida: $arg"; exit 1 ;;
@@ -41,6 +44,8 @@ case "$SO" in
   *) rojo "Sistema no soportado por este script ($SO). En Windows usa scripts\\start.ps1"; exit 1 ;;
 esac
 azul "==> Sistema detectado: $SO_NOMBRE ($ARQ)"
+# En Mac la IA va nativa por defecto: Docker en Mac es Linux y no tiene Apple Vision (usaría Tesseract).
+if [ "$SO" = "Darwin" ] && ! $IA_DOCKER; then IA_NATIVA=true; fi
 
 # ── Utilidades .env ───────────────────────────────────────────────────────────
 leer_env() { grep -E "^$1=" .env 2>/dev/null | tail -1 | cut -d= -f2- || true; }

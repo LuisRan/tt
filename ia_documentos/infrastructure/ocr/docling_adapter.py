@@ -29,6 +29,7 @@ from config.settings import (
     DOCLING_RETRY_MAX_SECONDS,
     DOCLING_RETRY_ON_UNKNOWN,
     DOCLING_RETRY_TRAVERSE_PICTURES,
+    DOCLING_FILAS_TABLAS,
     DOCLING_TEXT_MODE,
     DOCLING_TRAVERSE_PICTURES,
     OCR_ACTA_ZONA_SUPERIOR,
@@ -81,6 +82,16 @@ _PATRONES_TIPO: dict[TipoDocumento, list[str]] = {
     ],
 }
 
+
+
+def _filas_con_tablas() -> bool:
+    """DOCLING_FILAS_TABLAS: true/false explicito; "auto" = solo cuando el motor OCR de Docling es Tesseract."""
+    if DOCLING_FILAS_TABLAS in ("true", "1", "yes", "si", "on"):
+        return True
+    if DOCLING_FILAS_TABLAS == "auto":
+        from infrastructure.platform_config import detectar_plataforma
+        return detectar_plataforma().motor_ocr_docling == "tesseract"
+    return False
 
 class DoclingAdapter(IOcrPort):
     """OCR con estrategia hibrida adaptada por tipo de documento."""
@@ -198,7 +209,7 @@ class DoclingAdapter(IOcrPort):
         if (DOCLING_TEXT_MODE == "filas_acta" and tipo == TipoDocumento.ACTA_NACIMIENTO
                 and self._doc_docling is not None and texto_docling == texto_md_primero):
             try:
-                filas = self._normalizar(texto_por_filas(self._doc_docling))
+                filas = self._normalizar(texto_por_filas(self._doc_docling, _filas_con_tablas()))
             except Exception as e:
                 logger.warning("docling_filas_acta_fallo", extra={"error": str(e)})
                 filas = ""

@@ -155,6 +155,15 @@ DOCLING_TRAVERSE_PICTURES = _env_bool("DOCLING_TRAVERSE_PICTURES", False)
 # filas_acta (filas SOLO si el documento es un acta de nacimiento; el resto, markdown).
 # Cualquier otro valor equivale a markdown.
 DOCLING_TEXT_MODE = _env_str("DOCLING_TEXT_MODE", "markdown").lower()
+# Motor Tesseract de Docling (Linux/Windows/Docker): su OSD por recuadro a veces devuelve 180 grados con
+# confianza ~0.1 (recuadros con poco texto o codigos de barras) y el recorte se lee al reves. Con un valor
+# > 0 se ignora la orientacion detectada si su confianza es menor; las paginas realmente giradas (confianza
+# alta) se siguen corrigiendo. 0 = comportamiento original de Docling. Sin efecto con ocrmac.
+TESSERACT_OSD_MIN_CONF = _env_float("TESSERACT_OSD_MIN_CONF", 2.0)
+# Con DOCLING_TEXT_MODE=filas|filas_acta, incluir tambien el texto de las celdas de las tablas que detecta
+# Docling. Necesario con el motor Tesseract (Docker/Linux/Windows), donde el layout marca como tabla el
+# bloque de filiacion del acta. "auto" lo activa solo con Tesseract; con ocrmac (Mac) queda apagado.
+DOCLING_FILAS_TABLAS = _env_str("DOCLING_FILAS_TABLAS", "auto").lower()  # auto (solo con Tesseract) | true | false
 # Reintento de Docling con una segunda configuracion si el tipo no se detecta, ANTES de los
 # niveles Tesseract/Apple Vision. La 2a configuracion usa DOCLING_RETRY_* (mismos significados).
 DOCLING_RETRY_ON_UNKNOWN = _env_bool("DOCLING_RETRY_ON_UNKNOWN", False)

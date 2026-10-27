@@ -6,7 +6,7 @@ y preparan lo necesario. Guía completa de operación en [`docs/OPERACION.md`](.
 | Script | Sistema | Qué hace |
 |---|---|---|
 | `start.sh` | macOS / Linux | Crea `.env` con secretos aleatorios si falta, genera certificados con `mkcert` si existe, configura Ollama (nativo o contenedor, GPU NVIDIA si hay), descarga el modelo, levanta Docker Compose con `--build` y espera al backend. |
-| `start.sh --ia-nativa` | macOS (recomendado) | Igual, pero el módulo de IA corre nativo (Apple Vision + GPU Metal) y el backend lo usa por `host.docker.internal:5001`. |
+| `start.sh` / `start.sh --ia-nativa` | macOS (por defecto en Mac) | Igual, pero el módulo de IA corre nativo (Apple Vision + GPU Metal) y el backend lo usa por `host.docker.internal:5001`. |
 | `start.sh --sin-llm` | macOS / Linux | No configura Ollama; la extracción usa solo regex + validación cruzada. |
 | `stop.sh` | macOS / Linux | Detiene contenedores e IA nativa. Los datos se conservan. |
 | `stop.sh --borrar` | macOS / Linux | Detiene y borra volúmenes (BD, archivos). Pide confirmación. |

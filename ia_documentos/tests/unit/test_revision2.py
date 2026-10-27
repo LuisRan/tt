@@ -91,15 +91,33 @@ def test_acta_dos_madres_no_anula_curp_de_progenitor():
     assert r.datos["curp_padre"] == c1 and r.datos["curp_madre"] == c2
 
 
-def test_acta_diseno_etiqueta_primero_no_toma_el_valor_de_otro_campo():
-    raw = ("Acta de Nacimiento\nDatos de la Persona Registrada\nNombre(s): ROSA MARIA\nPrimer Apellido: PEREZ\n"
-           "Segundo Apellido: LOPEZ\nSexo: MUJER\nDatos de Filiación\nNombre(s): JUAN\nPrimer Apellido: PEREZ\n"
-           "Segundo Apellido: RUIZ\nNacionalidad: MEXICANA\nNombre(s): ANA\nPrimer Apellido: LOPEZ\n"
-           "Segundo Apellido: DIAZ\nNacionalidad: MEXICANA\nAnotaciones Marginales")
+_ACTA_ETIQUETA_PRIMERO = (
+    "Acta de Nacimiento\nDatos de la Persona Registrada\nNombre(s): ROSA MARIA\nPrimer Apellido: PEREZ\n"
+    "Segundo Apellido: LOPEZ\nSexo: MUJER\nDatos de Filiación\nNombre(s): JUAN\nPrimer Apellido: PEREZ\n"
+    "Segundo Apellido: RUIZ\nNacionalidad: MEXICANA\nNombre(s): ANA\nPrimer Apellido: LOPEZ\n"
+    "Segundo Apellido: DIAZ\nNacionalidad: MEXICANA\nAnotaciones Marginales")
+
+
+def test_acta_diseno_etiqueta_primero_no_toma_el_valor_de_otro_campo(monkeypatch):
+    # Reglas base (RECONCILE_ACTA apagado): fija el estado sin depender del .env del equipo.
+    import application.reconcile as R
+    monkeypatch.setattr(R, "ACTA_RULES_ON", False)
     d = {"nombres": "ROSA MARIA", "primer_apellido": "PEREZ", "segundo_apellido": "LOPEZ"}
-    r = reconcile("acta_nacimiento", raw, d, permitir_derivados=True)
+    r = reconcile("acta_nacimiento", _ACTA_ETIQUETA_PRIMERO, d, permitir_derivados=True)
     assert (r.datos["nombres"], r.datos["primer_apellido"], r.datos["segundo_apellido"]) == ("ROSA MARIA", "PEREZ", "LOPEZ")
     assert r.datos.get("nacionalidad_padre") in (None, "")
+
+
+def test_acta_diseno_etiqueta_primero_con_reglas_de_acta_conserva_la_persona(monkeypatch):
+    # Con RECONCILE_ACTA la filiacion se lee por bloques: la nacionalidad del bloque de cada progenitor
+    # es literal del documento y los datos de la persona registrada no cambian.
+    import application.reconcile as R
+    monkeypatch.setattr(R, "ACTA_RULES_ON", True)
+    d = {"nombres": "ROSA MARIA", "primer_apellido": "PEREZ", "segundo_apellido": "LOPEZ"}
+    r = reconcile("acta_nacimiento", _ACTA_ETIQUETA_PRIMERO, d)
+    assert (r.datos["nombres"], r.datos["primer_apellido"], r.datos["segundo_apellido"]) == ("ROSA MARIA", "PEREZ", "LOPEZ")
+    assert r.datos.get("nacionalidad_padre") == "MEXICANA"
+    assert r.datos.get("nacionalidad_madre") == "MEXICANA"
 
 
 def test_folio_impresion_por_etiqueta_solo_con_candidato_unico():

@@ -69,6 +69,21 @@ services:
       OCR_ENGINE: ${OCR_ENGINE:-auto}
       DOCLING_DEVICE: ${DOCLING_DEVICE:-auto}
       DOCLING_TABLES: ${DOCLING_TABLES:-auto}
+      # Mejoras de precision medidas en la campania de validacion final (ver
+      # ia_documentos/docs_docling.md, docs_ine.md, docs_pasaporte.md, docs_acta.md).
+      # Para volver al comportamiento anterior pon cualquiera en false/markdown en .env.
+      DOCLING_TEXT_MODE: ${DOCLING_TEXT_MODE:-filas_acta}
+      POSTPROCESS_RECONCILE: ${POSTPROCESS_RECONCILE:-true}
+      RECONCILE_INE: ${RECONCILE_INE:-true}
+      RECONCILE_PASAPORTE: ${RECONCILE_PASAPORTE:-true}
+      RECONCILE_ACTA: ${RECONCILE_ACTA:-true}
+      CLASSIFIER_TOLERANT: ${CLASSIFIER_TOLERANT:-true}
+      OCR_ACTA_ZONA_SUPERIOR: ${OCR_ACTA_ZONA_SUPERIOR:-true}
+      # Tesseract (Linux/Docker): ignora giros OSD de baja confianza (leia recuadros al reves)
+      TESSERACT_OSD_MIN_CONF: ${TESSERACT_OSD_MIN_CONF:-2.0}
+      DOCLING_FILAS_TABLAS: ${DOCLING_FILAS_TABLAS:-auto}   # auto = solo con Tesseract (celdas de tabla en el texto por filas)
+      # Valores NO literales (reconstruidos por checksum/CURP): apagado a proposito.
+      RECONCILE_ALLOW_DERIVED: ${RECONCILE_ALLOW_DERIVED:-false}
       IA_REQUEST_TIMEOUT: 600
       LOG_LEVEL: ${LOG_LEVEL_IA:-INFO}
       TZ: ${TZ:-America/Mexico_City}

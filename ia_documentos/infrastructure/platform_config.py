@@ -393,6 +393,38 @@ def crear_conversor_docling(retry: bool = False) -> Any:
         return DocumentConverter()
 
 
+def _filtrar_osd_tesseract(conf_minima: float) -> None:
+    """Hace que el modelo Tesseract CLI de Docling ignore orientaciones OSD de baja confianza.
+
+    Docling gira cada recuadro segun el OSD de Tesseract; con poco texto devuelve p. ej. 180 grados con
+    confianza 0.1 y el texto sale al reves. Se envuelve `_parse_orientation` (funcion del modulo de Docling).
+    """
+    if conf_minima <= 0:
+        return
+    try:
+        from docling.models.stages.ocr import tesseract_ocr_cli_model as m
+    except ImportError:  # pragma: no cover
+        return
+    if getattr(m, "_osd_filtrado", False):
+        return
+    original = m._parse_orientation
+
+    def filtrada(df_osd: Any) -> int:
+        grados = original(df_osd)
+        if not grados:
+            return 0
+        try:
+            claves = df_osd["key"].astype(str).str.strip().to_numpy()
+            valor = df_osd["value"].to_numpy()[claves == "Orientation confidence"][0]
+            conf = float(str(valor).strip())
+        except (KeyError, IndexError, ValueError):
+            return grados
+        return grados if conf >= conf_minima else 0
+
+    m._parse_orientation = filtrada
+    m._osd_filtrado = True
+
+
 def _crear_opciones_ocr(info: PlataformaInfo) -> Any:
     try:
         from docling.datamodel import pipeline_options as po
@@ -404,6 +436,7 @@ def _crear_opciones_ocr(info: PlataformaInfo) -> Any:
         if motor == "ocrmac" and hasattr(po, "OcrMacOptions"):
             return po.OcrMacOptions(lang=["es-ES", "en-US"])
         if motor == "tesseract" and hasattr(po, "TesseractCliOcrOptions"):
+            _filtrar_osd_tesseract(settings.TESSERACT_OSD_MIN_CONF)
             kwargs: dict[str, Any] = {"lang": _idiomas_tesseract()}
             if info.tesseract_cmd:
                 kwargs["tesseract_cmd"] = info.tesseract_cmd

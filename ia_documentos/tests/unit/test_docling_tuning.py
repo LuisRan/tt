@@ -358,7 +358,7 @@ def test_modo_markdown_y_desconocido_en_acta_usan_markdown(monkeypatch):
 
 def test_filas_acta_sin_filas_cae_a_markdown(monkeypatch):
     ad, _ = _adaptador_filas(monkeypatch, "filas_acta", _MD, TipoDocumento.ACTA_NACIMIENTO)
-    monkeypatch.setattr(da, "texto_por_filas", lambda d: "")
+    monkeypatch.setattr(da, "texto_por_filas", lambda d, *a: "")
     d = DocumentoIdentidad(ruta_pdf=Path("x.pdf"), user_id="u", doc_id="d")
     assert ad.extraer_texto(d).texto_crudo.startswith("markdown del documento")
 
@@ -366,3 +366,63 @@ def test_filas_acta_sin_filas_cae_a_markdown(monkeypatch):
 def test_exportar_filas_acta_y_desconocido_son_markdown():
     assert exportar(_DocFalso("MD"), modo="filas_acta") == "MD"
     assert exportar(_DocFalso("MD"), modo="xyz") == "MD"
+
+
+def test_osd_tesseract_ignora_orientacion_de_baja_confianza(monkeypatch):
+    import types
+    import pandas as pd
+    from infrastructure import platform_config as pc
+
+    mod = types.SimpleNamespace(_parse_orientation=lambda df: int(df.loc[df["key"] == "Orientation in degrees", "value"].iloc[0]))
+    import sys
+    paquete = "docling.models.stages.ocr.tesseract_ocr_cli_model"
+    monkeypatch.setitem(sys.modules, paquete, mod)
+    monkeypatch.setattr("docling.models.stages.ocr.tesseract_ocr_cli_model", mod, raising=False)
+    pc._filtrar_osd_tesseract(2.0)
+
+    def df(grados, conf):
+        return pd.DataFrame({"key": ["Orientation in degrees", "Orientation confidence"], "value": [str(grados), str(conf)]})
+
+    assert mod._parse_orientation(df(180, 0.11)) == 0      # ruido: se ignora
+    assert mod._parse_orientation(df(180, 6.5)) == 180     # pagina realmente girada: se corrige
+    assert mod._parse_orientation(df(0, 0.1)) == 0
+
+
+def test_osd_tesseract_sin_umbral_no_toca_docling():
+    from infrastructure import platform_config as pc
+    from docling.models.stages.ocr import tesseract_ocr_cli_model as m
+    antes = m._parse_orientation
+    pc._filtrar_osd_tesseract(0.0)
+    assert m._parse_orientation is antes
+
+
+def test_texto_por_filas_incluye_celdas_de_tablas_solo_si_se_pide():
+    from types import SimpleNamespace as NS
+
+    def bb(l, t, r, b):
+        return NS(l=l, t=t, r=r, b=b, coord_origin=NS(value="TOPLEFT"))
+
+    texto = NS(text="Datos de Filiacion", prov=[NS(page_no=1, bbox=bb(0, 0, 100, 10))])
+    celdas = [NS(text="CRISTIAN", bbox=bb(0, 20, 40, 30)), NS(text="MESA", bbox=bb(50, 20, 90, 30)),
+              NS(text="Nombre(s)", bbox=bb(0, 40, 40, 50)), NS(text="", bbox=bb(0, 60, 5, 70))]
+    tabla = NS(prov=[NS(page_no=1, bbox=bb(0, 20, 100, 50))], data=NS(table_cells=celdas))
+    d = NS(texts=[texto], tables=[tabla], pages={1: NS(size=NS(height=100))})
+    assert texto_por_filas(d) == "Datos de Filiacion"
+    assert texto_por_filas(d, incluir_tablas=True).split("\n") == ["Datos de Filiacion", "CRISTIAN MESA", "Nombre(s)"]
+    assert exportar(d, modo="filas", incluir_tablas=True).count("CRISTIAN") == 1
+
+
+def test_filas_con_tablas_auto_solo_con_tesseract(monkeypatch):
+    from types import SimpleNamespace as NS
+    from infrastructure.ocr import docling_adapter as da
+    from infrastructure import platform_config as pc
+
+    monkeypatch.setattr(da, "DOCLING_FILAS_TABLAS", "auto")
+    monkeypatch.setattr(pc, "detectar_plataforma", lambda: NS(motor_ocr_docling="tesseract"))
+    assert da._filas_con_tablas() is True
+    monkeypatch.setattr(pc, "detectar_plataforma", lambda: NS(motor_ocr_docling="ocrmac"))
+    assert da._filas_con_tablas() is False
+    monkeypatch.setattr(da, "DOCLING_FILAS_TABLAS", "true")
+    assert da._filas_con_tablas() is True
+    monkeypatch.setattr(da, "DOCLING_FILAS_TABLAS", "false")
+    assert da._filas_con_tablas() is False

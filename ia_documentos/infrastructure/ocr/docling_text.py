@@ -38,8 +38,39 @@ def _bbox_arriba(item: Any, doc: Any) -> Optional[tuple[int, float, float, float
     return (p.page_no, float(izq), float(min(arr, aba)), float(der), float(max(arr, aba)))
 
 
-def texto_por_filas(doc: Any) -> str:
-    """Texto de todos los items de texto, un renglon por fila visual, por pagina."""
+def _cajas_de_tablas(doc: Any) -> list[tuple[int, float, float, float, float, str]]:
+    """Celdas de las tablas de Docling como cajas (pagina, izq, arriba, der, abajo, texto).
+
+    Con el OCR Tesseract el layout suele clasificar bloques de formulario (p. ej. la filiacion del acta)
+    como tabla: su texto vive en las celdas y no en `doc.texts`, y `texto_por_filas` lo perderia.
+    """
+    cajas: list[tuple[int, float, float, float, float, str]] = []
+    for tabla in getattr(doc, "tables", []) or []:
+        prov = getattr(tabla, "prov", None)
+        data = getattr(tabla, "data", None)
+        if not prov or data is None:
+            continue
+        pagina = prov[0].page_no
+        for celda in getattr(data, "table_cells", []) or []:
+            txt = (getattr(celda, "text", "") or "").strip()
+            bb = getattr(celda, "bbox", None)
+            if not txt or bb is None:
+                continue
+            try:
+                origen = getattr(getattr(bb, "coord_origin", None), "value", str(getattr(bb, "coord_origin", "")))
+                if "BOTTOM" in str(origen).upper():
+                    bb = bb.to_top_left_origin(page_height=doc.pages[pagina].size.height)
+                cajas.append((pagina, float(bb.l), float(min(bb.t, bb.b)), float(bb.r), float(max(bb.t, bb.b)), txt))
+            except Exception:
+                continue
+    return cajas
+
+
+def texto_por_filas(doc: Any, incluir_tablas: bool = False) -> str:
+    """Texto de todos los items de texto, un renglon por fila visual, por pagina.
+
+    `incluir_tablas` agrega tambien el texto de las celdas de las tablas (ver `_cajas_de_tablas`).
+    """
     cajas: list[tuple[int, float, float, float, float, str]] = []
     sin_pos: list[str] = []
     for item in getattr(doc, "texts", []):
@@ -51,6 +82,8 @@ def texto_por_filas(doc: Any) -> str:
             sin_pos.append(txt)
         else:
             cajas.append((*b, txt))
+    if incluir_tablas:
+        cajas.extend(_cajas_de_tablas(doc))
     paginas: dict[int, list] = {}
     for c in cajas:
         paginas.setdefault(c[0], []).append(c)
@@ -76,9 +109,9 @@ def texto_por_filas(doc: Any) -> str:
     return "\n".join(salida).strip("\n")
 
 
-def exportar(doc: Any, traverse_pictures: bool = False, modo: str = "markdown") -> str:
+def exportar(doc: Any, traverse_pictures: bool = False, modo: str = "markdown", incluir_tablas: bool = False) -> str:
     if modo == "filas":
-        return texto_por_filas(doc)
+        return texto_por_filas(doc, incluir_tablas)
     if traverse_pictures:
         return doc.export_to_markdown(traverse_pictures=True)
     return doc.export_to_markdown()
