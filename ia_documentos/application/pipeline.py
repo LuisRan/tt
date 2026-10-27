@@ -11,6 +11,7 @@ Etapas:
 """
 from __future__ import annotations
 import logging
+import os
 import re
 import tempfile
 import time
@@ -20,9 +21,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
+from application.reconcile import reconcile
 from application.validator import validar_campos
 from config.settings import (
     ANTI_HALLUCINATION,
+    DATA_DIR,
     EXTRACTION_STRATEGY,
     JSON_RESULTS_DIR,
     OLLAMA_HOST,
@@ -35,6 +38,8 @@ from config.settings import (
     PDF_MAX_PAGES,
     PDF_MAX_SIZE_MB,
     PIPELINE_VERSION,
+    POSTPROCESS_RECONCILE,
+    RECONCILE_ALLOW_DERIVED,
     RAW_TEXT_DIR,
 )
 from domain.entities.documento import (
@@ -165,7 +170,7 @@ class DocumentPipeline:
             return self._procesar(ruta_procesada, user_id, doc_id, hash_sha256,
                                   num_paginas, inicio)
         finally:
-            # La copia corregida vive en /tmp: no dejar PDFs con datos personales
+            # La copia corregida vive en DATA_DIR/tmp: no dejar PDFs con datos personales
             if ruta_procesada != ruta_pdf:
                 try:
                     ruta_procesada.unlink(missing_ok=True)
@@ -219,6 +224,12 @@ class DocumentPipeline:
                     "doc_id": doc_id, "campos_descartados": campos_filtrados,
                 })
 
+        # Etapa 4b (opcional): reconciliacion determinista de campos
+        campos_reconciliados: list[dict] = []
+        if POSTPROCESS_RECONCILE:
+            campos, campos_reconciliados = self._reconciliar(
+                texto_extraido.tipo_detectado.value, texto_extraido.texto_crudo, campos, doc_id)
+
         # Etapa 5: Validacion Pydantic + envelope
         campos_validados, errores_validacion = validar_campos(
             campos, texto_extraido.tipo_detectado
@@ -255,11 +266,16 @@ class DocumentPipeline:
             "motor_ocr_docling": self._ocr.plataforma.get("motor_ocr_docling"),
             "docling": self._ocr.docling_disponible,
         }
+        if getattr(texto_extraido, "notas_ocr", None):
+            meta["docling_ocr"] = list(texto_extraido.notas_ocr)  # sin datos personales
         if campos_filtrados:
             resultado_dict["metadatos"]["campos_descartados_por_alucinacion"] = campos_filtrados
         corregidos_finales = [c for c in corregidos_ocr if campos_validados.get(c)]
         if corregidos_finales:
             resultado_dict["metadatos"]["campos_corregidos_ocr"] = corregidos_finales
+
+        if campos_reconciliados:
+            resultado_dict["metadatos"]["campos_reconciliados"] = campos_reconciliados
 
         self._json_storage.guardar_resultado(resultado_dict, doc_id, user_id)
 
@@ -304,6 +320,34 @@ class DocumentPipeline:
         penalizacion = 0.05 * n_errores + 0.05 * n_alucinados
         return round(max(0.0, min(1.0, base - penalizacion)), 2)
 
+    # ── Reconciliacion (etapa 4b) ─────────────────────────────────────────────
+
+    @staticmethod
+    def _reconciliar(tipo: str, texto_crudo: str, campos: dict, doc_id: str) -> tuple[dict, list[dict]]:
+        """
+        Aplica `reconcile` de forma SEGURA: nunca rompe el pipeline y respeta el filtro
+        anti-alucinacion. Un valor que reconcile escriba en un campo protegido (no derivado)
+        debe parecerse a algo que el OCR leyo (misma tolerancia que los campos corregidos);
+        si no, se revierte al valor previo. Los metadatos no contienen valores (sin PII).
+        """
+        try:
+            rec = reconcile(tipo, texto_crudo, campos, permitir_derivados=RECONCILE_ALLOW_DERIVED)
+            datos = rec.datos
+            aceptados = []
+            for c in rec.cambios:
+                if (ANTI_HALLUCINATION and not c.derivado and c.nuevo not in (None, "")
+                        and c.campo in _CAMPOS_PROTEGIDOS_CONTRA_ALUCINACION
+                        and not aparece_con_tolerancia(str(c.nuevo), texto_crudo)):
+                    datos[c.campo] = c.anterior
+                    logger.warning("reconcile_valor_descartado_por_alucinacion",
+                                   extra={"doc_id": doc_id, "campo": c.campo, "regla": c.regla})
+                    continue
+                aceptados.append({"campo": c.campo, "regla": c.regla, **({"derivado": True} if c.derivado else {})})
+            return datos, aceptados
+        except Exception as e:
+            logger.warning("reconcile_fallo", extra={"doc_id": doc_id, "error": type(e).__name__})
+            return campos, []
+
     # ── Anti-alucinacion ──────────────────────────────────────────────────────
 
     def _filtrar_alucinaciones(
@@ -345,8 +389,14 @@ class DocumentPipeline:
             raise
 
     def _corregir_orientacion_si_necesario(self, ruta_original: Path, doc_id: str) -> Path:
-        ruta_corregida = Path(tempfile.gettempdir()) / f"{doc_id}_corregido.pdf"
+        # Temporal impredecible (mkstemp, 0600) dentro de DATA_DIR, no en /tmp (R5)
+        ruta_corregida: Optional[Path] = None
         try:
+            dir_tmp = DATA_DIR / "tmp"
+            dir_tmp.mkdir(parents=True, exist_ok=True)
+            fd, nombre = tempfile.mkstemp(suffix="_corregido.pdf", prefix="ia_", dir=str(dir_tmp))
+            os.close(fd)
+            ruta_corregida = Path(nombre)
             corregida = corregir_orientacion(ruta_original, ruta_corregida)
             if corregida:
                 logger.info("orientacion_corregida_silenciosamente",
@@ -355,6 +405,11 @@ class DocumentPipeline:
         except Exception as e:
             logger.warning("orientacion_correccion_fallida",
                            extra={"doc_id": doc_id, "error": str(e)})
+            if ruta_corregida is not None:
+                try:
+                    ruta_corregida.unlink(missing_ok=True)
+                except OSError:
+                    pass
             return ruta_original
 
     def _etapa_ocr(self, documento: DocumentoIdentidad):
@@ -503,6 +558,10 @@ class DocumentPipeline:
         return campos, self._regex.nombre_adaptador
 
     # ── Utilidades publicas ───────────────────────────────────────────────────
+
+    def precargar(self) -> bool:
+        """Carga el motor OCR (Docling) por adelantado; devuelve si quedo cargado."""
+        return self._ocr.precargar()
 
     def health_check(self) -> dict:
         llm_ok = self._llm.disponible and self._llm.verificar_conexion(usar_cache=False)

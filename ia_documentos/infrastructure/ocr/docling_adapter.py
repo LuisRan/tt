@@ -19,13 +19,28 @@ import logging
 import os
 import re
 import tempfile
+import time
 import unicodedata
 from pathlib import Path
 from typing import Optional
 
-from config.settings import OCR_DPI, OCR_MIN_CHARS_FALLBACK, OCR_MIN_CHARS_NORMAL
+from config.settings import (
+    CLASSIFIER_TOLERANT,
+    DOCLING_RETRY_MAX_SECONDS,
+    DOCLING_RETRY_ON_UNKNOWN,
+    DOCLING_RETRY_TRAVERSE_PICTURES,
+    DOCLING_FILAS_TABLAS,
+    DOCLING_TEXT_MODE,
+    DOCLING_TRAVERSE_PICTURES,
+    OCR_ACTA_ZONA_SUPERIOR,
+    OCR_DPI,
+    OCR_MIN_CHARS_FALLBACK,
+    OCR_MIN_CHARS_NORMAL,
+)
 from domain.entities.documento import DocumentoIdentidad, TextoExtraido, TipoDocumento
 from domain.ports.interfaces import IOcrPort
+from infrastructure.ocr.clasificador_tolerante import clasificar_tolerante
+from infrastructure.ocr.docling_text import exportar, texto_por_filas
 from infrastructure.platform_config import (
     crear_conversor_docling,
     detectar_plataforma,
@@ -68,6 +83,16 @@ _PATRONES_TIPO: dict[TipoDocumento, list[str]] = {
 }
 
 
+
+def _filas_con_tablas() -> bool:
+    """DOCLING_FILAS_TABLAS: true/false explicito; "auto" = solo cuando el motor OCR de Docling es Tesseract."""
+    if DOCLING_FILAS_TABLAS in ("true", "1", "yes", "si", "on"):
+        return True
+    if DOCLING_FILAS_TABLAS == "auto":
+        from infrastructure.platform_config import detectar_plataforma
+        return detectar_plataforma().motor_ocr_docling == "tesseract"
+    return False
+
 class DoclingAdapter(IOcrPort):
     """OCR con estrategia hibrida adaptada por tipo de documento."""
 
@@ -85,6 +110,8 @@ class DoclingAdapter(IOcrPort):
 
         try:
             from PIL import Image
+            from config.settings import PDF_MAX_PIXELS
+            Image.MAX_IMAGE_PIXELS = PDF_MAX_PIXELS  # anti pixel-bomb (R1)
             self._Image = Image
             self._pil_available = True
         except ImportError:
@@ -125,8 +152,25 @@ class DoclingAdapter(IOcrPort):
         # Paso 1: Docling normal sobre todo el documento.
         # Si Docling falla por completo (p.ej. OOM de GPU en M1) o no esta
         # instalado, se invoca directamente Tesseract de pagina completa.
+        notas_ocr: list[str] = []
+        self._doc_docling = None  # DoclingDocument de la 1a conversion (solo modo filas_acta)
+        t_docling = time.monotonic()
         texto_docling = self._extraer_con_docling(documento.ruta_pdf)
+        t_docling = time.monotonic() - t_docling
         texto_docling = self._normalizar(texto_docling)
+        texto_md_primero = texto_docling
+        # Paso 1b (opcional, DOCLING_RETRY_ON_UNKNOWN): si Docling no detecto el tipo,
+        # reconvertir con una 2a configuracion de Docling ANTES de recurrir a Tesseract/Vision.
+        if DOCLING_RETRY_ON_UNKNOWN and self._docling_available \
+                and self.detectar_tipo(texto_docling) == TipoDocumento.DESCONOCIDO:
+            texto_r = self._reintentar_docling(documento.ruta_pdf, t_docling, notas_ocr)
+            if texto_r:
+                if self.detectar_tipo(texto_r) != TipoDocumento.DESCONOCIDO:
+                    texto_docling = texto_r
+                    notas_ocr.append("docling_reintento:tipo_recuperado")
+                else:
+                    notas_ocr.append("docling_reintento:sin_efecto")
+
         # Un escaneo/foto suele salir de Docling como "<!-- image -->": sin texto real
         texto_util = re.sub(r"<!--.*?-->", "", texto_docling).strip()
         if len(texto_util) < 80 and (self.tesseract_disponible or self._ocrmac_disponible()):
@@ -160,6 +204,20 @@ class DoclingAdapter(IOcrPort):
                     })
 
         # Paso 3: estrategia especifica por tipo
+        # Modo filas_acta: SOLO si es acta y el texto base sigue siendo el markdown de la 1a
+        # conversion, se sustituye por el texto por filas del MISMO resultado (sin reconvertir).
+        if (DOCLING_TEXT_MODE == "filas_acta" and tipo == TipoDocumento.ACTA_NACIMIENTO
+                and self._doc_docling is not None and texto_docling == texto_md_primero):
+            try:
+                filas = self._normalizar(texto_por_filas(self._doc_docling, _filas_con_tablas()))
+            except Exception as e:
+                logger.warning("docling_filas_acta_fallo", extra={"error": str(e)})
+                filas = ""
+            if filas:
+                texto_docling = filas
+                notas_ocr.append("docling_texto:filas_acta")
+        self._doc_docling = None
+
         texto_final = texto_docling
 
         if tipo == TipoDocumento.CURP:
@@ -197,6 +255,18 @@ class DoclingAdapter(IOcrPort):
                     "zonas_capturadas": len(extras),
                 })
                 texto_final = self._normalizar(texto_docling + "\n\n" + "\n\n".join(extras))
+
+        elif tipo == TipoDocumento.ACTA_NACIMIENTO and OCR_ACTA_ZONA_SUPERIOR:
+            # Acta: el Folio de Impresion y el Identificador Electronico se imprimen en la
+            # franja superior (sobre fondo con marca de agua) y Docling los deja como
+            # '<!-- image -->'. OCR de esa franja (12% superior, ancho completo) AÑADIDO al
+            # texto: el regex/LLM/anti-alucinacion operan sobre el texto completo como siempre.
+            texto_top = self._ocr_zona(documento.ruta_pdf, top_pct=0.0, bottom_pct=0.12)
+            if texto_top and len(texto_top.strip()) > 10:
+                logger.info("ocr_acta_zona_superior_ok", extra={
+                    "doc_id": documento.doc_id, "chars_zona": len(texto_top),
+                })
+                texto_final = self._normalizar(texto_docling + "\n\n" + texto_top)
 
         elif tipo == TipoDocumento.PASAPORTE:
             # Para Pasaporte: Docling lia los layouts en columnas.
@@ -239,9 +309,15 @@ class DoclingAdapter(IOcrPort):
             doc_id=documento.doc_id,
             texto_crudo=texto_final,
             tipo_detectado=tipo_final,
+            notas_ocr=notas_ocr,
         )
 
     # ── Lazy loaders ──────────────────────────────────────────────────────────
+
+    def precargar(self) -> bool:
+        """Carga Docling ahora (normalmente se hace en la 1a extraccion).
+        Permite medir el tiempo de carga aparte del de extraccion."""
+        return self._cargar_docling()
 
     def _cargar_docling(self) -> bool:
         if self._DocumentConverter is not None:
@@ -283,10 +359,32 @@ class DoclingAdapter(IOcrPort):
         try:
             converter = self._converter or self._DocumentConverter()
             result = converter.convert(str(ruta_pdf))
-            return result.document.export_to_markdown()
+            if DOCLING_TEXT_MODE == "filas_acta":
+                self._doc_docling = result.document
+            return exportar(result.document, DOCLING_TRAVERSE_PICTURES, DOCLING_TEXT_MODE)
         except Exception as e:
             logger.warning("docling_fallo", extra={"error": str(e)})
             return ""
+
+    def _reintentar_docling(self, ruta_pdf: Path, t_primera: float, notas: list[str]) -> str:
+        """2a conversion de Docling con la configuracion DOCLING_RETRY_*. Devuelve el texto
+        normalizado ("" si se omite o falla). Solo registra conteos/tiempos en `notas`."""
+        if t_primera > DOCLING_RETRY_MAX_SECONDS:
+            notas.append("docling_reintento:omitido_por_tiempo")
+            return ""
+        t0 = time.monotonic()
+        try:
+            if getattr(self, "_converter_retry", None) is None:
+                self._converter_retry = crear_conversor_docling(retry=True)
+            result = self._converter_retry.convert(str(ruta_pdf))
+            texto = self._normalizar(
+                exportar(result.document, DOCLING_RETRY_TRAVERSE_PICTURES, DOCLING_TEXT_MODE))
+        except Exception as e:
+            logger.warning("docling_reintento_fallo", extra={"error": str(e)})
+            notas.append("docling_reintento:error")
+            return ""
+        notas.append(f"docling_reintento:{round(time.monotonic() - t0, 1)}s")
+        return texto
 
     # ── Utilidades de imagen para Tesseract ───────────────────────────────────
 
@@ -558,6 +656,15 @@ class DoclingAdapter(IOcrPort):
             return TipoDocumento.CURP
 
         mejor = max(puntuacion, key=lambda t: puntuacion[t])
+        if CLASSIFIER_TOLERANT and puntuacion[mejor] <= 1:
+            # Sin coincidencia exacta (o con UNA sola, fragil): senales combinadas tolerantes al
+            # ruido. Solo cambia el resultado con puntuacion y margen suficientes; si no, se
+            # conserva el comportamiento exacto (tipo con 1 coincidencia, o no detectado).
+            tolerante = clasificar_tolerante(texto)
+            if tolerante is not None:
+                if tolerante != mejor or puntuacion[mejor] == 0:
+                    logger.info("tipo_documento_detectado_tolerante", extra={"tipo": tolerante.value})
+                return tolerante
         if puntuacion[mejor] == 0:
             logger.warning("tipo_documento_no_detectado")
             return TipoDocumento.DESCONOCIDO

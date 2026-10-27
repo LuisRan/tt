@@ -57,6 +57,15 @@ def _id_valido(valor: str | None) -> bool:
 
 
 def create_app(pipeline: DocumentPipeline | None = None) -> Flask:
+    if not settings.IA_API_KEY:
+        if settings.IA_REQUIRE_API_KEY:
+            raise RuntimeError(
+                "IA_REQUIRE_API_KEY=true pero IA_API_KEY está vacía: "
+                "defina IA_API_KEY o desactive IA_REQUIRE_API_KEY"
+            )
+        logger.warning("api_sin_clave_modo_abierto", extra={
+            "detalle": "IA_API_KEY vacía: la API no exige X-API-Key; usar solo en red interna/desarrollo"
+        })
     app = Flask(__name__)
     app.config["MAX_CONTENT_LENGTH"] = (settings.PDF_MAX_SIZE_MB + 1) * 1024 * 1024
     app.config["JSON_AS_ASCII"] = False
@@ -135,10 +144,12 @@ def create_app(pipeline: DocumentPipeline | None = None) -> Flask:
         except RuntimeError as e:
             logger.error("ocr_no_disponible", extra={"error": str(e)})
             return jsonify({"error": str(e), "codigo": "OCR_NO_DISPONIBLE"}), 503
-        except Exception as e:  # pragma: no cover
-            logger.exception("error_interno_procesando", extra={"doc_id": doc_id})
+        except Exception:
+            cid = uuid.uuid4().hex[:12]
+            logger.exception("error_interno_procesando",
+                             extra={"doc_id": doc_id, "correlacion": cid})
             return jsonify({"error": "Error interno al procesar el documento",
-                            "codigo": "ERROR_INTERNO", "detalle": str(e)[:300]}), 500
+                            "codigo": "ERROR_INTERNO", "detalle": f"id_correlacion={cid}"}), 500
         finally:
             ruta_tmp.unlink(missing_ok=True)
 

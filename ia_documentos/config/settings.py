@@ -67,6 +67,10 @@ for _d in [INPUT_DIR, RAW_TEXT_DIR, JSON_RESULTS_DIR, LOGS_DIR]:
 # ── Validacion de PDF ─────────────────────────────────────────────────────────
 PDF_MAX_SIZE_MB = _env_int("PDF_MAX_SIZE_MB", 10)
 PDF_MAX_PAGES   = _env_int("PDF_MAX_PAGES", 4)
+# Tope de pixeles por pagina al rasterizar (anti pixel-bomb). A4 a 300 dpi = ~8.7 MP.
+PDF_MAX_PIXELS  = _env_int("PDF_MAX_PIXELS", 50_000_000)
+# Dimension maxima de una pagina en puntos (1 pt = 1/72 in). 14400 pt = 200 in.
+PDF_MAX_DIM_PT  = _env_int("PDF_MAX_DIM_PT", 5000)
 
 # ── Ollama / LLM ──────────────────────────────────────────────────────────────
 # En Docker se usa http://ollama:11434 (contenedor) o
@@ -131,6 +135,44 @@ OCR_DPI       = _env_int("OCR_DPI", 200)  # 200 y no 300 para evitar OOM en M1
 OCR_MIN_CHARS_NORMAL   = _env_int("OCR_MIN_CHARS_NORMAL", 500)
 OCR_MIN_CHARS_FALLBACK = _env_int("OCR_MIN_CHARS_FALLBACK", 300)
 
+# ── Ajustes de Docling (todos APAGADOS por defecto = comportamiento historico) ───────────────
+# Ver docs_docling.md: medicion y causa raiz (en PDFs-imagen el layout, que corre a 72 dpi,
+# clasifica la tarjeta entera como "picture"; el OCR si lee dentro, pero el export a markdown
+# omite el texto hijo de las pictures).
+# Modo de OCR de Docling: "" (defecto de Docling) | full_page | layout_regions
+DOCLING_OCR_MODE = _env_str("DOCLING_OCR_MODE", "").lower()
+# Escala de render previa al OCR (OcrMacOptions.scale; 0 = defecto de Docling, 3.0)
+DOCLING_OCR_SCALE = _env_float("DOCLING_OCR_SCALE", 0.0)
+# Nivel de reconocimiento de ocrmac: "" (defecto, accurate) | accurate | fast
+DOCLING_OCR_RECOGNITION = _env_str("DOCLING_OCR_RECOGNITION", "").lower()
+# Idiomas del OCR de Docling separados por coma (p. ej. "es-ES,en-US"); "" = los de plataforma
+DOCLING_OCR_LANGS = _env_str("DOCLING_OCR_LANGS", "")
+# PdfPipelineOptions.images_scale (0 = defecto 1.0). No afecta al OCR en Docling 2.130.
+DOCLING_IMAGES_SCALE = _env_float("DOCLING_IMAGES_SCALE", 0.0)
+# Incluir en el markdown el texto leido dentro de regiones "picture" (export traverse_pictures)
+DOCLING_TRAVERSE_PICTURES = _env_bool("DOCLING_TRAVERSE_PICTURES", False)
+# Texto de Docling: markdown (defecto) | filas (items por posicion, todos los tipos) |
+# filas_acta (filas SOLO si el documento es un acta de nacimiento; el resto, markdown).
+# Cualquier otro valor equivale a markdown.
+DOCLING_TEXT_MODE = _env_str("DOCLING_TEXT_MODE", "markdown").lower()
+# Motor Tesseract de Docling (Linux/Windows/Docker): su OSD por recuadro a veces devuelve 180 grados con
+# confianza ~0.1 (recuadros con poco texto o codigos de barras) y el recorte se lee al reves. Con un valor
+# > 0 se ignora la orientacion detectada si su confianza es menor; las paginas realmente giradas (confianza
+# alta) se siguen corrigiendo. 0 = comportamiento original de Docling. Sin efecto con ocrmac.
+TESSERACT_OSD_MIN_CONF = _env_float("TESSERACT_OSD_MIN_CONF", 2.0)
+# Con DOCLING_TEXT_MODE=filas|filas_acta, incluir tambien el texto de las celdas de las tablas que detecta
+# Docling. Necesario con el motor Tesseract (Docker/Linux/Windows), donde el layout marca como tabla el
+# bloque de filiacion del acta. "auto" lo activa solo con Tesseract; con ocrmac (Mac) queda apagado.
+DOCLING_FILAS_TABLAS = _env_str("DOCLING_FILAS_TABLAS", "auto").lower()  # auto (solo con Tesseract) | true | false
+# Reintento de Docling con una segunda configuracion si el tipo no se detecta, ANTES de los
+# niveles Tesseract/Apple Vision. La 2a configuracion usa DOCLING_RETRY_* (mismos significados).
+DOCLING_RETRY_ON_UNKNOWN = _env_bool("DOCLING_RETRY_ON_UNKNOWN", False)
+DOCLING_RETRY_OCR_MODE = _env_str("DOCLING_RETRY_OCR_MODE", "full_page").lower()
+DOCLING_RETRY_OCR_SCALE = _env_float("DOCLING_RETRY_OCR_SCALE", 0.0)
+DOCLING_RETRY_TRAVERSE_PICTURES = _env_bool("DOCLING_RETRY_TRAVERSE_PICTURES", True)
+# Tope de tiempo (s) para NO lanzar el reintento si la 1a conversion ya tardo mas que esto
+DOCLING_RETRY_MAX_SECONDS = _env_float("DOCLING_RETRY_MAX_SECONDS", 40.0)
+
 # ── Anti-alucinacion ──────────────────────────────────────────────────────────
 # Si True: cada valor que el LLM produzca para campos protegidos (CURP, clave
 # de elector, codigos numericos, fechas, etc.) DEBE aparecer literalmente en
@@ -139,12 +181,44 @@ OCR_MIN_CHARS_FALLBACK = _env_int("OCR_MIN_CHARS_FALLBACK", 300)
 # DEJA ESTO EN True. Si lo desactivas, los datos sensibles pueden ser inventados.
 ANTI_HALLUCINATION = _env_bool("ANTI_HALLUCINATION", True)
 
+# ── Reconciliacion de campos (postproceso determinista) ──────────────────────
+# Si True: tras el filtro anti-alucinacion se aplican reglas de validacion
+# cruzada/reasignacion (application/reconcile.py) usando SOLO candidatos que
+# aparecen en el texto crudo. Default False hasta pasar la campana de regresion.
+POSTPROCESS_RECONCILE = _env_bool("POSTPROCESS_RECONCILE", False)
+# Reglas de reconcile que CONSTRUYEN valores no literales del texto crudo (MRZ
+# reconstruida, sexo/fecha derivados de la CURP). Contradicen RNF-03: solo con
+# decision explicita. Sin efecto si POSTPROCESS_RECONCILE es False.
+RECONCILE_ALLOW_DERIVED = _env_bool("RECONCILE_ALLOW_DERIVED", False)
+# Reglas adicionales de INE (application/reconcile_ine.py): nombre por ventana consistente con la CURP,
+# domicilio por roles, clave de elector por etiqueta. Solo actuan con POSTPROCESS_RECONCILE; las que
+# construyen valores no literales (N->Ñ por CURP) ademas exigen RECONCILE_ALLOW_DERIVED. Ver docs_ine.md.
+RECONCILE_INE = _env_bool("RECONCILE_INE", False)
+# Reglas propias del pasaporte (application/reconcile_pasaporte.py). Las literales
+# se aplican con este flag; las derivadas ademas exigen RECONCILE_ALLOW_DERIVED.
+RECONCILE_PASAPORTE = _env_bool("RECONCILE_PASAPORTE", False)
+# Reglas propias del acta de nacimiento (application/reconcile_acta.py). Las literales
+# se aplican con este flag; las derivadas ademas exigen RECONCILE_ALLOW_DERIVED.
+RECONCILE_ACTA = _env_bool("RECONCILE_ACTA", False)
+
+# ── Clasificador de tipo tolerante al ruido (segunda revision) ───────────────
+# Si True: cuando el clasificador exacto no halla tipo (o solo UNA coincidencia fragil),
+# se consulta `clasificador_tolerante` (frases difusas + MRZ/clave de elector, con margen).
+# Nunca altera un tipo con >= 2 coincidencias exactas. Default False hasta medirlo en campana.
+CLASSIFIER_TOLERANT = _env_bool("CLASSIFIER_TOLERANT", False)
+# Si True y el documento es un acta: OCR (Tesseract/Apple Vision) de la franja superior de la
+# pagina, donde el diseno imprime Folio de Impresion e Identificador Electronico y que Docling
+# deja como imagen. El texto se ANADE al texto crudo (no sustituye nada). Default False.
+OCR_ACTA_ZONA_SUPERIOR = _env_bool("OCR_ACTA_ZONA_SUPERIOR", False)
+
 # ── API REST (Flask) ──────────────────────────────────────────────────────────
 IA_API_HOST = _env_str("IA_API_HOST", "0.0.0.0")
 IA_API_PORT = _env_int("IA_API_PORT", 5001)
 # Clave compartida con el backend Node.js (cabecera X-API-Key).
 # Si esta vacia, la API no exige clave (solo recomendable en desarrollo local).
 IA_API_KEY = os.environ.get("IA_API_KEY", "").strip()
+# Si es true y IA_API_KEY esta vacia, la app NO arranca (default false: modo abierto).
+IA_REQUIRE_API_KEY = _env_bool("IA_REQUIRE_API_KEY", False)
 IA_WORKERS = _env_int("IA_WORKERS", 1)
 IA_REQUEST_TIMEOUT = _env_int("IA_REQUEST_TIMEOUT", 600)
 LOG_LEVEL = _env_str("LOG_LEVEL", "INFO")

@@ -304,9 +304,53 @@ def idiomas_pytesseract() -> str:
     return "+".join(_idiomas_tesseract())
 
 
-def crear_conversor_docling() -> Any:
+def _ajustes_docling(retry: bool) -> dict[str, Any]:
+    """Ajustes opcionales de Docling (settings.DOCLING_*). Vacio = comportamiento historico."""
+    if retry:
+        return {
+            "mode": settings.DOCLING_RETRY_OCR_MODE, "scale": settings.DOCLING_RETRY_OCR_SCALE,
+            "recognition": settings.DOCLING_OCR_RECOGNITION, "langs": settings.DOCLING_OCR_LANGS,
+            "images_scale": settings.DOCLING_IMAGES_SCALE,
+        }
+    return {
+        "mode": settings.DOCLING_OCR_MODE, "scale": settings.DOCLING_OCR_SCALE,
+        "recognition": settings.DOCLING_OCR_RECOGNITION, "langs": settings.DOCLING_OCR_LANGS,
+        "images_scale": settings.DOCLING_IMAGES_SCALE,
+    }
+
+
+def _aplicar_ajustes_docling(opciones: Any, ocr_opts: Any, retry: bool = False) -> list[str]:
+    """Aplica los ajustes no vacios sobre PdfPipelineOptions/ocr_options. Devuelve lo aplicado."""
+    aj = _ajustes_docling(retry)
+    aplicados: list[str] = []
+    try:
+        if aj["images_scale"] and aj["images_scale"] > 0:
+            opciones.images_scale = aj["images_scale"]
+            aplicados.append("images_scale")
+        if ocr_opts is None:
+            return aplicados
+        if aj["mode"] in {"full_page", "layout_regions"}:
+            from docling.datamodel.pipeline_options import OcrMode
+            ocr_opts.mode = OcrMode.FULL_PAGE if aj["mode"] == "full_page" else OcrMode.LAYOUT_REGIONS
+            aplicados.append("mode=" + aj["mode"])
+        if aj["scale"] and aj["scale"] > 0 and hasattr(ocr_opts, "scale"):
+            ocr_opts.scale = aj["scale"]
+            aplicados.append("scale")
+        if aj["recognition"] in {"accurate", "fast"} and hasattr(ocr_opts, "recognition"):
+            ocr_opts.recognition = aj["recognition"]
+            aplicados.append("recognition=" + aj["recognition"])
+        if aj["langs"] and hasattr(ocr_opts, "lang"):
+            ocr_opts.lang = [x.strip() for x in aj["langs"].split(",") if x.strip()]
+            aplicados.append("lang")
+    except Exception as e:
+        logger.warning("docling_ajustes_invalidos", extra={"error": str(e)})
+    return aplicados
+
+
+def crear_conversor_docling(retry: bool = False) -> Any:
     """
     Crea un DocumentConverter configurado para la plataforma actual.
+    `retry=True` crea el conversor de la 2a configuracion (DOCLING_RETRY_*).
     Si la configuracion avanzada falla (version vieja de docling, motor no
     instalado...) regresa el conversor por defecto para no romper el flujo.
     """
@@ -330,6 +374,7 @@ def crear_conversor_docling() -> Any:
         ocr_opts = _crear_opciones_ocr(info)
         if ocr_opts is not None:
             opciones.ocr_options = ocr_opts
+        _aplicar_ajustes_docling(opciones, opciones.ocr_options if ocr_opts is not None else None, retry)
 
         dispositivo = {
             "mps": AcceleratorDevice.MPS,
@@ -348,6 +393,38 @@ def crear_conversor_docling() -> Any:
         return DocumentConverter()
 
 
+def _filtrar_osd_tesseract(conf_minima: float) -> None:
+    """Hace que el modelo Tesseract CLI de Docling ignore orientaciones OSD de baja confianza.
+
+    Docling gira cada recuadro segun el OSD de Tesseract; con poco texto devuelve p. ej. 180 grados con
+    confianza 0.1 y el texto sale al reves. Se envuelve `_parse_orientation` (funcion del modulo de Docling).
+    """
+    if conf_minima <= 0:
+        return
+    try:
+        from docling.models.stages.ocr import tesseract_ocr_cli_model as m
+    except ImportError:  # pragma: no cover
+        return
+    if getattr(m, "_osd_filtrado", False):
+        return
+    original = m._parse_orientation
+
+    def filtrada(df_osd: Any) -> int:
+        grados = original(df_osd)
+        if not grados:
+            return 0
+        try:
+            claves = df_osd["key"].astype(str).str.strip().to_numpy()
+            valor = df_osd["value"].to_numpy()[claves == "Orientation confidence"][0]
+            conf = float(str(valor).strip())
+        except (KeyError, IndexError, ValueError):
+            return grados
+        return grados if conf >= conf_minima else 0
+
+    m._parse_orientation = filtrada
+    m._osd_filtrado = True
+
+
 def _crear_opciones_ocr(info: PlataformaInfo) -> Any:
     try:
         from docling.datamodel import pipeline_options as po
@@ -359,6 +436,7 @@ def _crear_opciones_ocr(info: PlataformaInfo) -> Any:
         if motor == "ocrmac" and hasattr(po, "OcrMacOptions"):
             return po.OcrMacOptions(lang=["es-ES", "en-US"])
         if motor == "tesseract" and hasattr(po, "TesseractCliOcrOptions"):
+            _filtrar_osd_tesseract(settings.TESSERACT_OSD_MIN_CONF)
             kwargs: dict[str, Any] = {"lang": _idiomas_tesseract()}
             if info.tesseract_cmd:
                 kwargs["tesseract_cmd"] = info.tesseract_cmd
@@ -382,6 +460,11 @@ def renderizar_paginas(ruta_pdf: Path | str, primera: int = 1, ultima: int = 1,
     """
     dpi = dpi or settings.OCR_DPI
     info = detectar_plataforma()
+    try:
+        from PIL import Image as _Image
+        _Image.MAX_IMAGE_PIXELS = settings.PDF_MAX_PIXELS  # anti pixel-bomb (R1)
+    except ImportError:  # pragma: no cover
+        pass
 
     if info.renderizador_pdf == "poppler":
         try:

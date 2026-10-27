@@ -295,6 +295,10 @@ def _limpiar_json(texto: str) -> str:
     return m.group(0) if m else texto.strip()
 
 
+_TOKENS_INSTRUCCIONES = 1000   # sistema + contexto por tipo + lista de campos
+_CHARS_POR_TOKEN = 3           # conservador (medido ~3.4 en texto OCR en espanol)
+
+
 # ── Adaptador ─────────────────────────────────────────────────────────────────
 
 class OllamaQwenAdapter(IFieldExtractorPort):
@@ -311,6 +315,7 @@ class OllamaQwenAdapter(IFieldExtractorPort):
         self._temperature = temperature
 
         self._cache_conexion: tuple[float, bool] | None = None
+        self.ultimas_metricas: dict = {}
 
         try:
             import ollama
@@ -360,6 +365,16 @@ class OllamaQwenAdapter(IFieldExtractorPort):
         self._cache_conexion = (ahora, disponible)
         return disponible
 
+    def _limite_texto(self) -> int:
+        """
+        Caracteres de texto que caben en el contexto: 8000 como maximo (como
+        siempre) y menos si num_ctx es pequeno, descontando la salida
+        (num_predict) y ~1000 tokens de instrucciones (~3 caracteres/token).
+        Con el num_ctx por defecto (8192) el limite sigue siendo 8000.
+        """
+        presupuesto = (self._num_ctx - self._num_predict - _TOKENS_INSTRUCCIONES) * _CHARS_POR_TOKEN
+        return max(2000, min(8000, presupuesto))
+
     def extraer_campos(self, texto: str, tipo_documento: TipoDocumento) -> dict:
         if not self._available:
             raise RuntimeError("Libreria ollama no instalada")
@@ -368,7 +383,7 @@ class OllamaQwenAdapter(IFieldExtractorPort):
         prompt = _USUARIO.format(
             contexto=contexto,
             campos_lista=_campos_lista(tipo_documento),
-            texto=texto[:8000],   # mas contexto para qwen2.5:7b
+            texto=texto[:self._limite_texto()],
         )
 
         logger.info("llm_request", extra={
@@ -413,8 +428,15 @@ class OllamaQwenAdapter(IFieldExtractorPort):
             no_nulos_brutos = sum(1 for v in campos_brutos.values() if v is not None)
             no_nulos_limpios = sum(1 for v in campos.values() if v is not None)
 
+            # Contadores de Ollama (perfilado de latencia): tokens y tiempos en ns
+            self.ultimas_metricas = {
+                k: getattr(response, k, None) for k in (
+                    "prompt_eval_count", "prompt_eval_duration", "eval_count",
+                    "eval_duration", "load_duration", "total_duration")
+            }
             logger.info("llm_response_ok", extra={
                 "tipo": tipo_documento.value,
+                **{f"ollama_{k}": v for k, v in self.ultimas_metricas.items()},
                 "campos_no_nulos": no_nulos_limpios,
                 "filtrados_basura": no_nulos_brutos - no_nulos_limpios,
             })
