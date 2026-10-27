@@ -1,0 +1,686 @@
+{
+  "doc_type": "pasaporte_electronico_2021",
+  "layout_version": "1.0.0",
+  "unit": "mm",
+  "origin": "top-left",
+  "source_note": "Proporciones de la familia de diseño medidas sobre formatos/pasaportelibretae.pdf (página de datos tipo 'E' rotada, rasterizada a 360 dpi; marco 1210x800 px -> 125x88 mm, conversión independiente por eje) y adaptadas al pasaporte electrónico ordinario 2021 (Tipo 'P'); MRZ según ICAO 9303 TD3 (2x44, paso 2.54 mm). Imagen secundaria -> avatar; escudo/chip -> figuras geométricas.",
+  "faces": [
+    {
+      "face": "unica",
+      "width_mm": 125.0,
+      "height_mm": 88.0,
+      "background_rgb": [
+        239,
+        235,
+        219
+      ],
+      "fields": [
+        {
+          "name": "zona_mrz",
+          "type": "shape",
+          "bbox": {
+            "x0": 0.0,
+            "y0": 69.6,
+            "x1": 125.0,
+            "y1": 88.0
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "fill color=249,248,243 | zona inferior lisa",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "titulo",
+          "type": "static",
+          "bbox": {
+            "x0": 3.0,
+            "y0": 2.2,
+            "x1": 37.0,
+            "y1": 6.4
+          },
+          "font": {
+            "family": "serif",
+            "size_pt": 10.0,
+            "color_rgb": [
+              40,
+              40,
+              40
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "PASAPORTE / PASSPORT / PASSEPORT",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "encabezado",
+          "type": "static",
+          "bbox": {
+            "x0": 38.0,
+            "y0": 2.4,
+            "x1": 92.0,
+            "y1": 6.6
+          },
+          "font": {
+            "family": "serif_bold",
+            "size_pt": 11.0,
+            "color_rgb": [
+              40,
+              40,
+              40
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "ESTADOS UNIDOS MEXICANOS",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "simbolo_chip",
+          "type": "shape",
+          "bbox": {
+            "x0": 99.0,
+            "y0": 1.6,
+            "x1": 106.0,
+            "y1": 6.6
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "chip stroke=60,60,60 | rectángulo genérico con círculo",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "escudo",
+          "type": "shape",
+          "bbox": {
+            "x0": 110.6,
+            "y0": 0.8,
+            "x1": 117.0,
+            "y1": 7.2
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "circle stroke=90,80,60 | círculo de contorno (sustituto geométrico)",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "foto",
+          "type": "photo",
+          "bbox": {
+            "x0": 4.5,
+            "y0": 13.5,
+            "x1": 34.0,
+            "y1": 53.5
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "tipo",
+          "type": "text",
+          "bbox": {
+            "x0": 45.5,
+            "y0": 10.2,
+            "x1": 54.0,
+            "y1": 13.6
+          },
+          "font": {
+            "family": "mono",
+            "size_pt": 9.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 1,
+          "static_value": null,
+          "label": "Tipo / Type / Type",
+          "label_bbox": {
+            "x0": 38.0,
+            "y0": 7.2,
+            "x1": 55.0,
+            "y1": 9.8
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "codigo_pais",
+          "type": "text",
+          "bbox": {
+            "x0": 71.5,
+            "y0": 10.2,
+            "x1": 84.0,
+            "y1": 13.6
+          },
+          "font": {
+            "family": "mono",
+            "size_pt": 9.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 3,
+          "static_value": null,
+          "label": "Clave del país de expedición\nIssuing State code / Code de l'État émetteur",
+          "label_bbox": {
+            "x0": 56.0,
+            "y0": 6.8,
+            "x1": 89.0,
+            "y1": 9.9
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "numero_pasaporte",
+          "type": "text",
+          "bbox": {
+            "x0": 101.0,
+            "y0": 10.6,
+            "x1": 121.5,
+            "y1": 14.2
+          },
+          "font": {
+            "family": "mono",
+            "size_pt": 10.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 9,
+          "static_value": null,
+          "label": "Pasaporte No. / Passport No. / No du Passeport",
+          "label_bbox": {
+            "x0": 90.0,
+            "y0": 7.2,
+            "x1": 121.5,
+            "y1": 9.8
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "foto_secundaria",
+          "type": "photo",
+          "bbox": {
+            "x0": 84.0,
+            "y0": 14.8,
+            "x1": 104.0,
+            "y1": 26.2
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "apellidos",
+          "type": "text",
+          "bbox": {
+            "x0": 38.0,
+            "y0": 21.2,
+            "x1": 83.0,
+            "y1": 24.6
+          },
+          "font": {
+            "family": "mono",
+            "size_pt": 9.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 39,
+          "static_value": null,
+          "label": "Apellidos / Surname / Nom",
+          "label_bbox": {
+            "x0": 38.0,
+            "y0": 18.4,
+            "x1": 80.0,
+            "y1": 20.8
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "nombres",
+          "type": "text",
+          "bbox": {
+            "x0": 38.0,
+            "y0": 28.2,
+            "x1": 80.0,
+            "y1": 31.4
+          },
+          "font": {
+            "family": "mono",
+            "size_pt": 9.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 39,
+          "static_value": null,
+          "label": "Nombres / Given names / Prénoms",
+          "label_bbox": {
+            "x0": 38.0,
+            "y0": 25.4,
+            "x1": 80.0,
+            "y1": 27.8
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "observaciones",
+          "type": "text",
+          "bbox": {
+            "x0": 81.0,
+            "y0": 29.0,
+            "x1": 122.0,
+            "y1": 32.0
+          },
+          "font": {
+            "family": "mono",
+            "size_pt": 9.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 30,
+          "static_value": null,
+          "label": "Observaciones / Remarks / Observations",
+          "label_bbox": {
+            "x0": 81.0,
+            "y0": 26.6,
+            "x1": 122.0,
+            "y1": 28.6
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "nacionalidad",
+          "type": "text",
+          "bbox": {
+            "x0": 38.0,
+            "y0": 35.2,
+            "x1": 80.0,
+            "y1": 38.4
+          },
+          "font": {
+            "family": "mono",
+            "size_pt": 9.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 8,
+          "static_value": null,
+          "label": "Nacionalidad / Nationality / Nationalité",
+          "label_bbox": {
+            "x0": 38.0,
+            "y0": 32.6,
+            "x1": 80.0,
+            "y1": 34.9
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "curp",
+          "type": "text",
+          "bbox": {
+            "x0": 81.0,
+            "y0": 35.2,
+            "x1": 118.0,
+            "y1": 38.4
+          },
+          "font": {
+            "family": "mono",
+            "size_pt": 9.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 18,
+          "static_value": null,
+          "label": "CURP / Personal No. / No personnel",
+          "label_bbox": {
+            "x0": 81.0,
+            "y0": 32.6,
+            "x1": 122.0,
+            "y1": 34.9
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "fecha_nacimiento",
+          "type": "text",
+          "bbox": {
+            "x0": 38.0,
+            "y0": 42.2,
+            "x1": 80.0,
+            "y1": 45.6
+          },
+          "font": {
+            "family": "mono",
+            "size_pt": 9.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 10,
+          "static_value": null,
+          "label": "Fecha de nacimiento / Date of birth / Date de naissance",
+          "label_bbox": {
+            "x0": 38.0,
+            "y0": 39.4,
+            "x1": 90.0,
+            "y1": 41.9
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "sexo",
+          "type": "text",
+          "bbox": {
+            "x0": 38.0,
+            "y0": 49.2,
+            "x1": 55.0,
+            "y1": 52.4
+          },
+          "font": {
+            "family": "mono",
+            "size_pt": 9.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 1,
+          "static_value": null,
+          "label": "Sexo / Sex / Sexe",
+          "label_bbox": {
+            "x0": 38.0,
+            "y0": 46.3,
+            "x1": 56.0,
+            "y1": 48.7
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "lugar_nacimiento",
+          "type": "text",
+          "bbox": {
+            "x0": 58.0,
+            "y0": 49.2,
+            "x1": 121.0,
+            "y1": 52.4
+          },
+          "font": {
+            "family": "mono",
+            "size_pt": 9.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 30,
+          "static_value": null,
+          "label": "Lugar de nacimiento / Place of birth / Lieu de naissance",
+          "label_bbox": {
+            "x0": 58.0,
+            "y0": 46.3,
+            "x1": 110.0,
+            "y1": 48.7
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "fecha_expedicion",
+          "type": "text",
+          "bbox": {
+            "x0": 38.0,
+            "y0": 55.4,
+            "x1": 80.0,
+            "y1": 58.8
+          },
+          "font": {
+            "family": "mono",
+            "size_pt": 9.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 10,
+          "static_value": null,
+          "label": "Fecha de expedición / Date of issue / Date de délivrance",
+          "label_bbox": {
+            "x0": 38.0,
+            "y0": 52.7,
+            "x1": 82.0,
+            "y1": 55.1
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "autoridad",
+          "type": "text",
+          "bbox": {
+            "x0": 84.0,
+            "y0": 55.4,
+            "x1": 121.0,
+            "y1": 58.8
+          },
+          "font": {
+            "family": "mono",
+            "size_pt": 9.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 20,
+          "static_value": null,
+          "label": "Autoridad / Authority / Autorité",
+          "label_bbox": {
+            "x0": 84.0,
+            "y0": 52.9,
+            "x1": 110.0,
+            "y1": 55.1
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "fecha_caducidad",
+          "type": "text",
+          "bbox": {
+            "x0": 38.0,
+            "y0": 64.0,
+            "x1": 80.0,
+            "y1": 67.6
+          },
+          "font": {
+            "family": "mono",
+            "size_pt": 9.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 10,
+          "static_value": null,
+          "label": "Fecha de caducidad / Date of expiry / Date d'expiration",
+          "label_bbox": {
+            "x0": 38.0,
+            "y0": 61.4,
+            "x1": 90.0,
+            "y1": 63.8
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "firma_portador",
+          "type": "signature",
+          "bbox": {
+            "x0": 7.0,
+            "y0": 62.4,
+            "x1": 34.0,
+            "y1": 69.4
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": "Firma del titular\nHolder's signature / Signature du titulaire",
+          "label_bbox": {
+            "x0": 5.0,
+            "y0": 56.6,
+            "x1": 36.0,
+            "y1": 61.6
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "mrz",
+          "type": "mrz",
+          "bbox": {
+            "x0": 6.62,
+            "y0": 71.4,
+            "x1": 118.38,
+            "y1": 82.6
+          },
+          "font": {
+            "family": "ocrb",
+            "size_pt": 11.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 2,
+          "max_chars": 44,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        }
+      ]
+    }
+  ]
+}

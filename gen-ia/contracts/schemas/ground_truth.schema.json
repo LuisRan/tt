@@ -1,0 +1,349 @@
+{
+  "$defs": {
+    "BBox": {
+      "additionalProperties": false,
+      "properties": {
+        "x0": {
+          "title": "X0",
+          "type": "number"
+        },
+        "y0": {
+          "title": "Y0",
+          "type": "number"
+        },
+        "x1": {
+          "title": "X1",
+          "type": "number"
+        },
+        "y1": {
+          "title": "Y1",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x0",
+        "y0",
+        "x1",
+        "y1"
+      ],
+      "title": "BBox",
+      "type": "object"
+    },
+    "DocType": {
+      "enum": [
+        "ine_2016",
+        "curp_2019",
+        "acta_nacimiento_2015",
+        "pasaporte_electronico_2021"
+      ],
+      "title": "DocType",
+      "type": "string"
+    },
+    "Face": {
+      "enum": [
+        "anverso",
+        "reverso",
+        "unica"
+      ],
+      "title": "Face",
+      "type": "string"
+    },
+    "FieldGT": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/FieldType"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        },
+        "bbox_mm": {
+          "$ref": "#/$defs/BBox"
+        },
+        "transformed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TransformedGeometry"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "value",
+        "bbox_mm"
+      ],
+      "title": "FieldGT",
+      "type": "object"
+    },
+    "FieldType": {
+      "enum": [
+        "text",
+        "multiline",
+        "photo",
+        "qr",
+        "barcode",
+        "mrz",
+        "signature",
+        "static",
+        "shape"
+      ],
+      "title": "FieldType",
+      "type": "string"
+    },
+    "PageGT": {
+      "additionalProperties": false,
+      "properties": {
+        "page_index": {
+          "minimum": 0,
+          "title": "Page Index",
+          "type": "integer"
+        },
+        "face": {
+          "$ref": "#/$defs/Face"
+        },
+        "width_mm": {
+          "title": "Width Mm",
+          "type": "number"
+        },
+        "height_mm": {
+          "title": "Height Mm",
+          "type": "number"
+        },
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/FieldGT"
+          },
+          "title": "Fields",
+          "type": "array"
+        }
+      },
+      "required": [
+        "page_index",
+        "face",
+        "width_mm",
+        "height_mm",
+        "fields"
+      ],
+      "title": "PageGT",
+      "type": "object"
+    },
+    "Quad": {
+      "additionalProperties": false,
+      "description": "Cuadrilátero (bbox transformada). Orden de puntos: TL, TR, BR, BL del bbox original.",
+      "properties": {
+        "points": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "title": "Points",
+          "type": "array"
+        }
+      },
+      "required": [
+        "points"
+      ],
+      "title": "Quad",
+      "type": "object"
+    },
+    "SyntheticMarker": {
+      "additionalProperties": false,
+      "properties": {
+        "is_synthetic": {
+          "default": true,
+          "title": "Is Synthetic",
+          "type": "boolean"
+        },
+        "watermark_text": {
+          "default": "MOCK DATA",
+          "title": "Watermark Text",
+          "type": "string"
+        },
+        "faker_locale": {
+          "default": "es_MX",
+          "title": "Faker Locale",
+          "type": "string"
+        }
+      },
+      "title": "SyntheticMarker",
+      "type": "object"
+    },
+    "TransformedGeometry": {
+      "additionalProperties": false,
+      "description": "Posición del campo en la imagen FINAL degradada (px), tras aplicar\nla matriz compuesta del transform_log a las 4 esquinas del bbox original.",
+      "properties": {
+        "quad_px": {
+          "$ref": "#/$defs/Quad"
+        },
+        "bbox_px": {
+          "$ref": "#/$defs/BBox"
+        },
+        "image_width_px": {
+          "title": "Image Width Px",
+          "type": "integer"
+        },
+        "image_height_px": {
+          "title": "Image Height Px",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "quad_px",
+        "bbox_px",
+        "image_width_px",
+        "image_height_px"
+      ],
+      "title": "TransformedGeometry",
+      "type": "object"
+    },
+    "Variant": {
+      "description": "Variante de un documento. Solo INE tiene más de una.",
+      "enum": [
+        "default",
+        "nacional",
+        "extranjero"
+      ],
+      "title": "Variant",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sample_id": {
+      "title": "Sample Id",
+      "type": "string"
+    },
+    "doc_type": {
+      "$ref": "#/$defs/DocType"
+    },
+    "variant": {
+      "$ref": "#/$defs/Variant",
+      "default": "default"
+    },
+    "layout_version": {
+      "title": "Layout Version",
+      "type": "string"
+    },
+    "seed": {
+      "title": "Seed",
+      "type": "integer"
+    },
+    "degradation_seed": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Degradation Seed"
+    },
+    "generator_version": {
+      "title": "Generator Version",
+      "type": "string"
+    },
+    "synthetic": {
+      "$ref": "#/$defs/SyntheticMarker",
+      "default": {
+        "is_synthetic": true,
+        "watermark_text": "MOCK DATA",
+        "faker_locale": "es_MX"
+      }
+    },
+    "pages": {
+      "items": {
+        "$ref": "#/$defs/PageGT"
+      },
+      "title": "Pages",
+      "type": "array"
+    },
+    "clean_pdf": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Clean Pdf"
+    },
+    "degraded_pdf": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Degraded Pdf"
+    },
+    "transform_log": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Transform Log"
+    }
+  },
+  "required": [
+    "sample_id",
+    "doc_type",
+    "layout_version",
+    "seed",
+    "generator_version",
+    "pages"
+  ],
+  "title": "GroundTruth",
+  "type": "object"
+}

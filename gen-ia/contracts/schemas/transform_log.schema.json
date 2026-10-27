@@ -1,0 +1,302 @@
+{
+  "$defs": {
+    "AppliedStep": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/StepKind"
+        },
+        "applied": {
+          "title": "Applied",
+          "type": "boolean"
+        },
+        "params": {
+          "additionalProperties": true,
+          "title": "Params",
+          "type": "object"
+        },
+        "matrix": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "maxItems": 3,
+                "minItems": 3,
+                "type": "array"
+              },
+              "maxItems": 3,
+              "minItems": 3,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Matrix"
+        },
+        "input_size_px": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Input Size Px",
+          "type": "array"
+        },
+        "output_size_px": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Output Size Px",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "applied",
+        "input_size_px",
+        "output_size_px"
+      ],
+      "title": "AppliedStep",
+      "type": "object"
+    },
+    "DegradationConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "default": "default",
+          "title": "Name",
+          "type": "string"
+        },
+        "render_dpi": {
+          "default": 300,
+          "maximum": 1200,
+          "minimum": 72,
+          "title": "Render Dpi",
+          "type": "integer"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/StepConfig"
+          },
+          "title": "Steps",
+          "type": "array"
+        },
+        "output_format": {
+          "default": "pdf",
+          "pattern": "^pdf$",
+          "title": "Output Format",
+          "type": "string"
+        },
+        "output_jpeg_quality": {
+          "default": 85,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Output Jpeg Quality",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "steps"
+      ],
+      "title": "DegradationConfig",
+      "type": "object"
+    },
+    "Face": {
+      "enum": [
+        "anverso",
+        "reverso",
+        "unica"
+      ],
+      "title": "Face",
+      "type": "string"
+    },
+    "PageTransformLog": {
+      "additionalProperties": false,
+      "properties": {
+        "page_index": {
+          "title": "Page Index",
+          "type": "integer"
+        },
+        "face": {
+          "$ref": "#/$defs/Face"
+        },
+        "face_size_mm": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Face Size Mm",
+          "type": "array"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/AppliedStep"
+          },
+          "title": "Steps",
+          "type": "array"
+        },
+        "composed": {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 3,
+            "minItems": 3,
+            "type": "array"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Composed",
+          "type": "array"
+        },
+        "final_size_px": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Final Size Px",
+          "type": "array"
+        }
+      },
+      "required": [
+        "page_index",
+        "face",
+        "face_size_mm",
+        "steps",
+        "final_size_px"
+      ],
+      "title": "PageTransformLog",
+      "type": "object"
+    },
+    "Range": {
+      "additionalProperties": false,
+      "properties": {
+        "min": {
+          "title": "Min",
+          "type": "number"
+        },
+        "max": {
+          "title": "Max",
+          "type": "number"
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "title": "Range",
+      "type": "object"
+    },
+    "StepConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/StepKind"
+        },
+        "probability": {
+          "default": 1.0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Probability",
+          "type": "number"
+        },
+        "params": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Range"
+          },
+          "title": "Params",
+          "type": "object"
+        },
+        "options": {
+          "additionalProperties": true,
+          "title": "Options",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "StepConfig",
+      "type": "object"
+    },
+    "StepKind": {
+      "enum": [
+        "render",
+        "dpi_resample",
+        "canvas_placement",
+        "rotation",
+        "skew",
+        "jpeg",
+        "gaussian_noise",
+        "salt_pepper",
+        "contrast_brightness",
+        "illumination_shadow",
+        "blur"
+      ],
+      "title": "StepKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "sample_id": {
+      "title": "Sample Id",
+      "type": "string"
+    },
+    "degradation_seed": {
+      "title": "Degradation Seed",
+      "type": "integer"
+    },
+    "config_name": {
+      "title": "Config Name",
+      "type": "string"
+    },
+    "config": {
+      "$ref": "#/$defs/DegradationConfig"
+    },
+    "pages": {
+      "items": {
+        "$ref": "#/$defs/PageTransformLog"
+      },
+      "title": "Pages",
+      "type": "array"
+    }
+  },
+  "required": [
+    "sample_id",
+    "degradation_seed",
+    "config_name",
+    "config",
+    "pages"
+  ],
+  "title": "TransformLog",
+  "type": "object"
+}

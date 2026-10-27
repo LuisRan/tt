@@ -1,0 +1,7 @@
+# Publica el módulo de IA en localhost:5001 para evaluarlo con gen-ia desde tu equipo.
+#   docker compose -f docker-compose.yml -f docker-compose.eval.yml up -d
+# (en modo nativo de Mac, start.sh ya expone la IA en :5001; no hace falta este archivo)
+services:
+  ia:
+    ports:
+      - "127.0.0.1:5001:5001"

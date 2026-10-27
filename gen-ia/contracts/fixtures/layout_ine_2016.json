@@ -1,0 +1,747 @@
+{
+  "doc_type": "ine_2016",
+  "layout_version": "0.0.1",
+  "unit": "mm",
+  "origin": "top-left",
+  "source_note": "FIXTURE de rejilla generado desde field_catalog; no es geometría real",
+  "faces": [
+    {
+      "face": "anverso",
+      "width_mm": 85.6,
+      "height_mm": 53.98,
+      "background_rgb": [
+        255,
+        255,
+        255
+      ],
+      "fields": [
+        {
+          "name": "escudo",
+          "type": "shape",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 3.424,
+            "x1": 82.17599999999999,
+            "y1": 5.54494
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "figura geométrica sustituta",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "pais",
+          "type": "static",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 5.7806,
+            "x1": 82.17599999999999,
+            "y1": 7.90154
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "MÉXICO",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "titulo",
+          "type": "static",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 8.1372,
+            "x1": 82.17599999999999,
+            "y1": 10.258140000000001
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "INSTITUTO NACIONAL ELECTORAL",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "subtitulo",
+          "type": "static",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 10.493799999999998,
+            "x1": 82.17599999999999,
+            "y1": 12.614739999999998
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "CREDENCIAL PARA VOTAR",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "foto",
+          "type": "photo",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 12.850399999999999,
+            "x1": 82.17599999999999,
+            "y1": 14.971339999999998
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "foto_secundaria",
+          "type": "photo",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 15.206999999999999,
+            "x1": 82.17599999999999,
+            "y1": 17.327939999999998
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "nombre",
+          "type": "multiline",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 17.563599999999997,
+            "x1": 82.17599999999999,
+            "y1": 19.68454
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 3,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "leyenda_extranjero",
+          "type": "static",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 19.920199999999998,
+            "x1": 82.17599999999999,
+            "y1": 22.04114
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "PARA VOTAR DESDE EL EXTRANJERO",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": [
+            "extranjero"
+          ]
+        },
+        {
+          "name": "domicilio",
+          "type": "multiline",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 22.276799999999998,
+            "x1": 82.17599999999999,
+            "y1": 24.39774
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 3,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "clave_elector",
+          "type": "text",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 24.633399999999998,
+            "x1": 82.17599999999999,
+            "y1": 26.75434
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "curp",
+          "type": "text",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 26.99,
+            "x1": 82.17599999999999,
+            "y1": 29.11094
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "anio_registro",
+          "type": "text",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 29.3466,
+            "x1": 82.17599999999999,
+            "y1": 31.46754
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "fecha_nacimiento",
+          "type": "text",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 31.703199999999995,
+            "x1": 82.17599999999999,
+            "y1": 33.82413999999999
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "sexo",
+          "type": "text",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 34.059799999999996,
+            "x1": 82.17599999999999,
+            "y1": 36.18073999999999
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "estado",
+          "type": "text",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 36.416399999999996,
+            "x1": 82.17599999999999,
+            "y1": 38.53733999999999
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "municipio",
+          "type": "text",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 38.772999999999996,
+            "x1": 82.17599999999999,
+            "y1": 40.89393999999999
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "seccion",
+          "type": "text",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 41.129599999999996,
+            "x1": 82.17599999999999,
+            "y1": 43.250539999999994
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "localidad",
+          "type": "text",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 43.4862,
+            "x1": 82.17599999999999,
+            "y1": 45.607139999999994
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "emision",
+          "type": "text",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 45.8428,
+            "x1": 82.17599999999999,
+            "y1": 47.963739999999994
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "vigencia",
+          "type": "text",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 48.1994,
+            "x1": 82.17599999999999,
+            "y1": 50.320339999999995
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 4.24188,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        }
+      ]
+    },
+    {
+      "face": "reverso",
+      "width_mm": 85.6,
+      "height_mm": 53.98,
+      "background_rgb": [
+        255,
+        255,
+        255
+      ],
+      "fields": [
+        {
+          "name": "codigo_barras",
+          "type": "barcode",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 3.424,
+            "x1": 82.17599999999999,
+            "y1": 8.72635
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "qr",
+          "type": "qr",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 9.3155,
+            "x1": 82.17599999999999,
+            "y1": 14.61785
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "recuadros_voto",
+          "type": "shape",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 15.206999999999999,
+            "x1": 82.17599999999999,
+            "y1": 20.509349999999998
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "rejilla de recuadros vacíos",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "firma",
+          "type": "signature",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 21.098499999999998,
+            "x1": 82.17599999999999,
+            "y1": 26.40085
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "huella",
+          "type": "shape",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 26.99,
+            "x1": 82.17599999999999,
+            "y1": 32.29235
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "óvalo genérico (sin huella)",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "cic",
+          "type": "text",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 32.8815,
+            "x1": 82.17599999999999,
+            "y1": 38.18385
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 10.6047,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "ocr",
+          "type": "text",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 38.772999999999996,
+            "x1": 82.17599999999999,
+            "y1": 44.07534999999999
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 10.6047,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "mrz",
+          "type": "mrz",
+          "bbox": {
+            "x0": 3.424,
+            "y0": 44.6645,
+            "x1": 82.17599999999999,
+            "y1": 49.966849999999994
+          },
+          "font": {
+            "family": "ocrb",
+            "size_pt": 10.6047,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 3,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        }
+      ]
+    }
+  ]
+}

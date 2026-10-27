@@ -1,0 +1,128 @@
+{
+  "name": "heavy",
+  "render_dpi": 300,
+  "steps": [
+    {
+      "kind": "canvas_placement",
+      "probability": 0.0,
+      "params": {
+        "margin_mm": {
+          "min": 5.0,
+          "max": 30.0
+        }
+      },
+      "options": {
+        "canvas": "letter"
+      }
+    },
+    {
+      "kind": "illumination_shadow",
+      "probability": 0.8,
+      "params": {
+        "strength": {
+          "min": 0.3,
+          "max": 0.6
+        }
+      },
+      "options": {}
+    },
+    {
+      "kind": "contrast_brightness",
+      "probability": 0.9,
+      "params": {
+        "contrast": {
+          "min": 0.5,
+          "max": 1.5
+        },
+        "brightness": {
+          "min": -60.0,
+          "max": 50.0
+        }
+      },
+      "options": {}
+    },
+    {
+      "kind": "skew",
+      "probability": 0.8,
+      "params": {
+        "corner_jitter": {
+          "min": -0.04,
+          "max": 0.04
+        }
+      },
+      "options": {
+        "mode": "perspective"
+      }
+    },
+    {
+      "kind": "rotation",
+      "probability": 0.9,
+      "params": {
+        "angle_deg": {
+          "min": -6.0,
+          "max": 6.0
+        }
+      },
+      "options": {
+        "expand": true
+      }
+    },
+    {
+      "kind": "dpi_resample",
+      "probability": 0.9,
+      "params": {
+        "target_dpi": {
+          "min": 80.0,
+          "max": 200.0
+        }
+      },
+      "options": {}
+    },
+    {
+      "kind": "blur",
+      "probability": 0.5,
+      "params": {
+        "sigma": {
+          "min": 0.5,
+          "max": 1.8
+        }
+      },
+      "options": {}
+    },
+    {
+      "kind": "gaussian_noise",
+      "probability": 0.9,
+      "params": {
+        "sigma": {
+          "min": 8.0,
+          "max": 28.0
+        }
+      },
+      "options": {}
+    },
+    {
+      "kind": "salt_pepper",
+      "probability": 0.6,
+      "params": {
+        "amount": {
+          "min": 0.003,
+          "max": 0.02
+        }
+      },
+      "options": {}
+    },
+    {
+      "kind": "jpeg",
+      "probability": 1.0,
+      "params": {
+        "quality": {
+          "min": 5.0,
+          "max": 35.0
+        }
+      },
+      "options": {}
+    }
+  ],
+  "output_format": "pdf",
+  "output_jpeg_quality": 80
+}

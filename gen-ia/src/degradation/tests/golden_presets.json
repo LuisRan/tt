@@ -1,0 +1,141 @@
+{
+ "_meta": {
+  "machine": "x86_64",
+  "platform": "linux/amd64",
+  "regenerate": "docker compose run --rm -T --no-deps --entrypoint python tests -m src.degradation.tests.golden > src/degradation/tests/golden_presets.json",
+  "versions": {
+   "numpy": "2.4.6",
+   "opencv-python-headless": "5.0.0.93",
+   "pillow": "13.0.0",
+   "pypdfium2": "5.14.0"
+  }
+ },
+ "default|False|1": {
+  "geometry": "3d07151a3bce549da5b582ac3aa22f8084d6b41c811cab5648a6ac718bc4e569",
+  "imgs": [
+   "80ecf9307b953c55691c52c8e9f03e65f4234a78a4c7d1cf81224917c8bdec50",
+   "ee40ad2afb64c111e7f17047ab1082a3f23d644a552f8551178559bd8d8fa2ee"
+  ],
+  "pdf": "5efaa72fa1e3cac97706465e88a8ef707d3a97d5fd25c99736c02213138a1b4e"
+ },
+ "default|False|7": {
+  "geometry": "c78ffcb8d83a846ef5010b2cfe869c791ff10194837586be122cb233b5eeb9d3",
+  "imgs": [
+   "9829b97fab2b9b6d9c2196dc7df9d46c88d283e2e99e63273983d98acd636a51",
+   "de78941779f3c8371a18898f598bb5b1a49ed2db032d48c5b7001eb189e12a5e"
+  ],
+  "pdf": "2ba6b733f37c3dcce5973af603566162824a8ba9e52c348faef2abf825831707"
+ },
+ "default|True|1": {
+  "geometry": "89b105de89c4b7da0ab4f55e49b38cf805c484d3949f253fb6ecb970aeaa4847",
+  "imgs": [
+   "5f78ff07cf1fc070d168c4df21f7fcd768ea329d53c7288950622ec5177427f3",
+   "d2670a0cd8e24b7c7ab86ac7728bee58387507fea59f3aaa40b22cfb008310a9"
+  ],
+  "pdf": "a692fd5059240280780df2097b467b2cd4e2dc19bd9695aba8b8d6aa4efca7fe"
+ },
+ "default|True|7": {
+  "geometry": "a39de5deac1d75396502e1ee1c7342ba540cd1d704ba52066c33d49d12ef5ee3",
+  "imgs": [
+   "18b88f5f4985b68690298fce2847e30b7580292335c3cc0c41e81dcc876295d9",
+   "c95baac965af64218eb91644cc3ed21e268e4132f377dbfcd2953d99c72ab8d4"
+  ],
+  "pdf": "ff8ce25a070bdcef8124a6ce4447089de37ef1a93332b762cc59df51f93b5f4d"
+ },
+ "heavy|False|1": {
+  "geometry": "a0c54a240ceafa6894daee559e6c4067f948a47524e55657f860acdda1b9d1c3",
+  "imgs": [
+   "f4378e0a4b63650db436af8104466c3269b2a05b3681ccb61e48fab21ad52331",
+   "ec7fc6ed04c87d305d6c71ddb372a234d995e918f0d382aef12cfee891f73e0b"
+  ],
+  "pdf": "b42e7fbea85369911eecf944ef16103e517ada4f9cde197b74c0034359e3ca10"
+ },
+ "heavy|False|7": {
+  "geometry": "6859369510b09fb449d667d2adf39467ffc5e67e78440e0d94c89265dcf42088",
+  "imgs": [
+   "bad5bda76f351b02f262d0ee1b9a36422d6822eacf08f7848705112e1b47f1c3",
+   "b6a490c9b4dd6188103da44b122dcaa827391ed5b2e05a3c8be9e42f4318259a"
+  ],
+  "pdf": "704794b03f673f7ca64776dbb7dbd1b16d84d9767f91df71096fa14e5a539604"
+ },
+ "heavy|True|1": {
+  "geometry": "30dabcaa767507f24c8fd5ba045df3e36def9ff5800726f53df40562da039239",
+  "imgs": [
+   "7e85708427661b0a29064c24b3ba12f8f7c4acf36fe356d605d00bb826a9291c",
+   "624e64ef0c4493674ea1886e2daeedde05509363c1370689612a626031ee88af"
+  ],
+  "pdf": "1532cf87959c9d98f36f6ceb6e00055c25416015898502bde045b8e6a3c4ab97"
+ },
+ "heavy|True|7": {
+  "geometry": "c978043eeca0b2f346552e3d6b1dca8156221239959f3e8a2605f75b908f3522",
+  "imgs": [
+   "d56eb88cd378a61b936e1bc8469e2b4465cb1d82bf8aa69679675b3b90dd7cc7",
+   "23c8910bc9cbdc74f1acb47ac18541287f0b50caf095626923458ce527438bf9"
+  ],
+  "pdf": "5c7659e93e0f51f528498525d746dc16ffd80e48f7ee793bf2e736c160e4a299"
+ },
+ "light|False|1": {
+  "geometry": "b5d1555dd4fb872392aae2414b19795f6db158e3552974fd3803558d4c4f630b",
+  "imgs": [
+   "a256cbaa58857afb88ad495b763b2f72679aa287d7a61420ee6eb209c99c6d5b",
+   "69334e3649b6b045d92885210dbef2366e9cbb189f53698ab415753e87490951"
+  ],
+  "pdf": "84c699f32ec84ab08f610b1e777bbdb8a04dd129f15476829dfcf50fc9ab9ad0"
+ },
+ "light|False|7": {
+  "geometry": "cb9926925b79b11eaf017793ee693ef82dbf2f38fb150844e73dbd34a0e5f8a4",
+  "imgs": [
+   "3443682124bc4705fedcfbb11987fa7afc400cdbf04c1ad79948ce2311261e52",
+   "74d0ace3250c4b4c6ae213fe534cbdcb8477ef94a60e0176c6fe0a868e279e39"
+  ],
+  "pdf": "a5bd696ba80f1f178d947d2bbe2f7be46a2695ecc555bee9890aba995b8529bb"
+ },
+ "light|True|1": {
+  "geometry": "cc972ae1ddf66a967aafef5b4e632d81948fae490642b2165088e2a5df1e12a0",
+  "imgs": [
+   "103f821a07406af48c233178886cba08dbc0f7de558edf673c7d67ee5da015c1",
+   "9012e0adcff6fea35071e46f905182b7d4b3cbc6b1a6c8bdc742c63f936bd7bd"
+  ],
+  "pdf": "7991bc750aa4f5ffd27de6ed9732f7c29aac148594487b82b00b3df01772d22c"
+ },
+ "light|True|7": {
+  "geometry": "09cf0d2268e38a07492d46851dc3983a17ca5a307ffb369671cb7f3e78682d22",
+  "imgs": [
+   "5b8bd8be23dad0869b27e1bb2a68cc1f34aadb8d24bcf1dc108627ce813c3d5c",
+   "c80055708a8091be823ecdfe0052e8c3ab0a66a24744ac4b92104564f15ba4c7"
+  ],
+  "pdf": "b54524cad51721ebc5c6c91f5c924fc8ec5457853b7b46b7557c76f37ff857d8"
+ },
+ "none|False|1": {
+  "geometry": "fc799a7264250fad22d220bba237c282e7bba4f26162b14d4b55e0ce37746e64",
+  "imgs": [
+   "405310205aeb1063ed1a89f48ea76fa6ccf40c16175c5ca8bf3d9a9996a1cf28",
+   "df2d60be0cab4b2541613266041df3db624b00ec0078c40e0fb9522cca081f09"
+  ],
+  "pdf": "8b357b019bfd8fb2a43d108fb1e40d472b7999be9ea55a1438fcb1e18743c1b4"
+ },
+ "none|False|7": {
+  "geometry": "fc799a7264250fad22d220bba237c282e7bba4f26162b14d4b55e0ce37746e64",
+  "imgs": [
+   "405310205aeb1063ed1a89f48ea76fa6ccf40c16175c5ca8bf3d9a9996a1cf28",
+   "df2d60be0cab4b2541613266041df3db624b00ec0078c40e0fb9522cca081f09"
+  ],
+  "pdf": "8b357b019bfd8fb2a43d108fb1e40d472b7999be9ea55a1438fcb1e18743c1b4"
+ },
+ "none|True|1": {
+  "geometry": "fc799a7264250fad22d220bba237c282e7bba4f26162b14d4b55e0ce37746e64",
+  "imgs": [
+   "405310205aeb1063ed1a89f48ea76fa6ccf40c16175c5ca8bf3d9a9996a1cf28",
+   "df2d60be0cab4b2541613266041df3db624b00ec0078c40e0fb9522cca081f09"
+  ],
+  "pdf": "8b357b019bfd8fb2a43d108fb1e40d472b7999be9ea55a1438fcb1e18743c1b4"
+ },
+ "none|True|7": {
+  "geometry": "fc799a7264250fad22d220bba237c282e7bba4f26162b14d4b55e0ce37746e64",
+  "imgs": [
+   "405310205aeb1063ed1a89f48ea76fa6ccf40c16175c5ca8bf3d9a9996a1cf28",
+   "df2d60be0cab4b2541613266041df3db624b00ec0078c40e0fb9522cca081f09"
+  ],
+  "pdf": "8b357b019bfd8fb2a43d108fb1e40d472b7999be9ea55a1438fcb1e18743c1b4"
+ }
+}

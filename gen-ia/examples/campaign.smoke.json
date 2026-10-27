@@ -1,0 +1,21 @@
+{
+  "name": "mi-prueba",
+  "seed": 7,
+  "per_doc_type": {
+    "ine_2016": 1,
+    "curp_2019": 1,
+    "acta_nacimiento_2015": 1,
+    "pasaporte_electronico_2021": 1
+  },
+  "variant": "nacional",
+  "degradation_presets": ["none", "heavy"],
+  "ine_pages": "front",
+  "ocr": {
+    "kind": "cli",
+    "python": "../ia_documentos/.venv/bin/python",
+    "ocr_project_dir": "../ia_documentos",
+    "timeout_s": 400,
+    "retries": 1
+  },
+  "out_dir": "out/campaigns"
+}

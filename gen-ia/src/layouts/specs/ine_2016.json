@@ -1,0 +1,907 @@
+{
+  "doc_type": "ine_2016",
+  "layout_version": "1.0.0",
+  "unit": "mm",
+  "origin": "top-left",
+  "source_note": "Medido proporcionalmente sobre formatos/modeloactual2016-ine.pdf pág. 1 (rasterizada a 432 dpi; marco anverso 2003x1245 px, reverso 1982x1254 px; conversión independiente por eje a 85.60x53.98 mm). Elementos de seguridad omitidos; escudo/logo -> figuras geométricas; fotos -> avatares; huella -> óvalo.",
+  "faces": [
+    {
+      "face": "anverso",
+      "width_mm": 85.6,
+      "height_mm": 53.98,
+      "background_rgb": [
+        238,
+        234,
+        227
+      ],
+      "fields": [
+        {
+          "name": "banda_encabezado",
+          "type": "shape",
+          "bbox": {
+            "x0": 0.0,
+            "y0": 0.0,
+            "x1": 85.6,
+            "y1": 13.6
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "header_band color=166,156,146 | banda superior de tinte plano con borde inferior curvo",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "escudo",
+          "type": "shape",
+          "bbox": {
+            "x0": 8.2,
+            "y0": 3.0,
+            "x1": 18.8,
+            "y1": 13.6
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "circle stroke=60,60,60 | círculo de contorno (sustituto geométrico)",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "pais",
+          "type": "static",
+          "bbox": {
+            "x0": 20.0,
+            "y0": 5.8,
+            "x1": 31.2,
+            "y1": 9.0
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.4,
+            "color_rgb": [
+              35,
+              35,
+              35
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "MÉXICO",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "titulo",
+          "type": "static",
+          "bbox": {
+            "x0": 32.0,
+            "y0": 3.4,
+            "x1": 82.8,
+            "y1": 7.0
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 10.0,
+            "color_rgb": [
+              35,
+              35,
+              35
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "INSTITUTO NACIONAL ELECTORAL",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "subtitulo",
+          "type": "static",
+          "bbox": {
+            "x0": 32.0,
+            "y0": 7.6,
+            "x1": 66.4,
+            "y1": 10.4
+          },
+          "font": {
+            "family": "sans_bold",
+            "size_pt": 8.0,
+            "color_rgb": [
+              35,
+              35,
+              35
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "CREDENCIAL PARA VOTAR",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "leyenda_extranjero",
+          "type": "static",
+          "bbox": {
+            "x0": 32.0,
+            "y0": 10.6,
+            "x1": 68.0,
+            "y1": 12.8
+          },
+          "font": {
+            "family": "sans_bold",
+            "size_pt": 5.5,
+            "color_rgb": [
+              35,
+              35,
+              35
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "PARA VOTAR DESDE EL EXTRANJERO",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": [
+            "extranjero"
+          ]
+        },
+        {
+          "name": "foto",
+          "type": "photo",
+          "bbox": {
+            "x0": 6.5,
+            "y0": 15.0,
+            "x1": 27.5,
+            "y1": 46.0
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "nombre",
+          "type": "multiline",
+          "bbox": {
+            "x0": 29.0,
+            "y0": 16.0,
+            "x1": 68.5,
+            "y1": 23.6
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.5,
+            "color_rgb": [
+              20,
+              20,
+              20
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 3,
+          "max_chars": 30,
+          "static_value": null,
+          "label": "NOMBRE",
+          "label_bbox": {
+            "x0": 29.0,
+            "y0": 14.2,
+            "x1": 40.0,
+            "y1": 15.9
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "domicilio",
+          "type": "multiline",
+          "bbox": {
+            "x0": 29.0,
+            "y0": 27.2,
+            "x1": 71.5,
+            "y1": 35.0
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.5,
+            "color_rgb": [
+              20,
+              20,
+              20
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 3,
+          "max_chars": 40,
+          "static_value": null,
+          "label": "DOMICILIO",
+          "label_bbox": {
+            "x0": 29.0,
+            "y0": 25.1,
+            "x1": 40.0,
+            "y1": 26.8
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "clave_elector",
+          "type": "text",
+          "bbox": {
+            "x0": 44.4,
+            "y0": 35.8,
+            "x1": 72.0,
+            "y1": 38.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.5,
+            "color_rgb": [
+              20,
+              20,
+              20
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 18,
+          "static_value": null,
+          "label": "CLAVE DE ELECTOR",
+          "label_bbox": {
+            "x0": 29.0,
+            "y0": 36.3,
+            "x1": 44.0,
+            "y1": 37.9
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "curp",
+          "type": "text",
+          "bbox": {
+            "x0": 34.0,
+            "y0": 38.8,
+            "x1": 62.2,
+            "y1": 41.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.5,
+            "color_rgb": [
+              20,
+              20,
+              20
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 18,
+          "static_value": null,
+          "label": "CURP",
+          "label_bbox": {
+            "x0": 29.0,
+            "y0": 39.3,
+            "x1": 33.8,
+            "y1": 40.9
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "anio_registro",
+          "type": "text",
+          "bbox": {
+            "x0": 76.6,
+            "y0": 38.8,
+            "x1": 85.4,
+            "y1": 41.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.5,
+            "color_rgb": [
+              20,
+              20,
+              20
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 7,
+          "static_value": null,
+          "label": "AÑO DE REGISTRO",
+          "label_bbox": {
+            "x0": 62.4,
+            "y0": 39.3,
+            "x1": 76.4,
+            "y1": 40.9
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "estado",
+          "type": "text",
+          "bbox": {
+            "x0": 38.6,
+            "y0": 42.4,
+            "x1": 44.5,
+            "y1": 44.9
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.5,
+            "color_rgb": [
+              20,
+              20,
+              20
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 2,
+          "static_value": null,
+          "label": "ESTADO",
+          "label_bbox": {
+            "x0": 29.0,
+            "y0": 42.9,
+            "x1": 35.5,
+            "y1": 44.6
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "municipio",
+          "type": "text",
+          "bbox": {
+            "x0": 55.8,
+            "y0": 42.4,
+            "x1": 61.6,
+            "y1": 44.9
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.5,
+            "color_rgb": [
+              20,
+              20,
+              20
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 3,
+          "static_value": null,
+          "label": "MUNICIPIO",
+          "label_bbox": {
+            "x0": 46.8,
+            "y0": 42.9,
+            "x1": 55.4,
+            "y1": 44.6
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "seccion",
+          "type": "text",
+          "bbox": {
+            "x0": 70.6,
+            "y0": 42.4,
+            "x1": 76.8,
+            "y1": 44.9
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.5,
+            "color_rgb": [
+              20,
+              20,
+              20
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 4,
+          "static_value": null,
+          "label": "SECCIÓN",
+          "label_bbox": {
+            "x0": 62.2,
+            "y0": 42.9,
+            "x1": 69.6,
+            "y1": 44.6
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "localidad",
+          "type": "text",
+          "bbox": {
+            "x0": 39.0,
+            "y0": 45.9,
+            "x1": 45.2,
+            "y1": 48.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.5,
+            "color_rgb": [
+              20,
+              20,
+              20
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 4,
+          "static_value": null,
+          "label": "LOCALIDAD",
+          "label_bbox": {
+            "x0": 29.0,
+            "y0": 46.4,
+            "x1": 38.0,
+            "y1": 48.1
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "emision",
+          "type": "text",
+          "bbox": {
+            "x0": 56.0,
+            "y0": 45.9,
+            "x1": 62.0,
+            "y1": 48.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.5,
+            "color_rgb": [
+              20,
+              20,
+              20
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 4,
+          "static_value": null,
+          "label": "EMISIÓN",
+          "label_bbox": {
+            "x0": 46.8,
+            "y0": 46.4,
+            "x1": 55.0,
+            "y1": 48.1
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "vigencia",
+          "type": "text",
+          "bbox": {
+            "x0": 70.6,
+            "y0": 45.9,
+            "x1": 76.8,
+            "y1": 48.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.5,
+            "color_rgb": [
+              20,
+              20,
+              20
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 4,
+          "static_value": null,
+          "label": "VIGENCIA",
+          "label_bbox": {
+            "x0": 62.2,
+            "y0": 46.4,
+            "x1": 70.0,
+            "y1": 48.1
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "fecha_nacimiento",
+          "type": "text",
+          "bbox": {
+            "x0": 69.6,
+            "y0": 16.0,
+            "x1": 84.6,
+            "y1": 18.8
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.5,
+            "color_rgb": [
+              20,
+              20,
+              20
+            ],
+            "uppercase": true
+          },
+          "align": "right",
+          "lines": 1,
+          "max_chars": 10,
+          "static_value": null,
+          "label": "FECHA NACIMIENTO",
+          "label_bbox": {
+            "x0": 68.8,
+            "y0": 14.2,
+            "x1": 84.4,
+            "y1": 15.9
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "sexo",
+          "type": "text",
+          "bbox": {
+            "x0": 82.0,
+            "y0": 18.9,
+            "x1": 84.6,
+            "y1": 21.5
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.5,
+            "color_rgb": [
+              20,
+              20,
+              20
+            ],
+            "uppercase": true
+          },
+          "align": "right",
+          "lines": 1,
+          "max_chars": 1,
+          "static_value": null,
+          "label": "SEXO",
+          "label_bbox": {
+            "x0": 76.6,
+            "y0": 19.6,
+            "x1": 81.6,
+            "y1": 21.3
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "foto_secundaria",
+          "type": "photo",
+          "bbox": {
+            "x0": 72.4,
+            "y0": 24.2,
+            "x1": 84.2,
+            "y1": 37.6
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        }
+      ]
+    },
+    {
+      "face": "reverso",
+      "width_mm": 85.6,
+      "height_mm": 53.98,
+      "background_rgb": [
+        234,
+        232,
+        229
+      ],
+      "fields": [
+        {
+          "name": "zona_superior",
+          "type": "shape",
+          "bbox": {
+            "x0": 0.0,
+            "y0": 0.0,
+            "x1": 22.4,
+            "y1": 5.9
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "fill color=255,255,255 | zona clara superior izquierda",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "barras_superior",
+          "type": "shape",
+          "bbox": {
+            "x0": 4.8,
+            "y0": 1.0,
+            "x1": 17.6,
+            "y1": 5.4
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "stripes seed=7 | franjas verticales decorativas, no codifican datos",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "recuadros_voto",
+          "type": "shape",
+          "bbox": {
+            "x0": 22.8,
+            "y0": 0.6,
+            "x1": 70.2,
+            "y1": 5.4
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "boxes n=2 split=0.37 | dos recuadros vacíos",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "logo_institucion",
+          "type": "shape",
+          "bbox": {
+            "x0": 76.0,
+            "y0": 0.6,
+            "x1": 84.0,
+            "y1": 3.6
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "hexagon stroke=90,90,90 | hexágono de contorno (sustituto geométrico)",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "codigo_barras",
+          "type": "barcode",
+          "bbox": {
+            "x0": 2.7,
+            "y0": 6.2,
+            "x1": 69.5,
+            "y1": 19.0
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "qr",
+          "type": "qr",
+          "bbox": {
+            "x0": 71.2,
+            "y0": 6.2,
+            "x1": 83.9,
+            "y1": 19.0
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "recuadro_firma",
+          "type": "shape",
+          "bbox": {
+            "x0": 2.7,
+            "y0": 19.8,
+            "x1": 62.4,
+            "y1": 29.4
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "rect fill=255,255,255 stroke=40,40,40 | recuadro de firma",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "firma",
+          "type": "signature",
+          "bbox": {
+            "x0": 16.0,
+            "y0": 20.4,
+            "x1": 48.5,
+            "y1": 28.8
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "huella",
+          "type": "shape",
+          "bbox": {
+            "x0": 50.4,
+            "y0": 20.4,
+            "x1": 57.0,
+            "y1": 28.8
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "oval stroke=110,110,110 | óvalo vacío (sin huella)",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "mrz",
+          "type": "mrz",
+          "bbox": {
+            "x0": 2.0,
+            "y0": 35.6,
+            "x1": 84.0,
+            "y1": 50.4
+          },
+          "font": {
+            "family": "ocrb",
+            "size_pt": 12.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 3,
+          "max_chars": 30,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "cic",
+          "type": "text",
+          "bbox": {
+            "x0": 15.667,
+            "y0": 35.6,
+            "x1": 40.267,
+            "y1": 40.533
+          },
+          "font": {
+            "family": "ocrb",
+            "size_pt": 12.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 9,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "ocr",
+          "type": "text",
+          "bbox": {
+            "x0": 48.467,
+            "y0": 35.6,
+            "x1": 84.0,
+            "y1": 40.533
+          },
+          "font": {
+            "family": "ocrb",
+            "size_pt": 12.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 13,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        }
+      ]
+    }
+  ]
+}

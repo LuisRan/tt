@@ -1,0 +1,16 @@
+{
+  "name": "baseline100",
+  "seed": 4242,
+  "per_doc_type": {"ine_2016": 34, "curp_2019": 34, "acta_nacimiento_2015": 34, "pasaporte_electronico_2021": 34},
+  "variant": "nacional",
+  "degradation_presets": ["none", "default", "heavy"],
+  "ine_pages": "front",
+  "ocr": {
+    "kind": "cli",
+    "python": "../ia_documentos/.venv/bin/python",
+    "ocr_project_dir": "../ia_documentos",
+    "timeout_s": 400,
+    "retries": 2
+  },
+  "out_dir": "out/campaigns"
+}

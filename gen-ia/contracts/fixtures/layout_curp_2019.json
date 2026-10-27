@@ -1,0 +1,583 @@
+{
+  "doc_type": "curp_2019",
+  "layout_version": "0.0.1",
+  "unit": "mm",
+  "origin": "top-left",
+  "source_note": "FIXTURE de rejilla generado desde field_catalog; no es geometría real",
+  "faces": [
+    {
+      "face": "unica",
+      "width_mm": 215.9,
+      "height_mm": 279.4,
+      "background_rgb": [
+        255,
+        255,
+        255
+      ],
+      "fields": [
+        {
+          "name": "escudo",
+          "type": "shape",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 8.636000000000001,
+            "x1": 207.264,
+            "y1": 19.35941818181818
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "figura geométrica sustituta",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "logo_dependencia",
+          "type": "shape",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 20.55090909090909,
+            "x1": 207.264,
+            "y1": 31.27432727272727
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "rectángulo sustituto del logo",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "bandera",
+          "type": "shape",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 32.46581818181818,
+            "x1": 207.264,
+            "y1": 43.18923636363636
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "tres franjas lisas sin escudo",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "titulo",
+          "type": "static",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 44.38072727272727,
+            "x1": 207.264,
+            "y1": 55.10414545454545
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "ESTADOS UNIDOS MEXICANOS",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "subtitulo",
+          "type": "static",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 56.29563636363636,
+            "x1": 207.264,
+            "y1": 67.01905454545454
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "CONSTANCIA DE LA CLAVE ÚNICA DE REGISTRO DE POBLACIÓN",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "curp",
+          "type": "text",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 68.21054545454545,
+            "x1": 207.264,
+            "y1": 78.93396363636363
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "nombre",
+          "type": "text",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 80.12545454545453,
+            "x1": 207.264,
+            "y1": 90.8488727272727
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "fecha_inscripcion",
+          "type": "text",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 92.04036363636362,
+            "x1": 207.264,
+            "y1": 102.7637818181818
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "folio",
+          "type": "text",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 103.95527272727271,
+            "x1": 207.264,
+            "y1": 114.67869090909089
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "entidad_registro",
+          "type": "text",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 115.8701818181818,
+            "x1": 207.264,
+            "y1": 126.59359999999998
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "qr_datos",
+          "type": "qr",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 127.7850909090909,
+            "x1": 207.264,
+            "y1": 138.5085090909091
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "codigo_barras",
+          "type": "barcode",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 139.7,
+            "x1": 207.264,
+            "y1": 150.42341818181816
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "codigo_barras_texto",
+          "type": "text",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 151.61490909090907,
+            "x1": 207.264,
+            "y1": 162.33832727272724
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "estatus_curp",
+          "type": "text",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 163.52981818181817,
+            "x1": 207.264,
+            "y1": 174.25323636363635
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "curps_asociadas",
+          "type": "multiline",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 175.44472727272725,
+            "x1": 207.264,
+            "y1": 186.16814545454542
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 3,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "nombre_destinatario",
+          "type": "text",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 187.35963636363635,
+            "x1": 207.264,
+            "y1": 198.08305454545453
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "lugar_fecha",
+          "type": "text",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 199.27454545454543,
+            "x1": 207.264,
+            "y1": 209.9979636363636
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "cuerpo",
+          "type": "static",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 211.1894545454545,
+            "x1": 207.264,
+            "y1": 221.91287272727268
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "texto ORIGINAL de la carta transcrito de la referencia (partes ilegibles: relleno de longitud similar)",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "firmante",
+          "type": "text",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 223.10436363636362,
+            "x1": 207.264,
+            "y1": 233.8277818181818
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "cargo_firmante",
+          "type": "static",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 235.0192727272727,
+            "x1": 207.264,
+            "y1": 245.74269090909087
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "SECRETARIA DE GOBERNACIÓN",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "qr_constancia",
+          "type": "qr",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 246.9341818181818,
+            "x1": 207.264,
+            "y1": 257.6576
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "leyenda_pie",
+          "type": "static",
+          "bbox": {
+            "x0": 8.636000000000001,
+            "y0": 258.8490909090909,
+            "x1": 207.264,
+            "y1": 269.5725090909091
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 21.44683636363636,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "leyenda ORIGINAL de protección de datos transcrita de la referencia",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        }
+      ]
+    }
+  ]
+}

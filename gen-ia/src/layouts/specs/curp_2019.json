@@ -1,0 +1,772 @@
+{
+  "doc_type": "curp_2019",
+  "layout_version": "1.0.0",
+  "unit": "mm",
+  "origin": "top-left",
+  "source_note": "Medido proporcionalmente sobre formatos/Diapositiva1.png (960x720 px, ampliada 3.4x con rejilla mm). Escala 2.376 px/mm fijada por el recuadro verde a 12.7 mm de los bordes laterales de la hoja carta; origen de la hoja en (216, 100) px. Textos 'cuerpo' y 'leyenda_pie' transcritos de la referencia. Logos/escudo -> figuras geométricas; bandera -> franjas lisas; marco -> línea lisa.",
+  "faces": [
+    {
+      "face": "unica",
+      "width_mm": 215.9,
+      "height_mm": 279.4,
+      "background_rgb": [
+        255,
+        255,
+        255
+      ],
+      "fields": [
+        {
+          "name": "marco",
+          "type": "shape",
+          "bbox": {
+            "x0": 12.7,
+            "y0": 12.5,
+            "x1": 203.8,
+            "y1": 102.8
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "frame stroke=46,110,60 inset=1.6 width=0.8 | marco de línea lisa",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "escudo",
+          "type": "shape",
+          "bbox": {
+            "x0": 100.6,
+            "y0": 13.6,
+            "x1": 114.4,
+            "y1": 26.8
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "circle stroke=46,110,60 | círculo de contorno (sustituto geométrico)",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "logo_dependencia",
+          "type": "shape",
+          "bbox": {
+            "x0": 18.0,
+            "y0": 29.0,
+            "x1": 60.0,
+            "y1": 42.0
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "rect stroke=120,40,60 | rectángulo de contorno (sustituto del logo)",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "titulo",
+          "type": "static",
+          "bbox": {
+            "x0": 64.0,
+            "y0": 26.6,
+            "x1": 152.0,
+            "y1": 33.0
+          },
+          "font": {
+            "family": "serif",
+            "size_pt": 15.0,
+            "color_rgb": [
+              70,
+              70,
+              70
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "ESTADOS UNIDOS MEXICANOS",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "subtitulo",
+          "type": "static",
+          "bbox": {
+            "x0": 64.0,
+            "y0": 33.4,
+            "x1": 152.0,
+            "y1": 44.6
+          },
+          "font": {
+            "family": "serif",
+            "size_pt": 11.5,
+            "color_rgb": [
+              70,
+              70,
+              70
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 2,
+          "max_chars": null,
+          "static_value": "CONSTANCIA DE LA CLAVE ÚNICA DE REGISTRO DE POBLACIÓN",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "dependencia_emisora",
+          "type": "static",
+          "bbox": {
+            "x0": 152.0,
+            "y0": 34.0,
+            "x1": 198.0,
+            "y1": 42.6
+          },
+          "font": {
+            "family": "serif",
+            "size_pt": 5.5,
+            "color_rgb": [
+              110,
+              110,
+              110
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 3,
+          "max_chars": null,
+          "static_value": "DIRECCIÓN GENERAL DEL REGISTRO NACIONAL DE POBLACIÓN E IDENTIFICACIÓN PERSONAL",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "bandera",
+          "type": "shape",
+          "bbox": {
+            "x0": 27.0,
+            "y0": 53.0,
+            "x1": 51.6,
+            "y1": 69.2
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "flag3 | tres franjas verticales lisas",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "curp",
+          "type": "text",
+          "bbox": {
+            "x0": 65.0,
+            "y0": 53.0,
+            "x1": 140.0,
+            "y1": 58.0
+          },
+          "font": {
+            "family": "sans_bold",
+            "size_pt": 13.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 18,
+          "static_value": null,
+          "label": "Clave:",
+          "label_bbox": {
+            "x0": 65.0,
+            "y0": 48.6,
+            "x1": 90.0,
+            "y1": 51.8
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "nombre",
+          "type": "text",
+          "bbox": {
+            "x0": 65.0,
+            "y0": 68.8,
+            "x1": 172.0,
+            "y1": 74.0
+          },
+          "font": {
+            "family": "sans_bold",
+            "size_pt": 11.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 50,
+          "static_value": null,
+          "label": "Nombre:",
+          "label_bbox": {
+            "x0": 65.0,
+            "y0": 63.6,
+            "x1": 90.0,
+            "y1": 66.9
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "qr_datos",
+          "type": "qr",
+          "bbox": {
+            "x0": 175.2,
+            "y0": 50.4,
+            "x1": 197.6,
+            "y1": 72.0
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "fecha_inscripcion",
+          "type": "text",
+          "bbox": {
+            "x0": 65.0,
+            "y0": 90.6,
+            "x1": 100.0,
+            "y1": 94.2
+          },
+          "font": {
+            "family": "sans_bold",
+            "size_pt": 8.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 10,
+          "static_value": null,
+          "label": "Fecha de inscripción",
+          "label_bbox": {
+            "x0": 65.0,
+            "y0": 85.3,
+            "x1": 100.0,
+            "y1": 89.0
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "folio",
+          "type": "text",
+          "bbox": {
+            "x0": 104.0,
+            "y0": 90.6,
+            "x1": 130.0,
+            "y1": 94.2
+          },
+          "font": {
+            "family": "sans_bold",
+            "size_pt": 8.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 8,
+          "static_value": null,
+          "label": "Folio",
+          "label_bbox": {
+            "x0": 104.0,
+            "y0": 85.3,
+            "x1": 130.0,
+            "y1": 89.0
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "entidad_registro",
+          "type": "text",
+          "bbox": {
+            "x0": 134.0,
+            "y0": 90.6,
+            "x1": 198.0,
+            "y1": 94.2
+          },
+          "font": {
+            "family": "sans_bold",
+            "size_pt": 8.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 30,
+          "static_value": null,
+          "label": "Entidad de registro",
+          "label_bbox": {
+            "x0": 134.0,
+            "y0": 85.3,
+            "x1": 198.0,
+            "y1": 89.0
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "codigo_barras",
+          "type": "barcode",
+          "bbox": {
+            "x0": 13.5,
+            "y0": 103.8,
+            "x1": 54.0,
+            "y1": 111.5
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "codigo_barras_texto",
+          "type": "text",
+          "bbox": {
+            "x0": 13.5,
+            "y0": 112.2,
+            "x1": 54.0,
+            "y1": 115.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 15,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "estatus_curp",
+          "type": "text",
+          "bbox": {
+            "x0": 132.0,
+            "y0": 107.4,
+            "x1": 204.0,
+            "y1": 110.3
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 60,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "curps_asociadas",
+          "type": "multiline",
+          "bbox": {
+            "x0": 147.0,
+            "y0": 114.8,
+            "x1": 204.0,
+            "y1": 120.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 2,
+          "max_chars": 18,
+          "static_value": null,
+          "label": "CURP's asociadas por corrección",
+          "label_bbox": {
+            "x0": 147.0,
+            "y0": 111.4,
+            "x1": 204.0,
+            "y1": 114.4
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "nombre_destinatario",
+          "type": "text",
+          "bbox": {
+            "x0": 13.0,
+            "y0": 130.2,
+            "x1": 120.0,
+            "y1": 133.6
+          },
+          "font": {
+            "family": "sans_bold",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": 50,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "presente",
+          "type": "static",
+          "bbox": {
+            "x0": 13.0,
+            "y0": 145.4,
+            "x1": 40.0,
+            "y1": 148.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "PRESENTE",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "lugar_fecha",
+          "type": "text",
+          "bbox": {
+            "x0": 110.0,
+            "y0": 145.4,
+            "x1": 204.6,
+            "y1": 148.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "right",
+          "lines": 1,
+          "max_chars": 50,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "cuerpo",
+          "type": "static",
+          "bbox": {
+            "x0": 12.7,
+            "y0": 150.2,
+            "x1": 204.7,
+            "y1": 186.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 12,
+          "max_chars": null,
+          "static_value": "Desde 2014, el derecho a la identidad está consagrado en nuestra Constitución. En la Secretaría de Gobernación trabajamos todos los días para garantizar que las y los mexicanos gocen de este derecho plenamente; y de esta forma puedan acceder de manera más sencilla a trámites y servicios.\n\nEn ese sentido, nuestro objetivo es que el uso y adopción de la Clave Única de Registro de Población (CURP) permita a la población tener una sola llave de acceso a servicios gubernamentales, ser atendida rápidamente y poder realizar trámites desde cualquier computadora con acceso a internet dentro o fuera del país.\n\nNuestro compromiso es que la identidad de cada persona esté protegida y segura, por ello contamos con los máximos estándares para la protección de los datos personales. En este marco, es importante que verifiques que la información contenida en la constancia anexa sea correcta para contribuir a la construcción de un registro fiel y confiable de la identidad de la población.\n\nAgradezco tu participación.",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "firmante",
+          "type": "text",
+          "bbox": {
+            "x0": 40.0,
+            "y0": 196.2,
+            "x1": 174.6,
+            "y1": 199.8
+          },
+          "font": {
+            "family": "sans_bold",
+            "size_pt": 9.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 50,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "cargo_firmante",
+          "type": "static",
+          "bbox": {
+            "x0": 42.0,
+            "y0": 203.2,
+            "x1": 174.6,
+            "y1": 206.6
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              70,
+              70,
+              70
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "SECRETARIA DE GOBERNACIÓN",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "qr_constancia",
+          "type": "qr",
+          "bbox": {
+            "x0": 174.4,
+            "y0": 192.4,
+            "x1": 197.9,
+            "y1": 215.6
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "aviso_telcurp",
+          "type": "static",
+          "bbox": {
+            "x0": 13.0,
+            "y0": 215.6,
+            "x1": 170.0,
+            "y1": 218.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 5.8,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "Estamos a sus órdenes para cualquier aclaración o duda sobre la conformación de su clave en TELCURP, marcando el 01 800 911 11 11",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "aviso_impresion",
+          "type": "static",
+          "bbox": {
+            "x0": 13.0,
+            "y0": 224.2,
+            "x1": 180.0,
+            "y1": 227.2
+          },
+          "font": {
+            "family": "sans_bold",
+            "size_pt": 5.8,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "La impresión de la constancia CURP en papel bond, a color o blanco y negro, es válida y debe ser aceptada para realizar todo trámite.",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "tramite_gratuito",
+          "type": "static",
+          "bbox": {
+            "x0": 80.0,
+            "y0": 229.4,
+            "x1": 136.6,
+            "y1": 233.0
+          },
+          "font": {
+            "family": "sans_bold",
+            "size_pt": 9.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "TRÁMITE GRATUITO",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "leyenda_pie",
+          "type": "static",
+          "bbox": {
+            "x0": 13.0,
+            "y0": 235.3,
+            "x1": 204.6,
+            "y1": 258.2
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.8,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 7,
+          "max_chars": null,
+          "static_value": "Los Datos Personales recabados, incorporados y tratados en la Base de Datos Nacional de la Clave Única de Registro de Población, son utilizados como elementos de apoyo en la función de la Secretaría de Gobernación, a través de la Dirección General del Registro Nacional de Población e Identificación Personal en el registro y acreditación de la identidad de la población del país, y de los nacionales residentes en el extranjero; asignando y expidiendo la Clave Única de Registro de Población. Dicha Base de Datos, se encuentra registrada en el Sistema Persona del Instituto Nacional de Transparencia, Acceso a la Información Pública y Protección de Datos Personales (http://persona.ifai.org.mx/persona/welcome.do). La transferencia de los Datos Personales y el ejercicio de los derechos de acceso, rectificación, cancelación y oposición, deben realizarse conforme a la Ley General de Protección de Datos Personales en Posesión de los Sujetos Obligados, y demás normatividad aplicable. Para ver la versión integral del aviso de privacidad ingresar a https://renapo.gob.mx/",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        }
+      ]
+    }
+  ]
+}
