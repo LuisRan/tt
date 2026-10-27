@@ -61,11 +61,11 @@ git clone https://github.com/LuisRan/tt.git && cd tt
 ```bash
 cd ~/Documents/tt
 chmod +x scripts/*.sh
-./scripts/start.sh --ia-nativa     # recomendado en Mac
-# o todo en Docker:
-./scripts/start.sh
+./scripts/start.sh                 # en Mac la IA va nativa por defecto (Apple Vision)
+# o la IA en Docker (Linux + Tesseract):
+./scripts/start.sh --ia-docker
 ```
-`--ia-nativa` ejecuta el módulo de IA directamente en macOS para aprovechar **ocrmac (Vision de
+En Mac el módulo de IA corre nativo (equivale a `--ia-nativa`, que sigue funcionando) y ejecuta el módulo de IA directamente en macOS para aprovechar **ocrmac (Vision de
 Apple) y la GPU Metal (MPS)**, como lo tenías configurado; el resto corre en Docker. El script
 instala con Homebrew lo que falte (Ollama, Tesseract + español, Poppler, Python 3.12), crea
 `ia_documentos/.venv` y descarga el modelo `qwen3:4b-instruct-2507-q4_K_M` la primera vez (si no lo tienes).
@@ -206,6 +206,19 @@ cd backend && npm install && npm run dev   # http://localhost:3000/api/salud
 cd frontend && npm install && npm run dev  # http://localhost:4321
 ```
 Para desarrollo local por HTTP pon `COOKIE_SECURE=false` y `CORS_ORIGINS=http://localhost:4321`.
+
+## 6b. Generador de documentos sintéticos y evaluación (`gen-ia/`)
+
+La carpeta [`gen-ia/`](gen-ia/README.md) genera pares (PDF degradado + JSON de verdad de referencia) de
+INE, Constancia CURP, Acta de Nacimiento y Pasaporte con datos **MOCK** (marca de agua obligatoria) y mide
+la precisión del OCR de este proyecto. Todo corre en Docker; la guía para correrlo contra el módulo de IA
+está en [`gen-ia/docs/USO_CON_TT.md`](gen-ia/docs/USO_CON_TT.md).
+
+```bash
+cd gen-ia && docker compose build && docker compose run --rm generate --doc-type all --n 5 --seed 1
+```
+
+---
 
 ## 7. Pruebas
 

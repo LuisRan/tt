@@ -1,0 +1,83 @@
+{
+  "name": "scanner",
+  "render_dpi": 300,
+  "steps": [
+    {
+      "kind": "canvas_placement",
+      "probability": 1.0,
+      "params": {
+        "margin_mm": {
+          "min": 0.0,
+          "max": 5.0
+        },
+        "background": {
+          "min": 238.0,
+          "max": 250.0
+        }
+      },
+      "options": {
+        "canvas": "letter",
+        "position": "random"
+      }
+    },
+    {
+      "kind": "illumination_shadow",
+      "probability": 1.0,
+      "params": {
+        "strength": {
+          "min": 0.05,
+          "max": 0.2
+        }
+      },
+      "options": {}
+    },
+    {
+      "kind": "rotation",
+      "probability": 1.0,
+      "params": {
+        "angle_deg": {
+          "min": -2.0,
+          "max": 2.0
+        }
+      },
+      "options": {
+        "expand": true
+      }
+    },
+    {
+      "kind": "dpi_resample",
+      "probability": 1.0,
+      "params": {
+        "target_dpi": {
+          "min": 150.0,
+          "max": 300.0
+        }
+      },
+      "options": {}
+    },
+    {
+      "kind": "gaussian_noise",
+      "probability": 1.0,
+      "params": {
+        "sigma": {
+          "min": 1.5,
+          "max": 5.0
+        }
+      },
+      "options": {}
+    },
+    {
+      "kind": "jpeg",
+      "probability": 1.0,
+      "params": {
+        "quality": {
+          "min": 50.0,
+          "max": 85.0
+        }
+      },
+      "options": {}
+    }
+  ],
+  "output_format": "pdf",
+  "output_jpeg_quality": 90
+}

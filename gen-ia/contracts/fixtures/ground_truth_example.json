@@ -1,0 +1,324 @@
+{
+  "schema_version": "1.0.0",
+  "sample_id": "ine_2016-nacional-42-000000",
+  "doc_type": "ine_2016",
+  "variant": "nacional",
+  "layout_version": "0.0.1",
+  "seed": 42,
+  "degradation_seed": null,
+  "generator_version": "0.0.0",
+  "synthetic": {
+    "is_synthetic": true,
+    "watermark_text": "MOCK DATA",
+    "faker_locale": "es_MX"
+  },
+  "pages": [
+    {
+      "page_index": 0,
+      "face": "anverso",
+      "width_mm": 85.6,
+      "height_mm": 53.98,
+      "fields": [
+        {
+          "name": "pais",
+          "type": "static",
+          "value": "MÉXICO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 5.7806,
+            "x1": 82.17599999999999,
+            "y1": 7.90154
+          },
+          "transformed": null
+        },
+        {
+          "name": "titulo",
+          "type": "static",
+          "value": "INSTITUTO NACIONAL ELECTORAL",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 8.1372,
+            "x1": 82.17599999999999,
+            "y1": 10.258140000000001
+          },
+          "transformed": null
+        },
+        {
+          "name": "subtitulo",
+          "type": "static",
+          "value": "CREDENCIAL PARA VOTAR",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 10.493799999999998,
+            "x1": 82.17599999999999,
+            "y1": 12.614739999999998
+          },
+          "transformed": null
+        },
+        {
+          "name": "foto",
+          "type": "photo",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 12.850399999999999,
+            "x1": 82.17599999999999,
+            "y1": 14.971339999999998
+          },
+          "transformed": null
+        },
+        {
+          "name": "foto_secundaria",
+          "type": "photo",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 15.206999999999999,
+            "x1": 82.17599999999999,
+            "y1": 17.327939999999998
+          },
+          "transformed": null
+        },
+        {
+          "name": "nombre",
+          "type": "multiline",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 17.563599999999997,
+            "x1": 82.17599999999999,
+            "y1": 19.68454
+          },
+          "transformed": null
+        },
+        {
+          "name": "domicilio",
+          "type": "multiline",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 22.276799999999998,
+            "x1": 82.17599999999999,
+            "y1": 24.39774
+          },
+          "transformed": null
+        },
+        {
+          "name": "clave_elector",
+          "type": "text",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 24.633399999999998,
+            "x1": 82.17599999999999,
+            "y1": 26.75434
+          },
+          "transformed": null
+        },
+        {
+          "name": "curp",
+          "type": "text",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 26.99,
+            "x1": 82.17599999999999,
+            "y1": 29.11094
+          },
+          "transformed": null
+        },
+        {
+          "name": "anio_registro",
+          "type": "text",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 29.3466,
+            "x1": 82.17599999999999,
+            "y1": 31.46754
+          },
+          "transformed": null
+        },
+        {
+          "name": "fecha_nacimiento",
+          "type": "text",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 31.703199999999995,
+            "x1": 82.17599999999999,
+            "y1": 33.82413999999999
+          },
+          "transformed": null
+        },
+        {
+          "name": "sexo",
+          "type": "text",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 34.059799999999996,
+            "x1": 82.17599999999999,
+            "y1": 36.18073999999999
+          },
+          "transformed": null
+        },
+        {
+          "name": "estado",
+          "type": "text",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 36.416399999999996,
+            "x1": 82.17599999999999,
+            "y1": 38.53733999999999
+          },
+          "transformed": null
+        },
+        {
+          "name": "municipio",
+          "type": "text",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 38.772999999999996,
+            "x1": 82.17599999999999,
+            "y1": 40.89393999999999
+          },
+          "transformed": null
+        },
+        {
+          "name": "seccion",
+          "type": "text",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 41.129599999999996,
+            "x1": 82.17599999999999,
+            "y1": 43.250539999999994
+          },
+          "transformed": null
+        },
+        {
+          "name": "localidad",
+          "type": "text",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 43.4862,
+            "x1": 82.17599999999999,
+            "y1": 45.607139999999994
+          },
+          "transformed": null
+        },
+        {
+          "name": "emision",
+          "type": "text",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 45.8428,
+            "x1": 82.17599999999999,
+            "y1": 47.963739999999994
+          },
+          "transformed": null
+        },
+        {
+          "name": "vigencia",
+          "type": "text",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 48.1994,
+            "x1": 82.17599999999999,
+            "y1": 50.320339999999995
+          },
+          "transformed": null
+        }
+      ]
+    },
+    {
+      "page_index": 1,
+      "face": "reverso",
+      "width_mm": 85.6,
+      "height_mm": 53.98,
+      "fields": [
+        {
+          "name": "codigo_barras",
+          "type": "barcode",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 3.424,
+            "x1": 82.17599999999999,
+            "y1": 8.72635
+          },
+          "transformed": null
+        },
+        {
+          "name": "qr",
+          "type": "qr",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 9.3155,
+            "x1": 82.17599999999999,
+            "y1": 14.61785
+          },
+          "transformed": null
+        },
+        {
+          "name": "firma",
+          "type": "signature",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 21.098499999999998,
+            "x1": 82.17599999999999,
+            "y1": 26.40085
+          },
+          "transformed": null
+        },
+        {
+          "name": "cic",
+          "type": "text",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 32.8815,
+            "x1": 82.17599999999999,
+            "y1": 38.18385
+          },
+          "transformed": null
+        },
+        {
+          "name": "ocr",
+          "type": "text",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 38.772999999999996,
+            "x1": 82.17599999999999,
+            "y1": 44.07534999999999
+          },
+          "transformed": null
+        },
+        {
+          "name": "mrz",
+          "type": "mrz",
+          "value": "EJEMPLO",
+          "bbox_mm": {
+            "x0": 3.424,
+            "y0": 44.6645,
+            "x1": 82.17599999999999,
+            "y1": 49.966849999999994
+          },
+          "transformed": null
+        }
+      ]
+    }
+  ],
+  "clean_pdf": null,
+  "degraded_pdf": null,
+  "transform_log": null
+}

@@ -1,0 +1,46 @@
+# ocr-synth -- servicios de Docker Compose (ver docs/DOCKER.md).
+#
+#   docker compose run --rm menu                                   # menu interactivo
+#   docker compose run --rm generate --doc-type all --n 5 --seed 1 # modo por flags
+#   docker compose run --rm tests                                  # suite de tests
+#
+# Plataforma: por defecto linux/amd64 en TODAS las maquinas para que los bytes
+# generados sean identicos (en Apple Silicon corre emulado: mas lento).
+# Cambiar con OCR_PLATFORM=linux/arm64 (mas rapido en Apple Silicon, pero los
+# bytes pueden diferir de los de amd64; ver docs/DOCKER.md).
+#
+# Usuario: los ficheros de ./data se crean con UID:GID del host. Los shells no
+# exportan UID/GID; en Linux ejecuta:  UID=$(id -u) GID=$(id -g) docker compose run ...
+# (o usa `make`, que lo hace por ti). En Docker Desktop (macOS) no hace falta.
+
+x-ocr-common: &ocr-common
+  image: ocr-synth:local
+  platform: ${OCR_PLATFORM:-linux/amd64}
+  user: "${UID:-1000}:${GID:-1000}"
+  build:
+    context: .
+    dockerfile: Dockerfile
+  init: true
+
+services:
+  # Menu interactivo: `python -m src` sin argumentos y con TTY.
+  menu:
+    <<: *ocr-common
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./data:/app/data
+
+  # Modo por flags. Los argumentos que pases se anaden a:
+  #   python -m src generate --out /app/data
+  generate:
+    <<: *ocr-common
+    entrypoint: ["python", "-m", "src", "generate", "--out", "/app/data"]
+    volumes:
+      - ./data:/app/data
+
+  # Suite de tests dentro del contenedor (no escribe en ./data).
+  tests:
+    <<: *ocr-common
+    entrypoint: ["python", "-m", "pytest"]
+    command: ["-q"]

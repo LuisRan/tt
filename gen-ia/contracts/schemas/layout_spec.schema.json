@@ -1,0 +1,359 @@
+{
+  "$defs": {
+    "Align": {
+      "enum": [
+        "left",
+        "center",
+        "right"
+      ],
+      "title": "Align",
+      "type": "string"
+    },
+    "BBox": {
+      "additionalProperties": false,
+      "properties": {
+        "x0": {
+          "title": "X0",
+          "type": "number"
+        },
+        "y0": {
+          "title": "Y0",
+          "type": "number"
+        },
+        "x1": {
+          "title": "X1",
+          "type": "number"
+        },
+        "y1": {
+          "title": "Y1",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x0",
+        "y0",
+        "x1",
+        "y1"
+      ],
+      "title": "BBox",
+      "type": "object"
+    },
+    "DocType": {
+      "enum": [
+        "ine_2016",
+        "curp_2019",
+        "acta_nacimiento_2015",
+        "pasaporte_electronico_2021"
+      ],
+      "title": "DocType",
+      "type": "string"
+    },
+    "Face": {
+      "enum": [
+        "anverso",
+        "reverso",
+        "unica"
+      ],
+      "title": "Face",
+      "type": "string"
+    },
+    "FaceSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "face": {
+          "$ref": "#/$defs/Face"
+        },
+        "width_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Width Mm",
+          "type": "number"
+        },
+        "height_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Height Mm",
+          "type": "number"
+        },
+        "background_rgb": {
+          "default": [
+            255,
+            255,
+            255
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Background Rgb",
+          "type": "array"
+        },
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/FieldSpec"
+          },
+          "title": "Fields",
+          "type": "array"
+        }
+      },
+      "required": [
+        "face",
+        "width_mm",
+        "height_mm",
+        "fields"
+      ],
+      "title": "FaceSpec",
+      "type": "object"
+    },
+    "FieldSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/FieldType"
+        },
+        "bbox": {
+          "$ref": "#/$defs/BBox"
+        },
+        "font": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FontSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "align": {
+          "$ref": "#/$defs/Align",
+          "default": "left"
+        },
+        "lines": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Lines",
+          "type": "integer"
+        },
+        "max_chars": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Chars"
+        },
+        "static_value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Static Value"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "label_bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BBox"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "in_ground_truth": {
+          "default": true,
+          "title": "In Ground Truth",
+          "type": "boolean"
+        },
+        "variants": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Variant"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Variants"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "bbox"
+      ],
+      "title": "FieldSpec",
+      "type": "object"
+    },
+    "FieldType": {
+      "enum": [
+        "text",
+        "multiline",
+        "photo",
+        "qr",
+        "barcode",
+        "mrz",
+        "signature",
+        "static",
+        "shape"
+      ],
+      "title": "FieldType",
+      "type": "string"
+    },
+    "FontFamily": {
+      "description": "Familias LÓGICAS; T1 las mapea a fuentes libres (ver PLAN.md).",
+      "enum": [
+        "sans",
+        "sans_bold",
+        "serif",
+        "serif_bold",
+        "mono",
+        "ocrb"
+      ],
+      "title": "FontFamily",
+      "type": "string"
+    },
+    "FontSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "family": {
+          "$ref": "#/$defs/FontFamily",
+          "default": "sans"
+        },
+        "size_pt": {
+          "exclusiveMinimum": 0,
+          "title": "Size Pt",
+          "type": "number"
+        },
+        "color_rgb": {
+          "default": [
+            0,
+            0,
+            0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Color Rgb",
+          "type": "array"
+        },
+        "uppercase": {
+          "default": false,
+          "title": "Uppercase",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "size_pt"
+      ],
+      "title": "FontSpec",
+      "type": "object"
+    },
+    "Unit": {
+      "enum": [
+        "mm",
+        "px"
+      ],
+      "title": "Unit",
+      "type": "string"
+    },
+    "Variant": {
+      "description": "Variante de un documento. Solo INE tiene más de una.",
+      "enum": [
+        "default",
+        "nacional",
+        "extranjero"
+      ],
+      "title": "Variant",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "doc_type": {
+      "$ref": "#/$defs/DocType"
+    },
+    "layout_version": {
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "title": "Layout Version",
+      "type": "string"
+    },
+    "unit": {
+      "$ref": "#/$defs/Unit",
+      "default": "mm"
+    },
+    "origin": {
+      "default": "top-left",
+      "title": "Origin",
+      "type": "string"
+    },
+    "source_note": {
+      "default": "",
+      "title": "Source Note",
+      "type": "string"
+    },
+    "faces": {
+      "items": {
+        "$ref": "#/$defs/FaceSpec"
+      },
+      "title": "Faces",
+      "type": "array"
+    }
+  },
+  "required": [
+    "doc_type",
+    "layout_version",
+    "faces"
+  ],
+  "title": "LayoutSpec",
+  "type": "object"
+}

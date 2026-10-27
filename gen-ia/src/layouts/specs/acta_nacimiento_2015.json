@@ -1,0 +1,1607 @@
+{
+  "doc_type": "acta_nacimiento_2015",
+  "layout_version": "1.0.0",
+  "unit": "mm",
+  "origin": "top-left",
+  "source_note": "Medido proporcionalmente sobre formatos/OFICIO DE SEGOB DG-410-0075-2017 Y ANEXOS.pdf pág. 3 (rasterizada a 216 dpi; marco exterior 1232x1600 px -> 215.9x279.4 mm). 'leyenda_pie' (bloque O) transcrita de la referencia. Marco decorado -> doble línea lisa; escudo -> círculo.",
+  "faces": [
+    {
+      "face": "unica",
+      "width_mm": 215.9,
+      "height_mm": 279.4,
+      "background_rgb": [
+        255,
+        255,
+        255
+      ],
+      "fields": [
+        {
+          "name": "marco",
+          "type": "shape",
+          "bbox": {
+            "x0": 1.6,
+            "y0": 1.6,
+            "x1": 214.3,
+            "y1": 277.8
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "frame stroke=60,110,70 inset=5.8 width=0.6 | marco de línea lisa",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "escudo",
+          "type": "shape",
+          "bbox": {
+            "x0": 97.0,
+            "y0": 6.2,
+            "x1": 121.0,
+            "y1": 30.0
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "circle stroke=60,110,70 | círculo de contorno (sustituto geométrico)",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "folio_impresion",
+          "type": "text",
+          "bbox": {
+            "x0": 18.0,
+            "y0": 12.8,
+            "x1": 48.0,
+            "y1": 17.2
+          },
+          "font": {
+            "family": "sans_bold",
+            "size_pt": 11.0,
+            "color_rgb": [
+              200,
+              30,
+              30
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 8,
+          "static_value": null,
+          "label": "Folio de Impresión",
+          "label_bbox": {
+            "x0": 18.0,
+            "y0": 9.2,
+            "x1": 48.0,
+            "y1": 12.6
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "identificador_electronico",
+          "type": "text",
+          "bbox": {
+            "x0": 150.0,
+            "y0": 17.5,
+            "x1": 198.0,
+            "y1": 21.8
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 9.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 20,
+          "static_value": null,
+          "label": "Identificador Electrónico",
+          "label_bbox": {
+            "x0": 150.0,
+            "y0": 13.0,
+            "x1": 198.0,
+            "y1": 17.0
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "identificador_barcode",
+          "type": "barcode",
+          "bbox": {
+            "x0": 158.0,
+            "y0": 21.9,
+            "x1": 190.0,
+            "y1": 26.2
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "titulo",
+          "type": "static",
+          "bbox": {
+            "x0": 24.0,
+            "y0": 45.4,
+            "x1": 118.0,
+            "y1": 52.6
+          },
+          "font": {
+            "family": "sans_bold",
+            "size_pt": 19.5,
+            "color_rgb": [
+              70,
+              70,
+              80
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "Estados Unidos Mexicanos",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "subtitulo",
+          "type": "static",
+          "bbox": {
+            "x0": 24.0,
+            "y0": 55.6,
+            "x1": 118.0,
+            "y1": 63.0
+          },
+          "font": {
+            "family": "sans_bold",
+            "size_pt": 19.5,
+            "color_rgb": [
+              70,
+              70,
+              80
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "Acta de Nacimiento",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "barra_curp",
+          "type": "shape",
+          "bbox": {
+            "x0": 133.0,
+            "y0": 28.2,
+            "x1": 203.0,
+            "y1": 33.2
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "fill color=232,232,236 | barra de etiqueta de tinte plano",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "curp",
+          "type": "text",
+          "bbox": {
+            "x0": 133.0,
+            "y0": 33.6,
+            "x1": 203.0,
+            "y1": 39.6
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 9.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 18,
+          "static_value": null,
+          "label": "Clave Única de Registro de Población",
+          "label_bbox": {
+            "x0": 133.0,
+            "y0": 28.5,
+            "x1": 203.0,
+            "y1": 32.900000000000006
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "barra_numero_certificado_nacimiento",
+          "type": "shape",
+          "bbox": {
+            "x0": 133.0,
+            "y0": 42.0,
+            "x1": 203.0,
+            "y1": 47.0
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "fill color=232,232,236 | barra de etiqueta de tinte plano",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "numero_certificado_nacimiento",
+          "type": "text",
+          "bbox": {
+            "x0": 133.0,
+            "y0": 47.2,
+            "x1": 203.0,
+            "y1": 52.2
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 9.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 9,
+          "static_value": null,
+          "label": "Número de Certificado de Nacimiento",
+          "label_bbox": {
+            "x0": 133.0,
+            "y0": 42.3,
+            "x1": 203.0,
+            "y1": 46.7
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "barra_entidad_registro",
+          "type": "shape",
+          "bbox": {
+            "x0": 133.0,
+            "y0": 52.6,
+            "x1": 203.0,
+            "y1": 57.4
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "fill color=232,232,236 | barra de etiqueta de tinte plano",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "entidad_registro",
+          "type": "text",
+          "bbox": {
+            "x0": 133.0,
+            "y0": 57.6,
+            "x1": 203.0,
+            "y1": 62.6
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 9.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 30,
+          "static_value": null,
+          "label": "Entidad de Registro",
+          "label_bbox": {
+            "x0": 133.0,
+            "y0": 52.9,
+            "x1": 203.0,
+            "y1": 57.1
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "barra_municipio_registro",
+          "type": "shape",
+          "bbox": {
+            "x0": 133.0,
+            "y0": 62.8,
+            "x1": 203.0,
+            "y1": 67.6
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "fill color=232,232,236 | barra de etiqueta de tinte plano",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "municipio_registro",
+          "type": "text",
+          "bbox": {
+            "x0": 133.0,
+            "y0": 67.8,
+            "x1": 203.0,
+            "y1": 72.8
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 9.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 40,
+          "static_value": null,
+          "label": "Municipio de Registro",
+          "label_bbox": {
+            "x0": 133.0,
+            "y0": 63.099999999999994,
+            "x1": 203.0,
+            "y1": 67.3
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "tabla_registro",
+          "type": "shape",
+          "bbox": {
+            "x0": 133.0,
+            "y0": 73.0,
+            "x1": 203.0,
+            "y1": 83.6
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "grid rows=2 cols=4 stroke=90,90,90 | tabla de líneas lisas",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "oficialia",
+          "type": "text",
+          "bbox": {
+            "x0": 133.4,
+            "y0": 78.6,
+            "x1": 150.1,
+            "y1": 83.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 4,
+          "static_value": null,
+          "label": "Oficialía",
+          "label_bbox": {
+            "x0": 133.4,
+            "y0": 74.6,
+            "x1": 150.1,
+            "y1": 76.8
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "fecha_registro",
+          "type": "text",
+          "bbox": {
+            "x0": 150.9,
+            "y0": 78.6,
+            "x1": 167.6,
+            "y1": 83.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 10,
+          "static_value": null,
+          "label": "Fecha de\nRegistro",
+          "label_bbox": {
+            "x0": 150.9,
+            "y0": 73.4,
+            "x1": 167.6,
+            "y1": 78.0
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "libro",
+          "type": "text",
+          "bbox": {
+            "x0": 168.4,
+            "y0": 78.6,
+            "x1": 185.1,
+            "y1": 83.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 4,
+          "static_value": null,
+          "label": "Libro",
+          "label_bbox": {
+            "x0": 168.4,
+            "y0": 74.6,
+            "x1": 185.1,
+            "y1": 76.8
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "numero_acta",
+          "type": "text",
+          "bbox": {
+            "x0": 185.9,
+            "y0": 78.6,
+            "x1": 202.6,
+            "y1": 83.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 5,
+          "static_value": null,
+          "label": "Número\nde Acta",
+          "label_bbox": {
+            "x0": 185.9,
+            "y0": 73.4,
+            "x1": 202.6,
+            "y1": 78.0
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "barra_registrada",
+          "type": "shape",
+          "bbox": {
+            "x0": 15.0,
+            "y0": 84.0,
+            "x1": 203.0,
+            "y1": 89.8
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "fill color=232,232,236 | barra de sección",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "seccion_registrada",
+          "type": "static",
+          "bbox": {
+            "x0": 15.0,
+            "y0": 84.4,
+            "x1": 203.0,
+            "y1": 89.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 9.0,
+            "color_rgb": [
+              60,
+              60,
+              60
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "Datos de la Persona Registrada",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "linea_reg_nombres",
+          "type": "shape",
+          "bbox": {
+            "x0": 15.0,
+            "y0": 99.0,
+            "x1": 203.0,
+            "y1": 99.4
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "hline stroke=60,60,60 | línea lisa",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "reg_nombres",
+          "type": "text",
+          "bbox": {
+            "x0": 15.0,
+            "y0": 93.2,
+            "x1": 73.0,
+            "y1": 98.8
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 9.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 40,
+          "static_value": null,
+          "label": "Nombre(s)",
+          "label_bbox": {
+            "x0": 15.0,
+            "y0": 100.2,
+            "x1": 73.0,
+            "y1": 104.6
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "reg_primer_apellido",
+          "type": "text",
+          "bbox": {
+            "x0": 77.0,
+            "y0": 93.2,
+            "x1": 143.0,
+            "y1": 98.8
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 9.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 30,
+          "static_value": null,
+          "label": "Primer Apellido",
+          "label_bbox": {
+            "x0": 77.0,
+            "y0": 100.2,
+            "x1": 143.0,
+            "y1": 104.6
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "reg_segundo_apellido",
+          "type": "text",
+          "bbox": {
+            "x0": 145.0,
+            "y0": 93.2,
+            "x1": 203.0,
+            "y1": 98.8
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 9.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 30,
+          "static_value": null,
+          "label": "Segundo Apellido",
+          "label_bbox": {
+            "x0": 145.0,
+            "y0": 100.2,
+            "x1": 203.0,
+            "y1": 104.6
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "linea_reg_sexo",
+          "type": "shape",
+          "bbox": {
+            "x0": 15.0,
+            "y0": 116.4,
+            "x1": 203.0,
+            "y1": 116.80000000000001
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "hline stroke=60,60,60 | línea lisa",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "reg_sexo",
+          "type": "text",
+          "bbox": {
+            "x0": 15.0,
+            "y0": 110.4,
+            "x1": 69.0,
+            "y1": 116.0
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 9.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 6,
+          "static_value": null,
+          "label": "Sexo",
+          "label_bbox": {
+            "x0": 15.0,
+            "y0": 117.4,
+            "x1": 69.0,
+            "y1": 121.8
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "reg_fecha_nacimiento",
+          "type": "text",
+          "bbox": {
+            "x0": 77.0,
+            "y0": 110.4,
+            "x1": 143.0,
+            "y1": 116.0
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 9.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 10,
+          "static_value": null,
+          "label": "Fecha de Nacimiento",
+          "label_bbox": {
+            "x0": 77.0,
+            "y0": 117.4,
+            "x1": 143.0,
+            "y1": 121.8
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "reg_lugar_nacimiento",
+          "type": "text",
+          "bbox": {
+            "x0": 145.0,
+            "y0": 110.4,
+            "x1": 203.0,
+            "y1": 116.0
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 9.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 30,
+          "static_value": null,
+          "label": "Lugar de Nacimiento",
+          "label_bbox": {
+            "x0": 145.0,
+            "y0": 117.4,
+            "x1": 203.0,
+            "y1": 121.8
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "barra_filiacion",
+          "type": "shape",
+          "bbox": {
+            "x0": 15.0,
+            "y0": 124.6,
+            "x1": 203.0,
+            "y1": 131.4
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "fill color=232,232,236 | barra de sección",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "seccion_filiacion",
+          "type": "static",
+          "bbox": {
+            "x0": 15.0,
+            "y0": 125.2,
+            "x1": 203.0,
+            "y1": 130.8
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 9.0,
+            "color_rgb": [
+              60,
+              60,
+              60
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "Datos de Filiación de la Persona Registrada",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "linea_p1",
+          "type": "shape",
+          "bbox": {
+            "x0": 15.0,
+            "y0": 144.8,
+            "x1": 203.0,
+            "y1": 145.20000000000002
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "hline stroke=60,60,60 | línea lisa",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "p1_nombres",
+          "type": "text",
+          "bbox": {
+            "x0": 15.0,
+            "y0": 139.0,
+            "x1": 47.0,
+            "y1": 144.6
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 30,
+          "static_value": null,
+          "label": "Nombre(s)",
+          "label_bbox": {
+            "x0": 15.0,
+            "y0": 145.8,
+            "x1": 47.0,
+            "y1": 150.0
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "p1_primer_apellido",
+          "type": "text",
+          "bbox": {
+            "x0": 49.0,
+            "y0": 139.0,
+            "x1": 85.0,
+            "y1": 144.6
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 25,
+          "static_value": null,
+          "label": "Primer Apellido",
+          "label_bbox": {
+            "x0": 49.0,
+            "y0": 145.8,
+            "x1": 85.0,
+            "y1": 150.0
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "p1_segundo_apellido",
+          "type": "text",
+          "bbox": {
+            "x0": 86.5,
+            "y0": 139.0,
+            "x1": 123.0,
+            "y1": 144.6
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 25,
+          "static_value": null,
+          "label": "Segundo Apellido",
+          "label_bbox": {
+            "x0": 86.5,
+            "y0": 145.8,
+            "x1": 123.0,
+            "y1": 150.0
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "p1_nacionalidad",
+          "type": "text",
+          "bbox": {
+            "x0": 127.0,
+            "y0": 139.0,
+            "x1": 164.6,
+            "y1": 144.6
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 20,
+          "static_value": null,
+          "label": "Nacionalidad",
+          "label_bbox": {
+            "x0": 127.0,
+            "y0": 145.8,
+            "x1": 164.6,
+            "y1": 150.0
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "p1_curp",
+          "type": "text",
+          "bbox": {
+            "x0": 165.4,
+            "y0": 139.0,
+            "x1": 202.6,
+            "y1": 144.6
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 18,
+          "static_value": null,
+          "label": "CURP",
+          "label_bbox": {
+            "x0": 165.4,
+            "y0": 145.8,
+            "x1": 202.6,
+            "y1": 150.0
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "linea_p2",
+          "type": "shape",
+          "bbox": {
+            "x0": 15.0,
+            "y0": 166.3,
+            "x1": 203.0,
+            "y1": 166.70000000000002
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "hline stroke=60,60,60 | línea lisa",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "p2_nombres",
+          "type": "text",
+          "bbox": {
+            "x0": 15.0,
+            "y0": 160.6,
+            "x1": 47.0,
+            "y1": 166.1
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 30,
+          "static_value": null,
+          "label": "Nombre(s)",
+          "label_bbox": {
+            "x0": 15.0,
+            "y0": 167.3,
+            "x1": 47.0,
+            "y1": 171.5
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "p2_primer_apellido",
+          "type": "text",
+          "bbox": {
+            "x0": 49.0,
+            "y0": 160.6,
+            "x1": 85.0,
+            "y1": 166.1
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 25,
+          "static_value": null,
+          "label": "Primer Apellido",
+          "label_bbox": {
+            "x0": 49.0,
+            "y0": 167.3,
+            "x1": 85.0,
+            "y1": 171.5
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "p2_segundo_apellido",
+          "type": "text",
+          "bbox": {
+            "x0": 86.5,
+            "y0": 160.6,
+            "x1": 123.0,
+            "y1": 166.1
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 25,
+          "static_value": null,
+          "label": "Segundo Apellido",
+          "label_bbox": {
+            "x0": 86.5,
+            "y0": 167.3,
+            "x1": 123.0,
+            "y1": 171.5
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "p2_nacionalidad",
+          "type": "text",
+          "bbox": {
+            "x0": 127.0,
+            "y0": 160.6,
+            "x1": 164.6,
+            "y1": 166.1
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 20,
+          "static_value": null,
+          "label": "Nacionalidad",
+          "label_bbox": {
+            "x0": 127.0,
+            "y0": 167.3,
+            "x1": 164.6,
+            "y1": 171.5
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "p2_curp",
+          "type": "text",
+          "bbox": {
+            "x0": 165.4,
+            "y0": 160.6,
+            "x1": 202.6,
+            "y1": 166.1
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 18,
+          "static_value": null,
+          "label": "CURP",
+          "label_bbox": {
+            "x0": 165.4,
+            "y0": 167.3,
+            "x1": 202.6,
+            "y1": 171.5
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "encabezado_anotaciones",
+          "type": "shape",
+          "bbox": {
+            "x0": 13.5,
+            "y0": 176.0,
+            "x1": 124.6,
+            "y1": 183.2
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "fill color=232,232,236 | barra de encabezado",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "recuadro_anotaciones",
+          "type": "shape",
+          "bbox": {
+            "x0": 13.5,
+            "y0": 176.0,
+            "x1": 124.6,
+            "y1": 215.0
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "rect stroke=60,60,60 | recuadro liso",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "encabezado_certificacion",
+          "type": "shape",
+          "bbox": {
+            "x0": 124.6,
+            "y0": 176.0,
+            "x1": 202.6,
+            "y1": 183.2
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "fill color=232,232,236 | barra de encabezado",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "recuadro_certificacion",
+          "type": "shape",
+          "bbox": {
+            "x0": 124.6,
+            "y0": 176.0,
+            "x1": 202.6,
+            "y1": 215.0
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "rect stroke=60,60,60 | recuadro liso",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "linea_certificacion",
+          "type": "shape",
+          "bbox": {
+            "x0": 124.6,
+            "y0": 206.3,
+            "x1": 202.6,
+            "y1": 206.7
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "hline stroke=60,60,60 | línea lisa",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "anotaciones_marginales",
+          "type": "multiline",
+          "bbox": {
+            "x0": 15.0,
+            "y0": 184.0,
+            "x1": 123.4,
+            "y1": 214.4
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 8,
+          "max_chars": 80,
+          "static_value": null,
+          "label": "Anotaciones Marginales:",
+          "label_bbox": {
+            "x0": 16.0,
+            "y0": 177.0,
+            "x1": 90.0,
+            "y1": 182.4
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "certificacion",
+          "type": "multiline",
+          "bbox": {
+            "x0": 126.0,
+            "y0": 184.0,
+            "x1": 201.6,
+            "y1": 206.0
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 7,
+          "max_chars": 70,
+          "static_value": null,
+          "label": "Certificación:",
+          "label_bbox": {
+            "x0": 126.0,
+            "y0": 177.0,
+            "x1": 170.0,
+            "y1": 182.4
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "codigo_2d",
+          "type": "qr",
+          "bbox": {
+            "x0": 13.5,
+            "y0": 216.6,
+            "x1": 60.0,
+            "y1": 263.0
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "firma_electronica",
+          "type": "multiline",
+          "bbox": {
+            "x0": 125.0,
+            "y0": 222.6,
+            "x1": 203.0,
+            "y1": 232.8
+          },
+          "font": {
+            "family": "mono",
+            "size_pt": 5.5,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 4,
+          "max_chars": 64,
+          "static_value": null,
+          "label": "Firma Electrónica Avanzada",
+          "label_bbox": {
+            "x0": 125.0,
+            "y0": 217.2,
+            "x1": 182.0,
+            "y1": 221.8
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "codigo_verificacion",
+          "type": "text",
+          "bbox": {
+            "x0": 64.0,
+            "y0": 251.6,
+            "x1": 100.0,
+            "y1": 255.2
+          },
+          "font": {
+            "family": "sans_bold",
+            "size_pt": 8.0,
+            "color_rgb": [
+              200,
+              30,
+              30
+            ],
+            "uppercase": false
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 15,
+          "static_value": null,
+          "label": "Código de Verificación",
+          "label_bbox": {
+            "x0": 64.0,
+            "y0": 247.8,
+            "x1": 100.0,
+            "y1": 251.2
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "codigo_verificacion_barcode",
+          "type": "barcode",
+          "bbox": {
+            "x0": 66.5,
+            "y0": 255.6,
+            "x1": 98.0,
+            "y1": 259.8
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "nombre_director",
+          "type": "text",
+          "bbox": {
+            "x0": 131.0,
+            "y0": 249.4,
+            "x1": 182.6,
+            "y1": 254.8
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 8.0,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": true
+          },
+          "align": "center",
+          "lines": 1,
+          "max_chars": 45,
+          "static_value": null,
+          "label": "Director General de Registro Civil",
+          "label_bbox": {
+            "x0": 131.0,
+            "y0": 255.0,
+            "x1": 182.6,
+            "y1": 259.0
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "qr",
+          "type": "qr",
+          "bbox": {
+            "x0": 183.2,
+            "y0": 237.6,
+            "x1": 202.4,
+            "y1": 257.2
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": "Código QR",
+          "label_bbox": {
+            "x0": 183.2,
+            "y0": 233.4,
+            "x1": 202.4,
+            "y1": 236.8
+          },
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "leyenda_pie",
+          "type": "static",
+          "bbox": {
+            "x0": 16.0,
+            "y0": 264.4,
+            "x1": 176.0,
+            "y1": 270.6
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 7.2,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 2,
+          "max_chars": null,
+          "static_value": "El contenido de esta acta puede ser verificado en la siguiente página web: www.gob.mx/actas  capturando el Identificador Electrónico.\nPara su consulta en dispositivos móviles, descarga una aplicación para lectura del Código QR.",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        }
+      ]
+    }
+  ]
+}

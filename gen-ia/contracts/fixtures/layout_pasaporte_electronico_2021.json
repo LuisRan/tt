@@ -1,0 +1,592 @@
+{
+  "doc_type": "pasaporte_electronico_2021",
+  "layout_version": "0.0.1",
+  "unit": "mm",
+  "origin": "top-left",
+  "source_note": "FIXTURE de rejilla generado desde field_catalog; no es geometría real",
+  "faces": [
+    {
+      "face": "unica",
+      "width_mm": 125.0,
+      "height_mm": 88.0,
+      "background_rgb": [
+        255,
+        255,
+        255
+      ],
+      "fields": [
+        {
+          "name": "escudo",
+          "type": "shape",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 5.0,
+            "x1": 120.0,
+            "y1": 8.190909090909091
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "figura geométrica sustituta",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "simbolo_chip",
+          "type": "shape",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 8.545454545454545,
+            "x1": 120.0,
+            "y1": 11.736363636363636
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "rectángulo genérico (icono e-passport)",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": false,
+          "variants": null
+        },
+        {
+          "name": "encabezado",
+          "type": "static",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 12.09090909090909,
+            "x1": 120.0,
+            "y1": 15.281818181818181
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "ESTADOS UNIDOS MEXICANOS",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "titulo",
+          "type": "static",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 15.636363636363637,
+            "x1": 120.0,
+            "y1": 18.827272727272728
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": "PASAPORTE / PASSPORT / PASSEPORT",
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "foto",
+          "type": "photo",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 19.18181818181818,
+            "x1": 120.0,
+            "y1": 22.37272727272727
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "foto_secundaria",
+          "type": "photo",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 22.727272727272727,
+            "x1": 120.0,
+            "y1": 25.918181818181818
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "tipo",
+          "type": "text",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 26.272727272727273,
+            "x1": 120.0,
+            "y1": 29.463636363636365
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "codigo_pais",
+          "type": "text",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 29.818181818181817,
+            "x1": 120.0,
+            "y1": 33.00909090909091
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "numero_pasaporte",
+          "type": "text",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 33.36363636363636,
+            "x1": 120.0,
+            "y1": 36.55454545454545
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "apellidos",
+          "type": "text",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 36.90909090909091,
+            "x1": 120.0,
+            "y1": 40.099999999999994
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "nombres",
+          "type": "text",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 40.45454545454545,
+            "x1": 120.0,
+            "y1": 43.64545454545454
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "nacionalidad",
+          "type": "text",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 44.0,
+            "x1": 120.0,
+            "y1": 47.19090909090909
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "observaciones",
+          "type": "text",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 47.54545454545455,
+            "x1": 120.0,
+            "y1": 50.736363636363635
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "fecha_nacimiento",
+          "type": "text",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 51.09090909090909,
+            "x1": 120.0,
+            "y1": 54.28181818181818
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "curp",
+          "type": "text",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 54.63636363636363,
+            "x1": 120.0,
+            "y1": 57.82727272727272
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "sexo",
+          "type": "text",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 58.18181818181818,
+            "x1": 120.0,
+            "y1": 61.37272727272727
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "lugar_nacimiento",
+          "type": "text",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 61.72727272727273,
+            "x1": 120.0,
+            "y1": 64.91818181818182
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "fecha_expedicion",
+          "type": "text",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 65.27272727272728,
+            "x1": 120.0,
+            "y1": 68.46363636363637
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "autoridad",
+          "type": "text",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 68.81818181818181,
+            "x1": 120.0,
+            "y1": 72.0090909090909
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "fecha_caducidad",
+          "type": "text",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 72.36363636363636,
+            "x1": 120.0,
+            "y1": 75.55454545454545
+          },
+          "font": {
+            "family": "sans",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "firma_portador",
+          "type": "signature",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 75.9090909090909,
+            "x1": 120.0,
+            "y1": 79.1
+          },
+          "font": null,
+          "align": "left",
+          "lines": 1,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        },
+        {
+          "name": "mrz",
+          "type": "mrz",
+          "bbox": {
+            "x0": 5.0,
+            "y0": 79.45454545454545,
+            "x1": 120.0,
+            "y1": 82.64545454545454
+          },
+          "font": {
+            "family": "ocrb",
+            "size_pt": 6.381818181818182,
+            "color_rgb": [
+              0,
+              0,
+              0
+            ],
+            "uppercase": false
+          },
+          "align": "left",
+          "lines": 3,
+          "max_chars": null,
+          "static_value": null,
+          "label": null,
+          "label_bbox": null,
+          "in_ground_truth": true,
+          "variants": null
+        }
+      ]
+    }
+  ]
+}

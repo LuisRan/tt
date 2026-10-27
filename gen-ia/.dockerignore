@@ -1,0 +1,32 @@
+# Directriz critica: las referencias oficiales NUNCA entran al contexto de build
+# ni a la imagen. Lista de exclusion por defecto; solo se copia lo necesario
+# (ver Dockerfile).
+formatos/
+**/formatos/
+
+# Entornos, control de versiones y herramientas locales
+.venv/
+**/.venv/
+venv/
+.git/
+.claude/
+.idea/
+.vscode/
+.DS_Store
+**/.DS_Store
+
+# Salidas generadas y caches
+data/
+out/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+**/.pytest_cache/
+*.egg-info/
+
+# Docker no necesita verse a si mismo
+Dockerfile
+.dockerignore
+docker-compose.yml
+docs/
+Makefile

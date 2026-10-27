@@ -1,0 +1,112 @@
+{
+  "$defs": {
+    "Range": {
+      "additionalProperties": false,
+      "properties": {
+        "min": {
+          "title": "Min",
+          "type": "number"
+        },
+        "max": {
+          "title": "Max",
+          "type": "number"
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "title": "Range",
+      "type": "object"
+    },
+    "StepConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/StepKind"
+        },
+        "probability": {
+          "default": 1.0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Probability",
+          "type": "number"
+        },
+        "params": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Range"
+          },
+          "title": "Params",
+          "type": "object"
+        },
+        "options": {
+          "additionalProperties": true,
+          "title": "Options",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "StepConfig",
+      "type": "object"
+    },
+    "StepKind": {
+      "enum": [
+        "render",
+        "dpi_resample",
+        "canvas_placement",
+        "rotation",
+        "skew",
+        "jpeg",
+        "gaussian_noise",
+        "salt_pepper",
+        "contrast_brightness",
+        "illumination_shadow",
+        "blur"
+      ],
+      "title": "StepKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "default": "default",
+      "title": "Name",
+      "type": "string"
+    },
+    "render_dpi": {
+      "default": 300,
+      "maximum": 1200,
+      "minimum": 72,
+      "title": "Render Dpi",
+      "type": "integer"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/StepConfig"
+      },
+      "title": "Steps",
+      "type": "array"
+    },
+    "output_format": {
+      "default": "pdf",
+      "pattern": "^pdf$",
+      "title": "Output Format",
+      "type": "string"
+    },
+    "output_jpeg_quality": {
+      "default": 85,
+      "maximum": 100,
+      "minimum": 1,
+      "title": "Output Jpeg Quality",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "steps"
+  ],
+  "title": "DegradationConfig",
+  "type": "object"
+}

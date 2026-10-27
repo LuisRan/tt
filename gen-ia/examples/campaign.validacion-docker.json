@@ -1,0 +1,24 @@
+{
+ "name": "validacion-docker",
+ "seed": 7373,
+ "per_doc_type": {
+  "ine_2016": 6,
+  "curp_2019": 6,
+  "acta_nacimiento_2015": 6,
+  "pasaporte_electronico_2021": 6
+ },
+ "variant": "nacional",
+ "degradation_presets": [
+  "none",
+  "default"
+ ],
+ "ine_pages": "front",
+ "ocr": {
+  "kind": "http",
+  "base_url": "http://127.0.0.1:5001",
+  "api_key_env": "IA_API_KEY",
+  "timeout_s": 600,
+  "retries": 2
+ },
+ "out_dir": "out/campaigns"
+}

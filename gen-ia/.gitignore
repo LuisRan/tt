@@ -1,0 +1,12 @@
+# Referencias oficiales: SOLO consulta local, nunca al repo (directriz crítica)
+formatos/
+
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+out/
+.DS_Store
+.claude/worktrees/
+data/
+*.zip
