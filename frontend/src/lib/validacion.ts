@@ -20,6 +20,7 @@ export function renderValidacion(
   alConfirmar: (r: any) => void,
   textoBoton = 'Confirmar y guardar',
   modo: 'validar' | 'editar' = 'validar',
+  rutaBase = '/documentos',
 ): void {
   const detectados: Record<string, string | null> =
     (modo === 'editar' ? doc.resultado?.datos_confirmados : null) ?? doc.resultado?.datos_extraidos ?? {};
@@ -39,13 +40,14 @@ export function renderValidacion(
   const corregidosOcr: string[] = modo === 'validar' ? doc.resultado?.metadatos?.campos_corregidos_ocr ?? [] : [];
 
   contenedor.innerHTML = `
-    ${confianza != null ? `<div style="margin-bottom:18px"><div class="small muted" style="display:flex;justify-content:space-between"><span>Confianza de la extracción</span><b>${Math.round(confianza * 100)}%</b></div><div class="barra"><span style="width:${Math.round(confianza * 100)}%"></span></div></div>` : ''}
+    ${confianza != null ? `<div style="margin-bottom:18px"><div class="small muted" style="display:flex;justify-content:space-between"><span>Indicador orientativo de completitud (no representa precisión real)</span><b>${Math.round(confianza * 100)}%</b></div><div class="barra"><span style="width:${Math.round(confianza * 100)}%"></span></div></div>` : ''}
     ${advertencias.length ? `<div class="alerta alerta-aviso"><b>Revisa:</b><ul>${advertencias.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></div>` : ''}
     ${descartados.length ? `<div class="alerta alerta-info">Por seguridad (anti-alucinación) se dejaron vacíos datos que no se pudieron verificar en el documento: ${descartados.map((c) => esc(etiqueta(c))).join(', ')}.</div>` : ''}
     <p class="muted small">${modo === 'editar'
       ? 'Modifica los datos que necesites. Estos cambios no afectan la medición de precisión de la IA.'
       : 'Los campos marcados con * son obligatorios. Corrige cualquier dato incorrecto antes de confirmar.'}</p>
     <form data-form-validacion novalidate>
+      ${rutaBase.startsWith('/auth/registro/') ? '<div class="alerta alerta-info">Este proceso extrae texto y no prueba la autenticidad oficial del documento. Confirma cada dato antes de continuar.</div>' : ''}
       <div data-error></div>
       <div class="form-validacion">
         ${campos
@@ -62,6 +64,7 @@ export function renderValidacion(
           })
           .join('')}
       </div>
+      ${rutaBase.startsWith('/auth/registro/') ? '<label class="declaracion-ine"><input type="checkbox" name="declaraTitular" required /> Confirmo que esta INE es mía y que he revisado los datos extraídos.</label>' : ''}
       <div style="display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px">
         <button class="btn btn-primario btn-grande" type="submit">${esc(textoBoton)}</button>
       </div>
@@ -78,13 +81,13 @@ export function renderValidacion(
     e.preventDefault();
     const boton = form.querySelector('button[type=submit]') as HTMLButtonElement;
     const datos: Record<string, string | null> = {};
-    form.querySelectorAll('input').forEach((i) => (datos[i.name] = i.value.trim() || null));
+    form.querySelectorAll<HTMLInputElement>('.form-validacion input').forEach((i) => (datos[i.name] = i.value.trim() || null));
     boton.disabled = true;
     boton.textContent = 'Guardando…';
     try {
       const r = modo === 'editar'
-        ? await api(`/documentos/${doc.id}/datos`, { metodo: 'PUT', cuerpo: { datos } })
-        : await api(`/documentos/${doc.id}/validar`, { cuerpo: { datos } });
+        ? await api(`${rutaBase}/${doc.id}/datos`, { metodo: 'PUT', cuerpo: { datos } })
+        : await api(`${rutaBase}/${doc.id}/validar`, { cuerpo: { datos, ...(rutaBase.startsWith('/auth/registro/') ? { declaraTitular: true } : {}) }, redirigir401: !rutaBase.startsWith('/auth/registro/') });
       toast(modo === 'editar' ? 'Cambios guardados' : 'Información validada y guardada', 'ok');
       alConfirmar(r);
     } catch (err: any) {
@@ -100,11 +103,11 @@ export function renderValidacion(
 }
 
 /** Espera a que el documento termine de procesarse (polling). */
-export async function esperarProcesamiento(id: number, alCambiar?: (estado: string) => void): Promise<any> {
+export async function esperarProcesamiento(id: number, alCambiar?: (estado: string) => void, rutaBase = '/documentos'): Promise<any> {
   const finales = ['procesado', 'rechazado', 'error', 'validado'];
   let anterior = '';
   for (let i = 0; i < 600; i++) {
-    const e = await api(`/documentos/${id}/estado`);
+    const e = await api(`${rutaBase}/${id}/estado`, { redirigir401: !rutaBase.startsWith('/auth/registro/') });
     if (e.estado !== anterior) {
       anterior = e.estado;
       alCambiar?.(e.estado);

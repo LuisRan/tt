@@ -269,3 +269,19 @@ ALTER TABLE documentos ADD COLUMN IF NOT EXISTS titular_iniciales VARCHAR(4);
 -- persona (pruebas) no convierte la INE propia en "versión anterior".
 ALTER TABLE documentos          ADD COLUMN IF NOT EXISTS titular_hash VARCHAR(64);
 ALTER TABLE documento_versiones ADD COLUMN IF NOT EXISTS titular_hash VARCHAR(64);
+
+
+-- Registro: aceptación versionada y separada del alta completa.
+CREATE TABLE IF NOT EXISTS consentimientos_privacidad (
+  id BIGSERIAL PRIMARY KEY,
+  usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  version_terminos VARCHAR(40) NOT NULL,
+  version_aviso VARCHAR(40) NOT NULL,
+  acepta_terminos BOOLEAN NOT NULL,
+  acepta_aviso BOOLEAN NOT NULL,
+  consentimiento_expreso BOOLEAN NOT NULL,
+  ip VARCHAR(64),
+  user_agent TEXT,
+  aceptado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_consentimientos_usuario ON consentimientos_privacidad(usuario_id, aceptado_en DESC);

@@ -33,6 +33,22 @@ export async function requiereSesion(req: Request, _res: Response, next: NextFun
   const p = leer(req.cookies, 'app');
   const u = p ? await cargarUsuario(p, 'app') : null;
   if (!u) return next(noAutorizado());
+  if (!u.registroCompleto) return next(prohibido('Completa tu registro con la INE antes de entrar.'));
+  req.usuario = u;
+  next();
+}
+
+/** Sólo registro verificado por correo, pendiente y con términos aceptados. */
+export async function requiereRegistroINE(req: Request, _res: Response, next: NextFunction) {
+  const p = leer(req.cookies, 'registro');
+  const u = p ? await cargarUsuario(p, 'registro') : null;
+  if (!u || u.registroCompleto) return next(noAutorizado('Vuelve al registro para continuar.'));
+  const estado = await uno<{ correo_verificado: boolean; terminos_aceptados_en: Date | null }>(
+    'SELECT correo_verificado, terminos_aceptados_en FROM usuarios WHERE id = $1', [u.id],
+  );
+  if (!estado?.correo_verificado || !estado.terminos_aceptados_en) {
+    return next(prohibido('Primero verifica el correo y acepta los términos.'));
+  }
   req.usuario = u;
   next();
 }

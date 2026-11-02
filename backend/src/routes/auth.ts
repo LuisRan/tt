@@ -3,13 +3,15 @@
  */
 import bcrypt from 'bcryptjs';
 import { Router } from 'express';
+import multer from 'multer';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { config } from '../config.js';
 import { query, uno } from '../db/pg.js';
 import { ErrorApp, noAutorizado } from '../lib/errores.js';
 import { emitir, leer, limpiar } from '../lib/sesion.js';
-import { requiereSesion } from '../middleware/auth.js';
+import { requiereRegistroINE, requiereSesion } from '../middleware/auth.js';
+import { crearDocumento, obtenerDocumento, validarDocumento, esquemaValidacion } from '../services/documentos.js';
 import { registrarAcceso, registrarEvento } from '../services/auditoria.js';
 import { emitirCodigo, verificarCodigo } from '../services/dosfa.js';
 
@@ -64,7 +66,7 @@ rutasAuth.post('/registro', limiteAuth, async (req, res) => {
   if (existente) {
     // Registro previo sin terminar: se reinicia con la nueva contraseña
     await query(
-      `UPDATE usuarios SET password_hash = $2, correo_verificado = FALSE, terminos_aceptados_en = NULL,
+      `UPDATE usuarios SET password_hash = $2, correo_verificado = FALSE, terminos_aceptados_en = NULL, registro_completo = FALSE,
                            token_version = token_version + 1, actualizado_en = NOW() WHERE id = $1`,
       [existente.id, hash],
     );
@@ -79,6 +81,7 @@ rutasAuth.post('/registro', limiteAuth, async (req, res) => {
   await registrarAcceso({ usuarioId, correo: body.correo, tipo: 'registro', exito: true, req });
   if (!config.REGISTRO_VERIFICAR_CORREO) {
     const u = await uno<FilaUsuario>('SELECT * FROM usuarios WHERE id = $1', [usuarioId]);
+    await query('UPDATE usuarios SET correo_verificado = TRUE WHERE id = $1', [usuarioId]);
     emitir(res, { sub: u!.id, rol: u!.rol, tv: u!.token_version }, 'registro');
     return res.status(201).json({ ok: true, requiereCodigo: false, siguiente: 'terminos', correo: body.correo });
   }
@@ -120,34 +123,116 @@ rutasAuth.get('/registro/estado', async (req, res) => {
     correo: u.correo,
     terminos_aceptados: !!u.terminos_aceptados_en,
     registro_completo: u.registro_completo,
+    siguiente: u.terminos_aceptados_en ? 'ine' : 'terminos',
   });
 });
+
+const VERSION_TERMINOS = 'TT-2026-10';
+const VERSION_AVISO = 'TT-2026-10';
+const subidaINE = multer({ storage: multer.memoryStorage(), limits: {
+  fileSize: config.MAX_UPLOAD_MB * 1024 * 1024, files: 1, fields: 2,
+}});
 
 rutasAuth.post('/registro/terminos', async (req, res) => {
   const p = leer(req.cookies, 'registro');
   if (!p) throw noAutorizado('Tu sesión de registro expiró.');
-  const { acepta } = z.object({ acepta: z.boolean() }).parse(req.body);
+  const u = await uno<FilaUsuario>('SELECT * FROM usuarios WHERE id = $1', [p.sub]);
+  if (!u || u.token_version !== p.tv || !u.correo_verificado || u.registro_completo) throw noAutorizado();
+  const { acepta, aceptaAviso, consentimientoExpreso } = z.object({
+    acepta: z.boolean(), aceptaAviso: z.boolean().optional(), consentimientoExpreso: z.boolean().optional(),
+  }).parse(req.body);
   if (!acepta) {
-    // CU-01 alterno: el usuario rechaza los términos -> se cancela el registro sin guardar datos
     await query('DELETE FROM usuarios WHERE id = $1 AND NOT registro_completo', [p.sub]);
     limpiar(res, 'registro');
-    await registrarEvento({ tipo: 'auditoria', tabla: 'usuarios', operacion: 'DELETE', descripcion: 'Registro cancelado: términos rechazados', req });
+    await registrarEvento({ tipo: 'auditoria', tabla: 'usuarios', operacion: 'DELETE', descripcion: 'Registro cancelado', req });
     return res.json({ ok: true, cancelado: true });
   }
-  // Al aceptar los términos el registro queda completo y se abre la sesión.
-  // La primera vez se muestra el tutorial (tutorial_visto = FALSE); la carga
-  // de documentos ya no es obligatoria para registrarse.
+  if (!aceptaAviso || !consentimientoExpreso) {
+    throw new ErrorApp(400, 'CONSENTIMIENTO_REQUERIDO', 'Debes aceptar el aviso de privacidad y el tratamiento de la INE.');
+  }
+  await query('UPDATE usuarios SET terminos_aceptados_en = NOW(), actualizado_en = NOW() WHERE id = $1', [p.sub]);
+  await query(`INSERT INTO consentimientos_privacidad
+    (usuario_id, version_terminos, version_aviso, acepta_terminos, acepta_aviso, consentimiento_expreso, ip, user_agent)
+    VALUES ($1,$2,$3,TRUE,TRUE,TRUE,$4,$5)`,
+    [p.sub, VERSION_TERMINOS, VERSION_AVISO, req.ip ?? null, (req.headers['user-agent'] ?? '').slice(0, 500)]);
+  res.json({ ok: true, siguiente: 'ine' });
+});
+
+/** Una cuenta limitada sólo puede subir su propia INE durante el registro. */
+rutasAuth.post('/registro/ine', requiereRegistroINE, subidaINE.single('archivo'), async (req, res) => {
+  if (!req.file) throw new ErrorApp(400, 'ARCHIVO_REQUERIDO', 'Selecciona tu INE en PDF, JPG o PNG.');
+  const doc = await crearDocumento({ usuarioId: req.usuario!.id, tipo: 'ine', archivo: req.file.buffer,
+    nombreOriginal: req.file.originalname || 'ine.pdf' });
+  res.status(202).json({ ...doc, mensaje: 'INE recibida. Esperando la extracción de datos.' });
+});
+
+async function inePropia(usuarioId: number, id: number) {
+  const d = await uno<{ id: number; estado: string }>(
+    `SELECT d.id, d.estado FROM documentos d JOIN tipos_documento t ON t.id=d.tipo_id
+      WHERE d.usuario_id=$1 AND d.id=$2 AND t.clave='ine'`, [usuarioId,id]);
+  if (!d) throw new ErrorApp(404, 'INE_NO_ENCONTRADA', 'INE no encontrada para esta cuenta.');
+  return d;
+}
+function idINE(raw: unknown) {
+  // Express 5 puede tipar los parámetros de ruta como string | string[].
+  // Rechazamos arreglos antes de convertir el identificador.
+  if (typeof raw !== 'string') {
+    throw new ErrorApp(400, 'ID_INVALIDO', 'Identificador de INE inválido.');
+  }
+  const n = Number(raw);
+  if (!Number.isSafeInteger(n) || n < 1) throw new ErrorApp(400, 'ID_INVALIDO', 'Identificador de INE inválido.');
+  return n;
+}
+rutasAuth.get('/registro/ine/ultima', requiereRegistroINE, async (req, res) => {
+  const d = await uno<{ id: number; estado: string }>(
+    `SELECT d.id,d.estado FROM documentos d JOIN tipos_documento t ON t.id=d.tipo_id
+      WHERE d.usuario_id=$1 AND t.clave='ine' ORDER BY d.id DESC LIMIT 1`, [req.usuario!.id]);
+  res.json(d || { id: null, estado: null });
+});
+rutasAuth.get('/registro/ine/:id/estado', requiereRegistroINE, async (req, res) => {
+  res.setHeader('Cache-Control','no-store');
+  res.json(await inePropia(req.usuario!.id, idINE(req.params.id)));
+});
+rutasAuth.get('/registro/ine/:id', requiereRegistroINE, async (req, res) => {
+  res.setHeader('Cache-Control','no-store');
+  const id = idINE(req.params.id);
+  await inePropia(req.usuario!.id, id);
+  res.json(await obtenerDocumento(req.usuario!.id,id));
+});
+rutasAuth.post('/registro/ine/:id/validar', requiereRegistroINE, async (req,res) => {
+  const id = idINE(req.params.id);
+  const doc = await inePropia(req.usuario!.id,id);
+  if (doc.estado !== 'procesado') throw new ErrorApp(409, 'INE_NO_PROCESADA', 'La INE debe procesarse antes de revisarla.');
+  const { datos, declaraTitular } = z.object({
+    datos: esquemaValidacion.shape.datos,
+    declaraTitular: z.literal(true),
+  }).parse(req.body);
+  res.json(await validarDocumento(req.usuario!.id, id, datos));
+});
+
+/** La transición a sesión normal se decide SIEMPRE en PostgreSQL, no en Astro. */
+rutasAuth.post('/registro/finalizar', requiereRegistroINE, async (req,res) => {
+  const usuarioId = req.usuario!.id;
+  const ine = await uno<{ id: number }>(
+    `SELECT d.id FROM documentos d JOIN tipos_documento t ON t.id=d.tipo_id
+      WHERE d.usuario_id=$1 AND d.estado='validado' AND t.clave='ine'
+      ORDER BY d.actualizado_en DESC LIMIT 1`, [usuarioId]);
+  const perfil = await uno<{ verificado: boolean }>('SELECT verificado FROM perfil_usuario WHERE usuario_id=$1', [usuarioId]);
+  const consentimiento = await uno<{ id: number }>(
+    `SELECT id FROM consentimientos_privacidad WHERE usuario_id=$1 AND acepta_terminos
+       AND acepta_aviso AND consentimiento_expreso ORDER BY aceptado_en DESC LIMIT 1`, [usuarioId]);
+  if (!ine || !perfil?.verificado || !consentimiento) {
+    throw new ErrorApp(409, 'REGISTRO_INCOMPLETO', 'Falta validar tu INE y confirmar tu información.');
+  }
   const u = await uno<FilaUsuario>(
-    `UPDATE usuarios SET terminos_aceptados_en = NOW(), registro_completo = TRUE, ultimo_acceso = NOW(),
-                         actualizado_en = NOW()
-      WHERE id = $1 RETURNING *`,
-    [p.sub],
-  );
-  if (!u || u.token_version !== p.tv) throw noAutorizado();
+    `UPDATE usuarios SET registro_completo=TRUE, ultimo_acceso=NOW(), actualizado_en=NOW()
+      WHERE id=$1 AND correo_verificado AND terminos_aceptados_en IS NOT NULL RETURNING *`, [usuarioId]);
+  if (!u) throw noAutorizado();
   limpiar(res, 'registro');
-  emitir(res, { sub: u.id, rol: u.rol, tv: u.token_version }, 'app');
-  await registrarEvento({ usuarioId: u.id, tipo: 'auditoria', tabla: 'usuarios', operacion: 'REGISTRO', descripcion: 'Registro completado', req });
-  res.json({ ok: true, rol: u.rol, redirigir: '/app/tutorial' });
+  emitir(res, { sub:u.id, rol:u.rol, tv:u.token_version }, 'app');
+  await registrarEvento({ usuarioId, tipo:'auditoria', tabla:'usuarios', operacion:'REGISTRO',
+    descripcion:'Registro completado con INE confirmada', req });
+  res.json({ ok:true, rol:u.rol, redirigir:'/app/tutorial' });
 });
 
 // ── Inicio de sesión con 2FA ─────────────────────────────────────────────────

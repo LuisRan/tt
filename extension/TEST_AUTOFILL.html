@@ -1,0 +1,19 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Formulario sintético - Prueba de autocompletado</title>
+<style>body{font:16px system-ui;background:#0f172a;color:#e2e8f0;max-width:740px;margin:40px auto;padding:20px}h1{color:#a5b4fc}label{display:block;margin:14px 0 5px}input,textarea,select{width:100%;padding:10px;border-radius:8px;border:1px solid #64748b;background:#1e293b;color:#fff}button{padding:12px;border:0;border-radius:8px;background:#6366f1;color:#fff;margin-top:18px}small{color:#94a3b8}</style></head>
+<body><h1>Formulario de prueba del TT</h1><p>Prueba únicamente con datos sintéticos. La extensión <b>no debe enviar</b> este formulario por sí sola.</p>
+<form id="demo">
+<label for="nombre">Nombre(s)</label><input id="nombre" autocomplete="given-name" name="nombre">
+<label for="paterno">Apellido paterno</label><input id="paterno" name="apellidoPaterno">
+<label for="materno">Apellido materno</label><input id="materno" name="apellidoMaterno">
+<label for="curp">CURP</label><input id="curp" name="curp">
+<label for="correo">Correo electrónico</label><input id="correo" type="email" autocomplete="email">
+<label for="nacimiento">Fecha de nacimiento</label><input id="nacimiento" type="date" name="fechaNacimiento">
+<label for="cp">Código postal</label><input id="cp" name="zipCode" inputmode="numeric">
+<label for="direccion">Domicilio completo</label><textarea id="direccion" name="streetAddress"></textarea>
+<label for="estado">Estado</label><select id="estado" name="estado"><option disabled selected value="">Seleccione</option><option>Ciudad de México</option><option>Estado de México</option></select>
+<label for="password">Contraseña (NO DEBE RELLENARSE)</label><input id="password" type="password">
+<label for="codigo">Código de verificación (NO DEBE RELLENARSE)</label><input id="codigo" placeholder="Código OTP">
+<label for="ocupado">Nombre preexistente (NO DEBE CAMBIARSE)</label><input id="ocupado" value="Valor original">
+<button type="button" id="dinamico">Mostrar campo creado dinámicamente</button><div id="nuevo"></div>
+<button type="submit">Enviar manualmente</button></form><p id="resultado" role="status"></p>
+<script>document.querySelector('#dinamico').addEventListener('click',()=>{const l=document.createElement('label');l.textContent='Municipio';l.htmlFor='municipio';const i=document.createElement('input');i.id='municipio';i.name='municipio';document.querySelector('#nuevo').append(l,i)});document.querySelector('#demo').addEventListener('submit',e=>{e.preventDefault();document.querySelector('#resultado').textContent='Formulario enviado solo tras un clic humano.'})</script></body></html>

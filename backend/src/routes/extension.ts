@@ -17,6 +17,7 @@ import {
   infoExtension,
   listarDispositivos,
   paqueteExtension,
+  perfilAutofillExtension,
   requiereExtension,
   revocarDispositivo,
 } from '../services/extension.js';
@@ -74,6 +75,11 @@ rutasExtension.post('/vincular', limiteVinculacion, async (req, res) => {
 rutasExtension.get('/documentos', requiereExtension, async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.json(await documentosParaExtension(req.usuario!.id));
+});
+
+rutasExtension.get('/autofill', requiereExtension, async (req,res) => {
+  res.setHeader('Cache-Control','no-store');
+  res.json(await perfilAutofillExtension(req.usuario!.id));
 });
 
 rutasExtension.post('/desvincular', requiereExtension, async (req, res) => {

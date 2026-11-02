@@ -9,7 +9,9 @@ import Icono from '../components/Icono.astro';
       <div class="pasos" data-pasos>
         <span data-p="cuenta">1. Cuenta</span>
         <span data-p="codigo">2. Verificar correo</span>
-        <span data-p="terminos">3. Términos</span>
+        <span data-p="terminos">3. Privacidad</span>
+        <span data-p="ine">4. INE</span>
+        <span data-p="validar">5. Revisión</span>
       </div>
       <div data-mensaje></div>
 
@@ -44,18 +46,51 @@ import Icono from '../components/Icono.astro';
         <h1>Términos y condiciones</h1>
         <p class="sub">Lee cómo tratamos tus datos personales y documentos oficiales.</p>
         <div class="card" style="background:var(--bg);box-shadow:none;max-height:320px;overflow:auto;margin:18px 0" data-terminos></div>
-        <label style="display:flex;gap:10px;align-items:center;margin-bottom:18px"><input type="checkbox" data-acepto /> He leído y acepto los términos y el aviso de privacidad.</label>
+        <div class="consentimientos-registro">
+          <label><input type="checkbox" data-acepto /> Acepto los términos de uso.</label>
+          <label><input type="checkbox" data-aviso /> He leído y acepto el aviso de privacidad.</label>
+          <label><input type="checkbox" data-expreso /> Autorizo expresamente el procesamiento y almacenamiento protegido de mi INE para extraer datos y completar el registro.</label>
+        </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap">
           <button class="btn btn-primario btn-grande" data-aceptar disabled>Aceptar y continuar</button>
           <button class="btn btn-peligro" data-rechazar>No acepto (cancelar registro)</button>
         </div>
       </section>
 
+      <!-- 4. INE obligatoria -->
+      <section data-seccion="ine" class="oculto">
+        <div class="registro-hero">
+          <span class="registro-num">PASO 04 / 05</span>
+          <h1>Tu identidad comienza aquí</h1>
+          <p class="sub">Carga tu INE para extraer los datos de registro. Puedes revisar y corregir cualquier campo antes de guardarlo.</p>
+        </div>
+        <div class="registro-ayuda"><b>Documento obligatorio</b><span>PDF, JPG o PNG · máximo 10 MB · procura que el frente y el reverso sean legibles.</span></div>
+        <form data-form-ine>
+          <label for="r-ine" class="drop-ine"><strong>Seleccionar tu INE</strong><span>Haz clic para elegir un archivo. No uses documentos de otras personas.</span></label>
+          <input id="r-ine" type="file" accept="application/pdf,image/jpeg,image/png" required class="input-ine" />
+          <p class="muted small" data-archivo-elegido></p>
+          <button type="submit" class="btn btn-primario btn-grande">Extraer información de mi INE</button>
+        </form>
+        <div class="registro-procesando oculto" data-procesando-ine aria-live="polite">
+          <div class="spinner"></div><p data-estado-ine>Analizando el documento…</p>
+        </div>
+      </section>
+
+      <!-- 5. Previsualización, corrección y confirmación -->
+      <section data-seccion="validar" class="oculto">
+        <div class="registro-hero"><span class="registro-num">PASO 05 / 05</span>
+          <h1>Revisa los datos de tu INE</h1>
+          <p class="sub">La extracción automática puede equivocarse. Confirma nombres, apellidos, CURP, domicilio y fecha de nacimiento antes de terminar.</p>
+        </div>
+        <div data-form-ine-validar></div>
+        <button class="btn btn-borde" type="button" data-otra-ine>Cambiar INE</button>
+      </section>
+
       <!-- Listo -->
       <section data-seccion="listo" class="oculto" style="text-align:center;padding:30px 0">
         <span class="icono icono-ok" style="margin-bottom:14px"><Icono nombre="check" tam={32} /></span>
         <h1>Registro completado</h1>
-        <p class="sub">Te mostraremos una guía rápida de cómo usar la plataforma…</p>
+        <p class="sub">Tu INE fue confirmada y tu perfil está listo. Te mostraremos la guía de la plataforma.</p>
       </section>
     </div>
   </div>
@@ -65,8 +100,9 @@ import Icono from '../components/Icono.astro';
   import { api } from '../lib/api';
   import { TERMINOS_HTML } from '../lib/terminos';
   import { confirmar, esc, limpiar, mostrarError, toast } from '../lib/ui';
+  import { esperarProcesamiento, renderValidacion } from '../lib/validacion';
 
-  const ORDEN = ['cuenta', 'codigo', 'terminos'];
+  const ORDEN = ['cuenta', 'codigo', 'terminos', 'ine', 'validar'];
   const msg = document.querySelector('[data-mensaje]') as HTMLElement;
   let correo = '';
 
@@ -124,25 +160,84 @@ import Icono from '../components/Icono.astro';
     }
   });
 
-  // 3. Términos: al aceptar se completa el registro y se abre la sesión
+  // 3. Aceptación versionada. La sesión completa NO se crea al aceptar.
   const acepto = document.querySelector('[data-acepto]') as HTMLInputElement;
+  const aviso = document.querySelector('[data-aviso]') as HTMLInputElement;
+  const expreso = document.querySelector('[data-expreso]') as HTMLInputElement;
   const btnAceptar = document.querySelector('[data-aceptar]') as HTMLButtonElement;
-  acepto.addEventListener('change', () => (btnAceptar.disabled = !acepto.checked));
+  const actualizarConsentimiento = () => btnAceptar.disabled = !(acepto.checked && aviso.checked && expreso.checked);
+  [acepto, aviso, expreso].forEach((c) => c.addEventListener('change', actualizarConsentimiento));
   btnAceptar.addEventListener('click', async () => {
     btnAceptar.disabled = true;
     try {
-      const r = await api('/auth/registro/terminos', { cuerpo: { acepta: true }, redirigir401: false });
-      ir('listo');
-      setTimeout(() => (location.href = r.redirigir ?? '/app/tutorial'), 1200);
+      await api('/auth/registro/terminos', { cuerpo: {
+        acepta: true, aceptaAviso: true, consentimientoExpreso: true,
+      }, redirigir401: false });
+      ir('ine');
     } catch (err: any) {
-      btnAceptar.disabled = false;
-      if (err.status === 401) {
-        toast('Tu sesión de registro expiró. Vuelve a comenzar.', 'error');
-        return ir('cuenta');
-      }
+      actualizarConsentimiento();
+      if (err.status === 401) return ir('cuenta');
       mostrarError(msg, err);
     }
   });
+
+  // 4. Subida y procesamiento obligatorio de la INE.
+  const formIne = document.querySelector('[data-form-ine]') as HTMLFormElement;
+  const inputIne = document.getElementById('r-ine') as HTMLInputElement;
+  let ineId: number | null = null;
+  inputIne.addEventListener('change', () => {
+    (document.querySelector('[data-archivo-elegido]') as HTMLElement).textContent = inputIne.files?.[0]?.name ?? '';
+  });
+
+  async function revisarINE(id: number) {
+    ineId = id;
+    ir('ine');
+    const proceso = document.querySelector('[data-procesando-ine]') as HTMLElement;
+    const estadoEl = document.querySelector('[data-estado-ine]') as HTMLElement;
+    proceso.classList.remove('oculto');
+    formIne.classList.add('oculto');
+    try {
+      const estado = await esperarProcesamiento(id, (e) => {
+        estadoEl.textContent = e === 'cargado' ? 'Archivo recibido y protegido…' : 'Extrayendo y verificando los datos…';
+      }, '/auth/registro/ine');
+      if (estado.estado === 'validado') return await finalizar();
+      if (estado.estado !== 'procesado') throw new Error(estado.motivo_rechazo ?? 'No fue posible procesar la INE. Prueba con una imagen más legible.');
+      const doc = await api(`/auth/registro/ine/${id}`, { redirigir401: false });
+      ir('validar');
+      renderValidacion(document.querySelector('[data-form-ine-validar]') as HTMLElement, doc,
+        async () => { await finalizar(); }, 'Confirmar INE y completar registro', 'validar', '/auth/registro/ine');
+    } catch(err) {
+      ir('ine');
+      mostrarError(msg, err);
+    } finally {
+      proceso.classList.add('oculto');
+      formIne.classList.remove('oculto');
+    }
+  }
+  async function finalizar() {
+    try {
+      const r = await api('/auth/registro/finalizar', { cuerpo: {}, redirigir401: false });
+      ir('listo');
+      location.assign(r.redirigir ?? '/app/tutorial');
+    } catch (err) { mostrarError(msg, err); }
+  }
+  formIne.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = inputIne.files?.[0];
+    if (!f) return mostrarError(msg, new Error('Selecciona tu INE.'));
+    if (!['application/pdf', 'image/jpeg', 'image/png'].includes(f.type) || f.size > 10 * 1024 * 1024)
+      return mostrarError(msg, new Error('Usa PDF, JPG o PNG, máximo 10 MB.'));
+    const datos = new FormData(); datos.append('archivo',f);
+    const boton = formIne.querySelector('button') as HTMLButtonElement;
+    boton.disabled = true;
+    try {
+      const doc = await api('/auth/registro/ine', { form: datos, redirigir401:false });
+      await revisarINE(doc.id);
+    } catch (err) { mostrarError(msg,err); }
+    finally { boton.disabled = false; }
+  });
+  document.querySelector('[data-otra-ine]')!.addEventListener('click', () => ir('ine'));
+
   document.querySelector('[data-rechazar]')!.addEventListener('click', async () => {
     if (!(await confirmar('Cancelar registro', 'Sin aceptar los términos no es posible crear tu cuenta. Se eliminará la información capturada.', 'Cancelar registro', true))) return;
     await api('/auth/registro/terminos', { cuerpo: { acepta: false }, redirigir401: false }).catch(() => undefined);
@@ -156,6 +251,9 @@ import Icono from '../components/Icono.astro';
       const est = await api('/auth/registro/estado', { redirigir401: false });
       correo = est.correo;
       if (!est.terminos_aceptados) return ir('terminos');
+      const d = await api('/auth/registro/ine/ultima', { redirigir401:false });
+      if (d.id && ['cargado','procesando','procesado','validado'].includes(d.estado)) return void revisarINE(d.id);
+      return ir('ine');
     } catch {
       /* sin registro en curso */
     }

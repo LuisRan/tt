@@ -287,3 +287,26 @@ export async function paqueteExtension(usuarioId: number, req: Request): Promise
   });
   return Buffer.from(zipSync(archivos, { level: 6 }));
 }
+
+/** Perfil confirmado para autofill: nunca devuelve OCR sin revisión del titular. */
+export async function perfilAutofillExtension(usuarioId: number) {
+  const p = await uno<{
+    correo: string; nombre: string | null; apellido_paterno: string | null;
+    apellido_materno: string | null; curp: string | null; fecha_nacimiento: Date | string | null;
+    sexo: string | null; direccion: string | null; verificado: boolean | null;
+  }>(`SELECT u.correo, p.nombre, p.apellido_paterno, p.apellido_materno,
+           p.curp, p.fecha_nacimiento, p.sexo, p.direccion, p.verificado
+      FROM usuarios u JOIN perfil_usuario p ON p.usuario_id=u.id
+     WHERE u.id=$1 AND u.registro_completo=TRUE`,[usuarioId]);
+  if (!p?.verificado) throw new ErrorApp(409,'PERFIL_SIN_CONFIRMAR','Confirma tu identidad en la plataforma antes de autocompletar.');
+  const fecha = p.fecha_nacimiento instanceof Date ? p.fecha_nacimiento.toISOString().slice(0,10) :
+    (p.fecha_nacimiento ? String(p.fecha_nacimiento).slice(0,10) : null);
+  const perfil = {
+    correo:p.correo, nombre:p.nombre, apellido_paterno:p.apellido_paterno,
+    apellido_materno:p.apellido_materno,
+    nombre_completo:[p.nombre,p.apellido_paterno,p.apellido_materno].filter(Boolean).join(' '),
+    curp:descifrar(p.curp), fecha_nacimiento:fecha, sexo:p.sexo,
+    domicilio_completo:descifrar(p.direccion),
+  };
+  return { validado:true, confirmado:true, perfil };
+}

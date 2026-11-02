@@ -162,6 +162,7 @@ function pintarInicio() {
       }),
     ),
   );
+  pintarAutofill();
   if (!total) {
     vista.append(
       el('p', { class: 'vacio' }, 'Aún no hay documentos validados. Sube y confirma un documento en la plataforma y pulsa Sincronizar.'),
@@ -285,7 +286,11 @@ function pintarVincular() {
     error.replaceChildren();
     boton.disabled = true;
     try {
-      estado = await Nucleo.vincular(codigo.value, direccion.value.trim());
+      const url = Nucleo.comprobarBase(direccion.value.trim());
+      const u = new URL(url);
+      const patron = `${u.protocol}//${u.hostname}/*`;
+      if (!(await chrome.permissions.request({ origins:[patron] }))) throw new Error('Autoriza la conexión con la plataforma para continuar.');
+      estado = await Nucleo.vincular(codigo.value, url);
       toast('Extensión vinculada');
       pila = [{ vista: 'inicio' }];
       pintar();
@@ -297,6 +302,77 @@ function pintarVincular() {
   });
   vista.append(form);
   codigo.focus();
+}
+
+// ── Autocompletado en la pestaña actual ─────────────────────────────────────
+async function pintarAutofill() {
+  const contenedor = el('section', { class:'autofill-panel' },
+    el('div', { class:'seccion-label' }, 'AUTOCOMPLETADO · PRIVADO'),
+    el('h2', {}, 'Rellena formularios en un clic'),
+    el('p', { class:'sub' }, 'Solo compartimos con esta página los campos que decidas completar. Nunca enviamos el formulario.'),
+  );
+  vista.prepend(contenedor);
+  let tab;
+  try { [tab] = await chrome.tabs.query({ active:true, currentWindow:true }); } catch { return; }
+  if (!tab?.id || !/^https?:\/\//.test(tab.url || '') || !contenedor.isConnected) {
+    contenedor.append(el('p', { class:'sub' }, 'Abre una página con formulario HTTPS para empezar.'));
+    return;
+  }
+  const urlTab = new URL(tab.url);
+  const origen = urlTab.origin;
+  const patron = `${urlTab.protocol}//${urlTab.hostname}/*`;
+  const local = ['localhost','127.0.0.1'].includes(new URL(tab.url).hostname);
+  if (!tab.url.startsWith('https:') && !local) {
+    contenedor.append(el('p', { class:'alerta aviso' }, 'El autocompletado no funciona en páginas HTTP públicas.'));
+    return;
+  }
+  contenedor.append(el('div', { class:'site-chip' }, el('span', { class:'site-dot' }), origen));
+  const docs = documentos().filter(d => Array.isArray(d.campos) && d.campos.length);
+  const selector = el('select', { class:'selector-fuente', 'aria-label':'Elegir fuente de datos' },
+    el('option', { value:'' }, 'Mi perfil confirmado (API)')
+  );
+  for (const d of docs) selector.append(el('option', {value:String(d.id)}, `${d.identificador || d.tipo || 'Documento'} · ${d.titular || 'Titular desconocido'}`));
+  const estadoText = el('p', { class:'sub' }, 'Elige la fuente de datos y revisa los campos antes de enviar.');
+  const rellenar = el('button', { class:'btn btn-primario', type:'button' }, 'Autocompletar ahora');
+  rellenar.addEventListener('click', async () => {
+    rellenar.disabled = true;
+    estadoText.textContent = 'Detectando campos compatibles…';
+    try {
+      const r = await chrome.runtime.sendMessage({tipo:'autofill:manual', tabId:tab.id, documentoId:selector.value || null});
+      if (!r?.ok) throw new Error(r?.error || 'No se pudo rellenar la página.');
+      estadoText.textContent = `${r.completados} campo(s) completados · ${r.compatibles} compatibles detectados. Revisa la página.`;
+      toast(r.completados ? 'Campos completados' : 'No hubo campos vacíos compatibles');
+    } catch (error) { estadoText.textContent = error.message; }
+    finally { rellenar.disabled = false; }
+  });
+  const etiqueta = el('label', { class:'switch-line' });
+  const siempre = el('input', {type:'checkbox', 'aria-label':'Siempre aquí'});
+  siempre.checked = (estado.sitios || []).includes(origen);
+  etiqueta.append(siempre,el('span', {}, 'Siempre aquí'), el('span', {class:'sub'}, 'Solo en este sitio'));
+  const recordarAyuda = el('p', { class:'sub' }, 'Solo disponible con perfil confirmado desde la API. Al autorizar, el sitio puede leer los campos que se rellenen.');
+  selector.addEventListener('change', () => {
+    siempre.disabled = Boolean(selector.value);
+    recordarAyuda.textContent = selector.value ? 'Con un documento seleccionado, el relleno es únicamente manual.' : 'Autoriza únicamente sitios de confianza; podrán leer los valores rellenados.';
+  });
+  siempre.addEventListener('change', async () => {
+    const activado = siempre.checked;
+    siempre.disabled = true;
+    try {
+      if (activado) {
+        const permitido = await chrome.permissions.request({ origins:[patron] });
+        if (!permitido) throw new Error('El navegador no concedió permiso para este sitio.');
+      }
+      const r = await chrome.runtime.sendMessage({tipo:'autofill:origen',tabId:tab.id,origen,activar:activado});
+      if (!r?.ok) throw new Error(r?.error || 'Error actualizando los permisos.');
+      if (!activado) await chrome.permissions.remove({ origins:[patron] });
+      estado.sitios = r.sitios;
+      toast(activado ? 'Sitio autorizado' : 'Autocompletado desactivado aquí');
+    } catch (err) {
+      siempre.checked = !activado;
+      estadoText.textContent = err.message;
+    } finally { siempre.disabled = Boolean(selector.value); }
+  });
+  contenedor.append(selector, rellenar, estadoText, etiqueta, recordarAyuda);
 }
 
 // ── Acciones ────────────────────────────────────────────────────────────────
@@ -317,8 +393,10 @@ async function sincronizar() {
 }
 
 function abrirPlataforma(url, ruta = '/app') {
-  const base = String(url || Nucleo.urlBase(estado)).replace(/\/+$/, '');
-  if (base) chrome.tabs.create({ url: `${base}${ruta}` });
+  try {
+    const base = Nucleo.comprobarBase(String(url || Nucleo.urlBase(estado)).replace(/\/+$/, ''));
+    chrome.tabs.create({ url: `${base}${ruta}` });
+  } catch { toast('Dirección de la plataforma no válida'); }
 }
 
 $('[data-atras]').innerHTML = svg('atras', 18);
@@ -344,4 +422,7 @@ chrome.storage.onChanged.addListener(async () => {
   estado = await Nucleo.leer();
   pila = [{ vista: 'inicio' }];
   pintar();
+  if (estado.token && !estado.documentos?.length) {
+    Nucleo.sincronizar().then(nuevo => { estado = nuevo; pintar(); }).catch(() => {});
+  }
 })();

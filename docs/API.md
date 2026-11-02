@@ -113,3 +113,18 @@ de origen (CSRF) que se aplica al resto de peticiones que modifican datos.
 | GET | `/health` | Plataforma detectada, motor OCR, modelo LLM y disponibilidad. |
 
 El backend convierte JPG/PNG a PDF (pdf-lib) antes de enviarlos, porque el módulo solo acepta PDF.
+
+
+## Registro con INE obligatoria (revisión octubre 2026)
+
+Estas rutas operan exclusivamente bajo cookie `registro` (scope limitado, email verificado y términos aceptados). La cookie `sesion` normal solo se emite después de confirmar la INE.
+
+- `POST /api/auth/registro/terminos` recibe `{ "acepta": true, "aceptaAviso": true, "consentimientoExpreso": true }`; registra aceptación versionada y responde `siguiente: ine`.
+- `POST /api/auth/registro/ine` recibe `multipart/form-data`, campo `archivo` (PDF/JPG/PNG), INE únicamente; responde `202` con `{id, estado}`.
+- `GET /api/auth/registro/ine/ultima` devuelve `{id, estado}` del último intento para reanudación.
+- `GET /api/auth/registro/ine/:id/estado` consulta procesamiento y `GET /api/auth/registro/ine/:id` devuelve el documento+campos extraídos al propietario.
+- `POST /api/auth/registro/ine/:id/validar` requiere `{ "datos": { "nombres": "...", ... }, "declaraTitular": true }`, conserva la corrección humana, restricciones de formato y auditoría.
+- `POST /api/auth/registro/finalizar` permite cuenta completa solo con aceptación, INE validada y perfil confirmado. No permite omitir carga manipulando el frontend.
+- `GET /api/extension/autofill` con token Bearer de dispositivo devuelve `{validado:true, confirmado:true, perfil:{...}}` solo de `perfil_usuario.verificado=true` y usuario registrado. Nunca devuelve datos sin confirmar.
+
+El sistema NO comprueba autenticidad ante autoridades; OCR y confirmación son validación de transcripción, no prueba de identidad oficial.

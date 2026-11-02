@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "OCR Platform - Mis documentos",
   "short_name": "OCR Platform",
-  "version": "1.0.0",
-  "description": "Tus documentos validados (INE, CURP, acta y pasaporte) a la mano: consulta y copia sus datos.",
+  "version": "1.1.0",
+  "description": "Consulta documentos confirmados y rellena formularios compatibles con autorización del usuario, sin enviarlos.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6tufnghRvh86PuCb38I2abmOiOrELmw6mHWnI9sPfwVlN/k7/f2NTs43VP7f/4xfZn2E/fy/XmqK+Hg/zSbcH+oKAmhXfIknEP8ehSarVMzWGyoxS7KefEvxYiXxNKDYEYEQnHleNO4i890kM+MHa10HU4djglRbyU5qZof0NBslGn888rHcZHHDvuK62+YG8GjWO5iusM/96wPj9JEwpsiIjcZmRZtK+DpEusPBDkgSKdQ8IPpYQiEDx0MU7s2aHzBf4dzgr9pCuFpHGYXwPziuwJg9TgPr89i/eonc/TCmE99QwRdaVoWlH/IEvhyZ0KhroqFstiXtNMj1VqRdbwIDAQAB",
   "minimum_chrome_version": "110",
   "icons": {
@@ -25,7 +25,10 @@
   },
   "permissions": [
     "storage",
-    "clipboardWrite"
+    "clipboardWrite",
+    "activeTab",
+    "scripting",
+    "tabs"
   ],
   "host_permissions": [
     "https://localhost/*"
@@ -37,5 +40,10 @@
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none'"
-  }
+  },
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ]
 }

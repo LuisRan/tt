@@ -66,6 +66,32 @@ server {
         proxy_pass http://backend_node;
     }
 
+    # La INE durante registro llega a /api/auth/registro/ine con hasta 10 MB.
+    # Sin este bloque, la expresión de autenticación inferior limitaría a 16 KB.
+    location = /api/auth/registro/ine {
+        client_max_body_size 12m;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        limit_req zone=auth burst=10 nodelay;
+        proxy_read_timeout 180s;
+        proxy_pass http://backend_node;
+    }
+
+    location ^~ /api/auth/registro/ine/ {
+        client_max_body_size 200k;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        limit_req zone=api burst=60 nodelay;
+        proxy_read_timeout 180s;
+        proxy_pass http://backend_node;
+    }
+
     # Límite estricto para autenticación (fuerza bruta)
     location ~ ^/api/auth/(login|registro)(/.*)?$ {
         client_max_body_size 16k;

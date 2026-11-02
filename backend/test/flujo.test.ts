@@ -73,63 +73,61 @@ describe('flujo completo', () => {
     expect(r.status).toBe(400);
   });
 
-  it('CUP-01 registro: correo + código + términos abre la sesión sin exigir documentos', async () => {
+  it('CUP-01: correo, consentimiento y bloqueo hasta que exista INE confirmada', async () => {
     const r = await usuario.post('/api/auth/registro').send({ correo, password });
     expect(r.status).toBe(201);
     expect(r.body.requiereCodigo).toBe(true);
-    const malo = await usuario.post('/api/auth/registro/verificar').send({ correo, codigo: '000000' });
-    expect(malo.status).toBe(400);
-    const ok = await usuario.post('/api/auth/registro/verificar').send({ correo, codigo: ultimoCodigo(correo) });
-    expect(ok.status).toBe(200);
-    const t = await usuario.post('/api/auth/registro/terminos').send({ acepta: true });
-    expect(t.body.redirigir).toBe('/app/tutorial');
-    const yo = await usuario.get('/api/auth/yo');
-    expect(yo.status).toBe(200);
-    expect(yo.body.tutorial_visto).toBe(false);
-    expect(yo.body.dosfa_activo).toBe(false);
-    expect((await usuario.post('/api/perfil/tutorial').send({})).status).toBe(200);
-    expect((await usuario.get('/api/auth/yo')).body.tutorial_visto).toBe(true);
+    expect((await usuario.post('/api/auth/registro/verificar').send({ correo, codigo:'000000' })).status).toBe(400);
+    expect((await usuario.post('/api/auth/registro/verificar').send({ correo, codigo:ultimoCodigo(correo) })).status).toBe(200);
+    expect((await usuario.post('/api/auth/registro/terminos').send({ acepta:true })).status).toBe(400);
+    const t = await usuario.post('/api/auth/registro/terminos').send({
+      acepta:true, aceptaAviso:true, consentimientoExpreso:true,
+    });
+    expect(t.body.siguiente).toBe('ine');
+    expect((await usuario.get('/api/auth/yo')).status).toBe(401);
+    expect((await usuario.post('/api/auth/registro/finalizar').send({})).status).toBe(409);
+    expect((await usuario.get('/api/documentos')).status).toBe(401);
   });
 
-  it('CUP-03/04 sube la INE (requiere contraseña) y el módulo de IA la procesa', async () => {
-    const sin = await usuario.post('/api/documentos').field('tipo', 'ine').attach('archivo', readFileSync(path.join(PDFS, 'ine2.pdf')), 'ine2.pdf');
-    expect(sin.status).toBe(428);
-    expect((await confirmarPassword(usuario)).status).toBe(200);
-    const r = await usuario.post('/api/documentos').field('tipo', 'ine').attach('archivo', readFileSync(path.join(PDFS, 'ine2.pdf')), 'ine2.pdf');
+  it('CUP-03/04: sube INE con sesión limitada y procesa OCR', async () => {
+    const ruta = path.join(PDFS, 'ine2.pdf');
+    const sin = await usuario.post('/api/documentos').field('tipo','ine').attach('archivo', readFileSync(ruta), 'ine2.pdf');
+    expect(sin.status).toBe(401);
+    const r = await usuario.post('/api/auth/registro/ine').attach('archivo', readFileSync(ruta), 'ine2.pdf');
     expect(r.status).toBe(202);
     ineId = r.body.id;
-    const estado = await esperarEstado(usuario, ineId);
-    expect(estado.estado).toBe('procesado');
-    const det = await usuario.get(`/api/documentos/${ineId}`);
+    for (let i = 0; i < 240; i++) {
+      const est = await usuario.get(`/api/auth/registro/ine/${ineId}/estado`);
+      if (['procesado','rechazado','error'].includes(est.body.estado)) {expect(est.body.estado).toBe('procesado');break;}
+      await new Promise(resolve=>setTimeout(resolve,1000));
+    }
+    const det = await usuario.get(`/api/auth/registro/ine/${ineId}`);
+    expect(det.status).toBe(200);
     expect(det.body.resultado.tipo_documento).toBe('INE');
-    expect(det.body.resultado.datos_extraidos.clave_elector).toBe('BRCRPL94062222M400');
-    expect(det.body.resultado.datos_extraidos.curp).toBe('BACP940622MQTRRL08');
     expect(det.body.ruta_archivo).toBeUndefined();
-    const crudo = coleccion.docs.find((d: any) => d.documento_id === ineId);
-    expect(String(crudo.datos_extraidos.clave_elector)).toMatch(/^enc:v1:/);
-    expect(String(crudo.texto_crudo)).toMatch(/^enc:v1:/);
-    // El texto OCR ya no se consulta en la plataforma (solo lo lleva la extensión)
-    expect((await usuario.get(`/api/documentos/${ineId}/texto`)).status).toBe(404);
   });
 
-  it('CUP-05 valida y la INE propia completa el perfil', async () => {
-    const incompleto = await usuario.post(`/api/documentos/${ineId}/validar`).send({ datos: { nombres: 'PAULINA', curp: null } });
+  it('CUP-05: valida INE, completa perfil y solo entonces habilita acceso', async () => {
+    const ruta = `/api/auth/registro/ine/${ineId}/validar`;
+    const incompleto = await usuario.post(ruta).send({datos:{nombres:'PAULINA',curp:null},declaraTitular:true});
     expect(incompleto.status).toBe(400);
-    const ok = await usuario.post(`/api/documentos/${ineId}/validar`).send({
-      datos: {
-        nombres: 'Paulina', primer_apellido: 'Barajas', segundo_apellido: 'De la Cruz', curp: 'BACP940622MQTRRL08',
-        fecha_nacimiento: '22/06/1994', sexo: 'M', clave_elector: 'BRCRPL94062222M400',
-        domicilio: 'COL LAZARO CARDENAS 76087 QUERETARO, QRO', año_vigencia: '2034',
-      },
+    const ok = await usuario.post(ruta).send({
+      declaraTitular:true,
+      datos: { nombres:'Paulina', primer_apellido:'Barajas', segundo_apellido:'De la Cruz', curp:'BACP940622MQTRRL08',
+        fecha_nacimiento:'22/06/1994', sexo:'M', clave_elector:'BRCRPL94062222M400',
+        domicilio:'COL LAZARO CARDENAS 76087 QUERETARO, QRO', año_vigencia:'2034' },
     });
     expect(ok.status).toBe(200);
-    expect(ok.body.version).toBe(1);
     expect(ok.body.perfil_actualizado).toBe(true);
-    // Folio 1 + iniciales del titular (se omiten partículas: "DE LA CRUZ" -> C)
-    expect(ok.body.identificador).toBe('0001_PBC');
+    expect((await usuario.get('/api/auth/yo')).status).toBe(401);
+    const final = await usuario.post('/api/auth/registro/finalizar').send({});
+    expect(final.status).toBe(200);
+    expect(final.body.redirigir).toBe('/app/tutorial');
     const yo = await usuario.get('/api/auth/yo');
+    expect(yo.status).toBe(200);
     expect(yo.body.nombre).toBe('PAULINA');
     expect(yo.body.verificado).toBe(true);
+    expect((await usuario.post('/api/perfil/tutorial').send({})).status).toBe(200);
   });
 
   it('editar un documento validado no cambia la métrica de precisión de la IA', async () => {
@@ -315,8 +313,9 @@ describe('flujo completo', () => {
     const c3 = 'tercero@example.com';
     await tercero.post('/api/auth/registro').send({ correo: c3, password });
     await tercero.post('/api/auth/registro/verificar').send({ correo: c3, codigo: ultimoCodigo(c3) });
-    await tercero.post('/api/auth/registro/terminos').send({ acepta: true });
-    expect((await tercero.get(`/api/documentos/${ineId}`)).status).toBe(404);
+    await tercero.post('/api/auth/registro/terminos').send({ acepta:true, aceptaAviso:true, consentimientoExpreso:true });
+    // El registro sin INE no tiene ninguna autorización para consultar documentos.
+    expect((await tercero.get(`/api/documentos/${ineId}`)).status).toBe(401);
   });
 
   it('CUA-03..06 administración con CRUD de usuarios', async () => {

@@ -373,7 +373,7 @@ class DocumentPipeline:
                     continue
             if not _valor_aparece_en_texto(valor, texto_crudo, campo):
                 resultado[campo] = None
-                descartados.append(f"{campo}={valor}")
+                descartados.append(campo)
 
         return resultado, descartados
 
