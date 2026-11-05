@@ -14,6 +14,7 @@ pytesseract>=0.3.10
 pdf2image>=1.16.0          # requiere Poppler; si falta se usa pypdfium2
 pypdf>=4.0.0
 Pillow>=10.0.0
+opencv-python-headless>=4.9,<5  # CLAHE / umbral adaptativo para fotos dificiles
 
 # LLM local
 ollama>=0.4.0

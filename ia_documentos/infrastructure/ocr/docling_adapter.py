@@ -36,11 +36,14 @@ from config.settings import (
     OCR_DPI,
     OCR_MIN_CHARS_FALLBACK,
     OCR_MIN_CHARS_NORMAL,
+    OCR_RESCATE_ADAPTATIVO,
+    OCR_RESCATE_MIN_CHARS,
 )
 from domain.entities.documento import DocumentoIdentidad, TextoExtraido, TipoDocumento
 from domain.ports.interfaces import IOcrPort
 from infrastructure.ocr.clasificador_tolerante import clasificar_tolerante
 from infrastructure.ocr.docling_text import exportar, texto_por_filas
+from infrastructure.ocr.mejora_imagen import lectura_debil, puntuacion_lectura, variantes_rescate
 from infrastructure.platform_config import (
     crear_conversor_docling,
     detectar_plataforma,
@@ -196,9 +199,12 @@ class DoclingAdapter(IOcrPort):
                 if disperso:
                     texto_tess_inicial = texto_tess_inicial + "\n\n" + disperso
             if texto_tess_inicial:
-                tipo = self.detectar_tipo(texto_docling + "\n" + texto_tess_inicial)
+                # Conservar evidencia del primer OCR; no sustituirla por una pasada
+                # alternativa ni descartar un texto útil solo por faltar el encabezado.
+                texto_combinado = self._combinar_textos(texto_docling, texto_tess_inicial)
+                tipo = self.detectar_tipo(texto_combinado)
+                texto_docling = texto_combinado
                 if tipo != TipoDocumento.DESCONOCIDO:
-                    texto_docling = self._normalizar(texto_docling + "\n\n" + texto_tess_inicial)
                     logger.info("ocr_tipo_recuperado_con_pytesseract", extra={
                         "doc_id": documento.doc_id, "tipo": tipo.value,
                     })
@@ -249,12 +255,18 @@ class DoclingAdapter(IOcrPort):
                 extras.append(texto_ine_inf)
             if texto_ine_der and len(texto_ine_der) > 10:
                 extras.append(texto_ine_der)
+            # INEs con anverso y reverso en páginas distintas: leer también el
+            # reverso completo; el OCR de zonas anterior solo usa la página 1.
+            if documento.num_paginas == 2:
+                reverso = self._ocr_zona(documento.ruta_pdf, pagina=2)
+                if reverso and len(reverso.strip()) > 10:
+                    extras.append(reverso)
             if extras:
                 logger.info("ocr_ine_zonas_extra_ok", extra={
                     "doc_id": documento.doc_id,
                     "zonas_capturadas": len(extras),
                 })
-                texto_final = self._normalizar(texto_docling + "\n\n" + "\n\n".join(extras))
+                texto_final = self._combinar_textos(texto_docling, *extras)
 
         elif tipo == TipoDocumento.ACTA_NACIMIENTO and OCR_ACTA_ZONA_SUPERIOR:
             # Acta: el Folio de Impresion y el Identificador Electronico se imprimen en la
@@ -286,15 +298,15 @@ class DoclingAdapter(IOcrPort):
         if len(texto_final) < OCR_MIN_CHARS_NORMAL and self._pil_available and self._docling_available:
             logger.info("ocr_intentando_multizona", extra={"doc_id": documento.doc_id})
             texto_mz = self._extraer_multizona(documento.ruta_pdf)
-            if texto_mz and len(texto_mz) > len(texto_final):
-                texto_final = self._normalizar(texto_mz)
+            if texto_mz and len(texto_mz.strip()) > 20:
+                texto_final = self._combinar_textos(texto_final, texto_mz)
 
         # Paso 5: ultima opcion - pytesseract toda la pagina
         if len(texto_final) < OCR_MIN_CHARS_FALLBACK and (self.tesseract_disponible or self._ocrmac_disponible()):
             logger.info("ocr_fallback_pytesseract", extra={"doc_id": documento.doc_id})
             texto_t = self._ocr_pagina_completa(documento.ruta_pdf)
-            if texto_t and len(texto_t) > len(texto_final):
-                texto_final = self._normalizar(texto_t)
+            if texto_t and len(texto_t.strip()) > 20:
+                texto_final = self._combinar_textos(texto_final, texto_t)
 
         # Re-detectar tipo con el texto final (puede haber mejorado)
         tipo_final = self.detectar_tipo(texto_final) if tipo == TipoDocumento.DESCONOCIDO else tipo
@@ -480,22 +492,46 @@ class DoclingAdapter(IOcrPort):
         return self._agrupar_lineas(anotaciones)
 
     def _tesseract(self, img, disperso: bool = False) -> str:
-        """Tesseract con preprocesado ligero y dos modos de segmentacion."""
-        try:
-            from PIL import ImageOps
-            prep = ImageOps.autocontrast(img.convert("L"))
-        except Exception:
-            prep = img
+        """Tesseract con rescate acotado cuando la lectura inicial es deficiente.
+
+        PSM 3/11 sobre contraste normal. Si falla, prueba hasta dos tratamientos
+        (CLAHE y umbral adaptativo) y escoge por legibilidad, no por longitud.
+        La puntuación es heurística: no representa confianza estadística.
+        """
+        from PIL import ImageOps
+
+        prep = ImageOps.autocontrast(img.convert("L"))
         lang = getattr(self, "_lang", "spa+eng")
-        if disperso:
-            return self._pytesseract.image_to_string(prep, lang=lang, config="--psm 11")
-        texto = self._pytesseract.image_to_string(prep, lang=lang, config="--psm 3")
-        if len(texto.strip()) < 80:
-            # Layout disperso (tarjetas): psm 11 = texto suelto sin orden
-            alterno = self._pytesseract.image_to_string(prep, lang=lang, config="--psm 11")
-            if len(alterno.strip()) > len(texto.strip()):
-                texto = alterno
-        return texto
+        psm = 11 if disperso else 3
+        mejor = self._pytesseract.image_to_string(prep, lang=lang, config=f"--psm {psm}") or ""
+        mejor_puntuacion = puntuacion_lectura(mejor)
+
+        if not lectura_debil(mejor, OCR_RESCATE_MIN_CHARS):
+            return mejor
+
+        # El PSM disperso lee etiquetas distantes en documentos tipo tarjeta.
+        if not disperso:
+            alterno = self._pytesseract.image_to_string(prep, lang=lang, config="--psm 11") or ""
+            puntaje = puntuacion_lectura(alterno)
+            if puntaje > mejor_puntuacion:
+                mejor, mejor_puntuacion = alterno, puntaje
+
+        if OCR_RESCATE_ADAPTATIVO and lectura_debil(mejor, OCR_RESCATE_MIN_CHARS):
+            try:
+                for variante in variantes_rescate(img):
+                    try:
+                        alterno = self._pytesseract.image_to_string(
+                            variante, lang=lang, config="--psm 11" if disperso else "--psm 6"
+                        ) or ""
+                        puntaje = puntuacion_lectura(alterno)
+                        if puntaje > mejor_puntuacion:
+                            mejor, mejor_puntuacion = alterno, puntaje
+                    except Exception as exc:
+                        logger.debug("ocr_variante_rescate_fallo", extra={"tipo_error": type(exc).__name__})
+            except Exception as exc:
+                # Un fallo del preprocesamiento nunca invalida la lectura base.
+                logger.warning("ocr_preprocesamiento_omitido", extra={"tipo_error": type(exc).__name__})
+        return mejor
 
     # ── Estrategia 2: OCR de zona arbitraria (CURP zona sup, INE zona inf) ────
 
@@ -506,6 +542,7 @@ class DoclingAdapter(IOcrPort):
         bottom_pct: float = 1.0,
         left_pct: float = 0.0,
         right_pct: float = 1.0,
+        pagina: int = 1,
     ) -> Optional[str]:
         """
         Renderiza la primera pagina como imagen, recorta la region indicada
@@ -515,7 +552,7 @@ class DoclingAdapter(IOcrPort):
             return None
         try:
             # DPI=200 (no 300) para evitar OOM en Apple M1 con GPUs compartidas
-            imagenes = renderizar_paginas(ruta_pdf, 1, 1, dpi=OCR_DPI)
+            imagenes = renderizar_paginas(ruta_pdf, pagina, pagina, dpi=OCR_DPI)
             if not imagenes:
                 return None
             img = self._recortar_contenido(imagenes[0])
@@ -669,6 +706,33 @@ class DoclingAdapter(IOcrPort):
             logger.warning("tipo_documento_no_detectado")
             return TipoDocumento.DESCONOCIDO
         return mejor
+
+    # ── Fusión conservadora de lecturas ──────────────────────────────────────
+
+    @staticmethod
+    def _combinar_textos(*lecturas: str) -> str:
+        """Unifica líneas entre OCRs sin perder información ya obtenida.
+
+        Desduplica coincidencias exactas ignorando espacios/acentos/caja; no
+        inventa texto ni intenta decidir qué dato personal es el correcto.
+        Se mantienen las primeras apariciones y el orden de sus fuentes.
+        """
+        vistos: set[str] = set()
+        lineas: list[str] = []
+        for fuente in lecturas:
+            for linea in (fuente or "").splitlines():
+                limpia = re.sub(r"\s+", " ", linea).strip()
+                if not limpia:
+                    if lineas and lineas[-1] != "":
+                        lineas.append("")
+                    continue
+                clave = unicodedata.normalize("NFKD", limpia)
+                clave = "".join(c for c in clave if not unicodedata.combining(c)).casefold()
+                if clave in vistos:
+                    continue
+                vistos.add(clave)
+                lineas.append(limpia)
+        return DoclingAdapter._normalizar("\n".join(lineas))
 
     # ── Normalizacion ─────────────────────────────────────────────────────────
 

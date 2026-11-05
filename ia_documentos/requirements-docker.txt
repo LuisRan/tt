@@ -5,6 +5,7 @@ pytesseract>=0.3.10
 pdf2image>=1.16.0
 pypdf>=4.0.0
 Pillow>=10.0.0
+opencv-python-headless>=4.9,<5
 ollama>=0.4.0
 pydantic>=2.7.0
 structlog>=24.0.0

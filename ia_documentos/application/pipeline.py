@@ -92,30 +92,54 @@ def _normalizar_para_comparacion(texto: str) -> str:
     return s.upper()
 
 
-def _valor_aparece_en_texto(valor: Any, texto_crudo: str, campo: str = "") -> bool:
+_MESES_ES = (
+    "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+    "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE",
+)
+_CAMPOS_FECHA_PROTEGIDOS = {"fecha_expedicion", "fecha_caducidad", "fecha_registro"}
+
+
+def _fecha_completa_en_ocr(valor: str, texto_crudo: str) -> bool:
+    """Comprueba día, mes Y año. El día/mes parcial nunca valida una fecha.
+
+    Soporta ISO, dd/mm/aaaa y escritura en español ("3 de noviembre de 2024").
+    No construye años faltantes: si falta el año, la validación queda pendiente.
     """
-    True si el valor aparece (normalizado) en el texto crudo.
-    Permite tolerancia a separadores, acentos y mayusculas.
-    Para fechas (fecha_expedicion, fecha_caducidad), también acepta
-    que solo dd/mm aparezca en el texto (cuando el OCR truncó el año).
-    """
-    if valor is None or not str(valor).strip():
-        return True  # null no es alucinacion
-    valor_norm = _normalizar_para_comparacion(valor)
-    texto_norm = _normalizar_para_comparacion(texto_crudo)
-    if valor_norm in texto_norm:
+    valor = str(valor).strip()
+    m_iso = re.fullmatch(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})", valor)
+    m_local = re.fullmatch(r"(\d{1,2})[-/ ](\d{1,2})[-/ ](\d{4})", valor)
+    if m_iso:
+        anio, mes, dia = map(int, m_iso.groups())
+    elif m_local:
+        dia, mes, anio = map(int, m_local.groups())
+    else:
+        # No se acepta una fecha no reconocible por coincidencia parcial.
+        return False
+    try:
+        from datetime import date
+        date(anio, mes, dia)
+    except ValueError:
+        return False
+    limpio = _normalizar_para_comparacion(texto_crudo)
+    if f"{dia:02d}{mes:02d}{anio:04d}" in limpio or f"{anio:04d}{mes:02d}{dia:02d}" in limpio:
         return True
+    # Fecha textual: NFKD y límites de palabra para evitar años parciales.
+    norm = unicodedata.normalize("NFKD", texto_crudo.upper())
+    norm = "".join(c for c in norm if not unicodedata.combining(c))
+    nombre_mes = _MESES_ES[mes - 1]
+    return bool(re.search(
+        rf"(?<!\d)0?{dia}\s*(?:DE\s+)?{nombre_mes}\s*(?:DE\s+)?{anio}(?!\d)", norm
+    ))
 
-    # Tolerancia especial para fechas: si el OCR truncó el año,
-    # verificar que al menos dd/mm aparezca en el texto
-    if campo in ("fecha_expedicion", "fecha_caducidad", "fecha_registro"):
-        partes = re.split(r"[/\-\s]", str(valor).strip())
-        if len(partes) >= 2:
-            dd_mm = _normalizar_para_comparacion(f"{partes[0]}/{partes[1]}")
-            if dd_mm and dd_mm in texto_norm:
-                return True
 
-    return False
+def _valor_aparece_en_texto(valor: Any, texto_crudo: str, campo: str = "") -> bool:
+    """Verificación literal de evidencia OCR; fechas requieren día, mes y año."""
+    if valor is None or not str(valor).strip():
+        return True
+    if campo in _CAMPOS_FECHA_PROTEGIDOS:
+        return _fecha_completa_en_ocr(str(valor), texto_crudo)
+    valor_norm = _normalizar_para_comparacion(valor)
+    return bool(valor_norm and valor_norm in _normalizar_para_comparacion(texto_crudo))
 
 
 class DocumentPipeline:

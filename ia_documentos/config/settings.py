@@ -134,6 +134,10 @@ OCR_DPI       = _env_int("OCR_DPI", 200)  # 200 y no 300 para evitar OOM en M1
 
 OCR_MIN_CHARS_NORMAL   = _env_int("OCR_MIN_CHARS_NORMAL", 500)
 OCR_MIN_CHARS_FALLBACK = _env_int("OCR_MIN_CHARS_FALLBACK", 300)
+# Reintentos con filtros de imagen solo cuando la lectura es muy corta/ilegible.
+# Máximo 2 variantes extra; desactivar en hardware CPU limitado si aumenta latencia.
+OCR_RESCATE_ADAPTATIVO = _env_bool("OCR_RESCATE_ADAPTATIVO", True)
+OCR_RESCATE_MIN_CHARS = max(20, min(500, _env_int("OCR_RESCATE_MIN_CHARS", 100)))
 
 # ── Ajustes de Docling (todos APAGADOS por defecto = comportamiento historico) ───────────────
 # Ver docs_docling.md: medicion y causa raiz (en PDFs-imagen el layout, que corre a 72 dpi,
@@ -224,4 +228,4 @@ IA_REQUEST_TIMEOUT = _env_int("IA_REQUEST_TIMEOUT", 600)
 LOG_LEVEL = _env_str("LOG_LEVEL", "INFO")
 
 # ── Version del pipeline (se incluye en el envelope JSON) ─────────────────────
-PIPELINE_VERSION = "0.3.0"
+PIPELINE_VERSION = "0.3.1"

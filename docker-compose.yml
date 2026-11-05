@@ -67,6 +67,8 @@ services:
       EXTRACTION_STRATEGY: ${EXTRACTION_STRATEGY:-llm_first}
       ANTI_HALLUCINATION: "true"
       OCR_ENGINE: ${OCR_ENGINE:-auto}
+      OCR_RESCATE_ADAPTATIVO: ${OCR_RESCATE_ADAPTATIVO:-true}
+      OCR_RESCATE_MIN_CHARS: ${OCR_RESCATE_MIN_CHARS:-100}
       DOCLING_DEVICE: ${DOCLING_DEVICE:-auto}
       DOCLING_TABLES: ${DOCLING_TABLES:-auto}
       # Mejoras de precision medidas en la campania de validacion final (ver
