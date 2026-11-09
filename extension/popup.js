@@ -332,15 +332,37 @@ async function pintarAutofill() {
     el('option', { value:'' }, 'Mi perfil confirmado (API)')
   );
   for (const d of docs) selector.append(el('option', {value:String(d.id)}, `${d.identificador || d.tipo || 'Documento'} · ${d.titular || 'Titular desconocido'}`));
-  const estadoText = el('p', { class:'sub' }, 'Elige la fuente de datos y revisa los campos antes de enviar.');
+  const estadoText = el('p', { class:'sub', role:'status', 'aria-live':'polite' }, 'Elige la fuente de datos y revisa los campos antes de enviar.');
+  let consultaPendiente=null, ultimaSesion=null;
+  const nombresCampos={nombre:'nombre(s)',apellido_paterno:'primer apellido',apellido_materno:'segundo apellido',fecha_nacimiento:'fecha de nacimiento',dia_nacimiento:'día de nacimiento',mes_nacimiento:'mes de nacimiento',anio_nacimiento:'año de nacimiento',estado_nacimiento:'estado de nacimiento',sexo:'sexo',correo:'correo',estado:'estado del domicilio'};
+  function mostrarResultado(r) {
+    const faltantes=Array.isArray(r.sin_datos)?r.sin_datos.map(k=>nombresCampos[k] || k.replace(/_/g,' ')):[];
+    estadoText.textContent=`${r.completados} campo(s) completados · ${r.compatibles} campos reconocidos. Revisa la página.`
+      + (faltantes.length?` Sin dato confirmado: ${faltantes.join(', ')}.`:'')
+      + (r.no_admitidos?` ${r.no_admitidos} campo(s) requieren revisión manual por su formato u opciones.`:'');
+  }
+  function consultarResultado(tabId,sesion,desde) {
+    clearTimeout(consultaPendiente);
+    consultaPendiente=setTimeout(async()=>{
+      if (!estadoText.isConnected || ultimaSesion!==sesion || Date.now()-desde>18000) return;
+      try {
+        const r=await chrome.runtime.sendMessage({tipo:'autofill:estado',tabId,sesion});
+        if (!r?.ok || !estadoText.isConnected || ultimaSesion!==sesion) return;
+        mostrarResultado(r); consultarResultado(tabId,sesion,desde);
+      } catch { /* La pestaña pudo cerrarse o navegar. */ }
+    },500);
+  }
   const rellenar = el('button', { class:'btn btn-primario', type:'button' }, 'Autocompletar ahora');
   rellenar.addEventListener('click', async () => {
     rellenar.disabled = true;
+    ultimaSesion=null; clearTimeout(consultaPendiente);
     estadoText.textContent = 'Detectando campos compatibles…';
     try {
       const r = await chrome.runtime.sendMessage({tipo:'autofill:manual', tabId:tab.id, documentoId:selector.value || null});
       if (!r?.ok) throw new Error(r?.error || 'No se pudo rellenar la página.');
-      estadoText.textContent = `${r.completados} campo(s) completados · ${r.compatibles} compatibles detectados. Revisa la página.`;
+      mostrarResultado(r);
+      ultimaSesion=r.sesion;
+      if (r.sesion) consultarResultado(tab.id,r.sesion,Date.now());
       toast(r.completados ? 'Campos completados' : 'No hubo campos vacíos compatibles');
     } catch (error) { estadoText.textContent = error.message; }
     finally { rellenar.disabled = false; }
@@ -351,6 +373,9 @@ async function pintarAutofill() {
   etiqueta.append(siempre,el('span', {}, 'Siempre aquí'), el('span', {class:'sub'}, 'Solo en este sitio'));
   const recordarAyuda = el('p', { class:'sub' }, 'Solo disponible con perfil confirmado desde la API. Al autorizar, el sitio puede leer los campos que se rellenen.');
   selector.addEventListener('change', () => {
+    ultimaSesion=null; clearTimeout(consultaPendiente);
+    chrome.runtime.sendMessage({tipo:'autofill:cancelar',tabId:tab.id}).catch(()=>{});
+    estadoText.textContent='Fuente cambiada. Pulsa Autocompletar para usarla.';
     siempre.disabled = Boolean(selector.value);
     recordarAyuda.textContent = selector.value ? 'Con un documento seleccionado, el relleno es únicamente manual.' : 'Autoriza únicamente sitios de confianza; podrán leer los valores rellenados.';
   });

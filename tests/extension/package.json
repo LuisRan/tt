@@ -1,0 +1,11 @@
+{
+  "name": "tt-extension-regression",
+  "private": true,
+  "version": "1.0.0",
+  "engines": {"node": ">=20"},
+  "scripts": {
+    "test": "node --test ../../extension/tests/core.test.cjs ./*.test.cjs",
+    "test:browser": "node --test browser.test.cjs"
+  },
+  "devDependencies": {"playwright": "1.62.1"}
+}

@@ -108,6 +108,24 @@ const Nucleo = (() => {
     }
   }
 
+  async function obtenerDocumento(id) {
+    const estado = await leer();
+    if (!estado.token) throw new Error('Primero vincula la extensión.');
+    try {
+      // Revalidar contra la API: la copia de sesión puede haberse eliminado o corregido.
+      const r = await peticion('/extension/documentos', { token: estado.token, url: urlBase(estado) });
+      const doc = Array.isArray(r.documentos) && r.documentos.find(d => String(d.id) === String(id));
+      if (!doc || !Array.isArray(doc.campos)) throw new Error('El documento ya no está disponible o confirmado. Sincroniza la extensión.');
+      return doc;
+    } catch (err) {
+      if (err.status === 401) {
+        await chrome.storage.local.set({ [CLAVE]: { url: urlBase(estado), aviso: err.message } });
+        await chrome.storage.session.remove(SESION_DOCS);
+      }
+      throw err;
+    }
+  }
+
   async function vincular(codigo, url) {
     const base = comprobarBase(String(url || urlBase(await leer())).replace(/\/+$/, ''));
     if (!base) throw new Error('Falta la dirección de la plataforma.');
@@ -148,7 +166,7 @@ const Nucleo = (() => {
     }
   }
 
-  return { leer, guardar, urlBase, comprobarBase, obtenerPerfil, vincular, sincronizar, desvincular };
+  return { leer, guardar, urlBase, comprobarBase, obtenerPerfil, obtenerDocumento, vincular, sincronizar, desvincular };
 })();
 
 globalThis.Nucleo = Nucleo;
