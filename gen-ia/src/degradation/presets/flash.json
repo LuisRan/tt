@@ -1,0 +1,20 @@
+{
+  "name": "flash",
+  "render_dpi": 300,
+  "steps": [
+    {
+      "kind": "flash",
+      "probability": 1.0,
+      "params": {
+        "strength": {"min": 0.18, "max": 0.72},
+        "center_x": {"min": 0.18, "max": 0.82},
+        "center_y": {"min": 0.18, "max": 0.82},
+        "radius": {"min": 0.12, "max": 0.4},
+        "falloff": {"min": 1.4, "max": 3.8}
+      },
+      "options": {}
+    }
+  ],
+  "output_format": "pdf",
+  "output_jpeg_quality": 92
+}

@@ -37,6 +37,7 @@ class StepKind(str, Enum):
     SALT_PEPPER = "salt_pepper"
     CONTRAST_BRIGHTNESS = "contrast_brightness"
     ILLUMINATION_SHADOW = "illumination_shadow"
+    FLASH = "flash"
     BLUR = "blur"
 
 

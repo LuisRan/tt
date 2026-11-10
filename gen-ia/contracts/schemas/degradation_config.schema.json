@@ -63,6 +63,7 @@
         "salt_pepper",
         "contrast_brightness",
         "illumination_shadow",
+        "flash",
         "blur"
       ],
       "title": "StepKind",

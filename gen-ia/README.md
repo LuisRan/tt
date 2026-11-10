@@ -42,7 +42,7 @@ inválida repite la pregunta):
 3. **Variante de la INE** (solo si eligió la INE): nacional, extranjero o mixta (80/20).
 4. **Degradación**: `1` `mixed` (default, recomendada: mayoría de documentos normales/limpios y algunos
    escaneados, sucios o muy degradados en el mismo lote), `none`, `light`, `default`, `heavy`,
-   `scanner` o la ruta a un JSON.
+   `scanner`, `flash` (iluminación directa, opción aislada) o la ruta a un JSON.
 5. **Seed**: Enter genera una seed **aleatoria distinta en cada ejecución** (el menú muestra
    "Seed usada: N" y la incluye en el comando equivalente); escriba un número para repetir
    exactamente un lote anterior.
@@ -100,7 +100,7 @@ subcomando `generate` es opcional.
 | `--n` | muestras por documento (default 1), o `DOC=N,DOC=N` para cantidades distintas |
 | `--seed` | seed de datos. Sin `--seed` se genera una **aleatoria** distinta en cada ejecución (se imprime en el resumen, en el comando "Para repetirlo exactamente" y queda en `run.json`); con `--seed N` el lote es reproducible |
 | `--variant` | `nacional`, `extranjero`, `mixed` (solo INE; se ignora en los demás) |
-| `--degradation` | `mixed` (**default**; antes era `default`), `none`, `light`, `default`, `heavy`, `scanner` o ruta a un `.json` |
+| `--degradation` | `mixed` (**default**; antes era `default`), `none`, `light`, `default`, `heavy`, `scanner`, `flash` (opción aislada) o ruta a un `.json` |
 | `--out` | carpeta de datos (default `data/`, ignorada por git) |
 | `--extras` | guarda además, por muestra, el PDF limpio (`<sample_id>.clean.pdf`) y el log de transformaciones (`<sample_id>.transform_log.json`) en `<documento>/_extras/`. Sin esta opción solo se guardan el PDF degradado y el GT |
 | `--on-exist` | si la carpeta de un documento ya tiene muestras (archivos `<doc_type>-*.pdf/.json`, `manifest.jsonl` o subcarpetas de la estructura antigua con `gt.json`): `error` (default, no escribe nada), `overwrite` (borra solo lo que generó la herramienta, nunca otros archivos tuyos, y regenera), `skip` (omite ese documento) o `append` (añade desde `--start-index`; falla si el índice ya existe) |
@@ -284,6 +284,7 @@ la `degradation_seed` (reproducible).
 | `default` | Rotación +-3 deg, shear, sombras, contraste/brillo, remuestreo 100-300 dpi, blur, ruido gaussiano y sal y pimienta, JPEG 10-60. |
 | `heavy` | Rotación +-6 deg, perspectiva, sombras fuertes, remuestreo 80-200 dpi, ruido sigma 8-28, JPEG 5-35. |
 | `scanner` | `default` pero la cara se coloca siempre sobre una "cama de escáner" tamaño carta (`canvas_placement` con probabilidad 1). |
+| `flash` | Simula iluminación directa localizada con intensidad, posición, radio y caída radial variables. Se activa solo al elegir este preset; no aparece en `mixed`. |
 | `mixed` | No es un preset: elige uno **por muestra** de forma determinista a partir de `(seed, doc_type, index)` (SHA-256; el mismo índice no recibe el mismo preset en todos los documentos) con estos pesos (`MIXED_DEGRADATION_WEIGHTS` en `src/pipeline.py`): `none` 10 %, `light` 45 %, `default` 25 %, `scanner` 12 %, `heavy` 8 %. Así el 55 % de los documentos son "normales" (`none` + `light`) y el 45 % restante son más sucios, en el mismo lote. El preset de cada muestra queda en `degradation_preset` (manifest) y `config_name` (transform_log). |
 | `<ruta>.json` | Cualquier `contracts.DegradationConfig` serializada (ver `contracts/fixtures/degradation_default.json`). |
 
