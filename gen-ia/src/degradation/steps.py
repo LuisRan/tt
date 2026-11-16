@@ -29,6 +29,9 @@ DEFAULT_PARAMS: dict[StepKind, dict[str, Range]] = {
     StepKind.SALT_PEPPER: {"amount": Range(min=0.001, max=0.005)},
     StepKind.CONTRAST_BRIGHTNESS: {"contrast": Range(min=0.8, max=1.2), "brightness": Range(min=-20, max=20)},
     StepKind.ILLUMINATION_SHADOW: {"strength": Range(min=0.1, max=0.4)},
+    StepKind.FLASH: {"strength": Range(min=0.15, max=0.65), "center_x": Range(min=0.2, max=0.8),
+                     "center_y": Range(min=0.2, max=0.8), "radius": Range(min=0.12, max=0.38),
+                     "falloff": Range(min=1.5, max=3.5)},
     StepKind.BLUR: {"sigma": Range(min=0.3, max=1.0)},
 }
 # Defaults del modo perspectiva de `skew` (sustituyen a `shear`).
@@ -201,6 +204,23 @@ def illumination_shadow(img, st, p, opts, rng) -> Result:
     return np.clip(np.rint(out), 0, 255).astype(np.uint8), None, extra
 
 
+def flash(img, st, p, opts, rng) -> Result:
+    """Simula flash directo: núcleo sobreexpuesto y caída radial ajustable."""
+    h, w = img.shape[:2]
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    xx = (xx + 0.5) / max(w, 1)
+    yy = (yy + 0.5) / max(h, 1)
+    cx, cy = float(p["center_x"]), float(p["center_y"])
+    radius = max(float(p["radius"]), 1e-3)
+    falloff = max(float(p["falloff"]), 0.1)
+    distance = np.sqrt(((xx - cx) * w / max(w, h)) ** 2 + ((yy - cy) * h / max(w, h)) ** 2)
+    profile = np.exp(-0.5 * np.power(distance / radius, falloff)).astype(np.float32)
+    alpha = np.clip(float(p["strength"]) * profile, 0, 0.95)[..., None]
+    out = img.astype(np.float32) * (1.0 - alpha) + 255.0 * alpha
+    extra = {"flash_center": [cx, cy], "flash_radius": radius, "falloff": falloff}
+    return np.clip(np.rint(out), 0, 255).astype(np.uint8), None, extra
+
+
 def blur(img, st, p, opts, rng) -> Result:
     s = float(p["sigma"])
     return cv2.GaussianBlur(img, (0, 0), sigmaX=s, sigmaY=s), None, {}
@@ -216,6 +236,7 @@ STEP_FUNCS: dict[StepKind, Callable[..., Result]] = {
     StepKind.SALT_PEPPER: salt_pepper,
     StepKind.CONTRAST_BRIGHTNESS: contrast_brightness,
     StepKind.ILLUMINATION_SHADOW: illumination_shadow,
+    StepKind.FLASH: flash,
     StepKind.BLUR: blur,
 }
 

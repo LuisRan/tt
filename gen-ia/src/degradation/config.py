@@ -7,7 +7,7 @@ from pathlib import Path
 from contracts.degradation import DegradationConfig
 
 PRESETS_DIR = Path(__file__).parent / "presets"
-PRESET_NAMES = ("none", "light", "default", "heavy", "scanner")
+PRESET_NAMES = ("none", "light", "default", "heavy", "scanner", "flash")
 
 
 def load_config(path: str | Path) -> DegradationConfig:

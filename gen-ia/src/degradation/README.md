@@ -69,6 +69,7 @@ API pública (`src/degradation/__init__.py`):
 | `salt_pepper` | `amount` (0.001–0.005) | — | Fracción de píxeles; mitad blancos, mitad negros. |
 | `contrast_brightness` | `contrast` (0.8–1.2), `brightness` (−20–20) | — | `(v−128)·contrast + 128 + brightness`. |
 | `illumination_shadow` | `strength` (0.1–0.4) | — | Gradiente lineal (dirección aleatoria) × sombra gaussiana suave; factor mínimo ≈ `(1−strength/2)²`. Registra `gradient_angle_deg`, `shadow_center`, `shadow_radius`. |
+| `flash` | `strength`, `center_x`, `center_y`, `radius`, `falloff` | — | Punto de flash sobreexpuesto con posición, intensidad, tamaño y caída radial variables. El preset aislado `flash` no participa en `mixed`. |
 | `blur` | `sigma` (0.3–1.0) | — | Desenfoque gaussiano. |
 
 Zonas expuestas por rotación/skew: casi blanco (245) si no hay lienzo; sobre
@@ -106,6 +107,11 @@ estos (decisión 4 del PLAN).
 `illumination_shadow` leve (0.05–0.2), `rotation` ±2° (expand), `dpi_resample`
 150–300, `gaussian_noise` σ 1.5–5 y `jpeg` 50–85 (`output_jpeg_quality` 90).
 Error medido de marcadores con este preset ≤ 0.2 px (tolerancia 1.5 px).
+
+`flash`: aplica solo iluminación tipo flash a documentos sintéticos; muestrea la
+posición, intensidad, radio y caída en cada página. Se solicita explícitamente con
+`--degradation flash` o desde su opción dedicada en el menú. No forma parte de
+`mixed`, así que la generación normal conserva su distribución actual.
 
 ## Tests
 

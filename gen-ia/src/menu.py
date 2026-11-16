@@ -71,6 +71,7 @@ DEGRADATIONS: list[tuple[str, str]] = [
     ("default", "default: rotación, sombras, ruido, remuestreo y JPEG variados"),
     ("heavy", "heavy: perspectiva, ruido y compresión fuertes"),
     ("scanner", "scanner: como default, sobre una cama de escáner tamaño carta"),
+    ("flash", "flash: iluminación directa con punto brillante y caída radial; solo se aplica si se elige"),
 ]
 CUSTOM_DEGRADATION_OPTION = len(DEGRADATIONS) + 1  # ruta a un JSON
 DEFAULT_DEGRADATION_OPTION = "1"  # mixed
@@ -175,8 +176,8 @@ def parse_option(text: str, options: list[tuple[str, str]], extra: int = 0) -> s
 
 
 def parse_degradation(text: str, allow_custom: bool = True) -> str:
-    """Número (1-6 presets; 7 pide la ruta), nombre de preset (incl. `mixed`) o ruta existente a
-    un .json -> nombre/ruta validados con el pipeline. Con `allow_custom`, la opción 7 devuelve ''
+    """Número de preset; la opción final pide ruta, nombre de preset o ruta existente a
+    un .json -> nombre/ruta validados con el pipeline. Con `allow_custom`, devuelve ''
     (señal para pedir la ruta)."""
     raw = text.strip()
     if not raw:
