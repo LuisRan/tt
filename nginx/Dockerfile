@@ -12,7 +12,7 @@ ARG PUBLIC_PRIVACIDAD_CONSERVACION
 RUN npm run build
 
 # ─── Etapa 2: Nginx (reverse proxy + HTTPS) sirviendo el frontend ────────────
-FROM nginx:1.27-alpine
+FROM nginx:1.30.6-alpine
 RUN apk add --no-cache openssl
 COPY --from=build /app/dist /usr/share/nginx/html
 # La plantilla se procesa con envsubst al arrancar (variable HTTPS_PORT)

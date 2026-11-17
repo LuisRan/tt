@@ -431,7 +431,7 @@ class Installer:
                       "fetch(process.env.IA_URL+'/health',{signal:AbortSignal.timeout(10000)}).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"],
                      paso="verificar HTTPS del backend al servicio IA")
         self.compose(["exec", "-T", "web", "nginx", "-t"], paso="validar Nginx")
-        salud_web = self.compose(["exec", "-T", "web", "wget", "--no-check-certificate", "-qO-", "https://localhost/api/salud"], paso="comprobar proxy HTTPS al backend")
+        salud_web = self.run(["curl", "--fail", "--silent", "--show-error", "--noproxy", "*", "--max-time", "15", "--resolve", "redesnoc-alert.xyz:443:127.0.0.1", "https://redesnoc-alert.xyz/api/salud"], paso="comprobar proxy HTTPS al backend")
         salud = json.loads(salud_web.stdout)
         if salud.get("postgres") is not True or salud.get("mongo") is not True:
             raise ErrorDespliegue("La ruta HTTPS del proxy no confirmó ambas bases")
