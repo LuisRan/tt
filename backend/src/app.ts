@@ -19,6 +19,11 @@ import { rutasSalud } from './routes/salud.js';
 export function crearApp() {
   const app = express();
   app.disable('x-powered-by');
+  app.use('/api', (_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Pragma', 'no-cache');
+    next();
+  });
   // Detrás de Nginx (reverse proxy): confiar en X-Forwarded-For del primer salto
   app.set('trust proxy', 1);
 

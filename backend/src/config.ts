@@ -39,6 +39,10 @@ const esquema = z.object({
     .string()
     .refine((v) => Buffer.from(v, 'base64').length === 32, 'DATA_ENCRYPTION_KEY debe ser 32 bytes en base64'),
   COOKIE_SECURE: bool.default(true),
+  RUN_DB_MIGRATIONS: bool.default(true),
+  ALLOW_LEGACY_PLAINTEXT: bool.default(true),
+  BACKEND_TLS_CERT_FILE: z.string().default(''),
+  BACKEND_TLS_KEY_FILE: z.string().default(''),
   CODIGO_2FA_MINUTOS: z.coerce.number().int().default(10),
   CODIGO_2FA_INTENTOS: z.coerce.number().int().default(5),
   REAUTH_MINUTOS: z.coerce.number().int().default(10),
@@ -89,9 +93,13 @@ if (!resultado.success) {
 
 const env = resultado.data;
 
-if (env.MAIL_PROVIDER === 'resend' && !env.RESEND_API_KEY) {
+if (env.NODE_ENV !== 'production' && env.MAIL_PROVIDER === 'resend' && !env.RESEND_API_KEY) {
   // eslint-disable-next-line no-console
   console.warn('[config] MAIL_PROVIDER=resend pero RESEND_API_KEY está vacío: se usará la consola.');
+}
+
+if (env.NODE_ENV === 'production' && (env.MAIL_PROVIDER !== 'resend' || !env.RESEND_API_KEY)) {
+  throw new Error('Producción requiere un proveedor de correo configurado; no se imprimen códigos en consola.');
 }
 
 export const config = {

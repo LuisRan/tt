@@ -7,10 +7,22 @@ doc_id, tipo, adaptador, tiempo_ms, resultado_validacion.
 from __future__ import annotations
 import logging
 import logging.handlers
+import os
+import re
 import sys
 from pathlib import Path
 
 import structlog
+
+
+class FormatoPrivado(logging.Formatter):
+    """En producción conserva eventos de la aplicación y niveles, sin valores, rutas ni trazas."""
+    def format(self, record):
+        local = record.name.split(".")[0] in {"application", "integration", "infrastructure", "config", "domain"}
+        evento = record.msg if local and isinstance(record.msg, str) and not record.args else ""
+        if not re.fullmatch(r"[a-z][a-z0-9_]{0,80}", evento):
+            evento = "evento"
+        return f"{record.levelname} {evento}"
 
 
 def configurar_logging(logs_dir: Path, nivel: str = "INFO") -> None:
@@ -34,10 +46,15 @@ def configurar_logging(logs_dir: Path, nivel: str = "INFO") -> None:
         encoding="utf-8",
     )
     archivo.setLevel(nivel_int)
+    privado = os.environ.get("IA_LOGS_PRIVADOS", "").lower() == "true"
+    if privado:
+        for handler in (consola, archivo):
+            handler.setFormatter(FormatoPrivado())
 
     logging.basicConfig(
         level=nivel_int,
         handlers=[consola, archivo],
+        force=privado,
     )
 
     structlog.configure(

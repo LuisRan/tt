@@ -1,0 +1,182 @@
+# Se agrega al COMPOSE_FILE existente; no modifica puertos públicos ni certificados web.
+services:
+  postgres:
+    command:
+      - postgres
+      - -c
+      - ssl=on
+      - -c
+      - ssl_cert_file=/run/tt/postgres/cert.pem
+      - -c
+      - ssl_key_file=/run/tt/postgres/key.pem
+      - -c
+      - hba_file=/run/tt/pg_hba.conf
+      - -c
+      - ssl_min_protocol_version=TLSv1.2
+      - -c
+      - password_encryption=scram-sha-256
+    networks: !override [datos]
+    volumes:
+      - ${TT_SECURITY_DIR:?}/postgres:/run/tt/postgres:ro
+      - ${TT_SECURITY_DIR:?}/pg_hba.conf:/run/tt/pg_hba.conf:ro
+
+  mongo:
+    command: ["mongod", "--auth", "--bind_ip_all", "--noscripting", "--tlsMode", "requireTLS", "--tlsCertificateKeyFile", "/run/tt/mongo/server.pem", "--tlsCAFile", "/run/tt/ca.crt", "--tlsAllowConnectionsWithoutCertificates"]
+    networks: !override [datos]
+    volumes:
+      - ${TT_SECURITY_DIR:?}/mongo:/run/tt/mongo:ro
+      - ${TT_SECURITY_DIR:?}/ca.crt:/run/tt/ca.crt:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--tls", "--tlsCAFile", "/run/tt/ca.crt", "--host", "localhost", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+
+  backend:
+    image: ${TT_BACKEND_IMAGE:?}
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${TT_RUNTIME_DATABASE_URL:?}
+      MONGO_URL: ${TT_RUNTIME_MONGO_URL:?}
+      RUN_DB_MIGRATIONS: "false"
+      ALLOW_LEGACY_PLAINTEXT: "false"
+      NODE_EXTRA_CA_CERTS: /run/tt/ca.crt
+      BACKEND_TLS_CERT_FILE: /run/tt/backend/cert.pem
+      BACKEND_TLS_KEY_FILE: /run/tt/backend/key.pem
+      IA_URL: https://ia:5001
+      ADMIN_EMAIL: ""
+      ADMIN_PASSWORD: ""
+    networks: !override [edge, datos, procesamiento]
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('node:https').get('https://localhost:3000/api/salud',r=>{r.resume();process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))"]
+    volumes:
+      - ${TT_SECURITY_DIR:?}/backend:/run/tt/backend:ro
+      - ${TT_SECURITY_DIR:?}/ca.crt:/run/tt/ca.crt:ro
+      - ./deploy/seguridad/backend-tools.mjs:/app/tt-security-tools.mjs:ro
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+
+  web:
+    image: ${TT_WEB_IMAGE:?}
+    volumes:
+      - ${TT_SECURITY_DIR:?}/web-templates:/etc/nginx/templates:ro
+      - ${TT_SECURITY_DIR:?}/ca.crt:/run/tt/ca.crt:ro
+    networks: !override [edge]
+
+  ia:
+    image: ${TT_IA_IMAGE:?}
+    tmpfs:
+      - /app/data/input:uid=${TT_IA_UID:?},gid=${TT_IA_GID:?},mode=700,size=64m
+      - /app/data/tmp:uid=${TT_IA_UID:?},gid=${TT_IA_GID:?},mode=700,size=1g
+      - /app/data/logs:uid=${TT_IA_UID:?},gid=${TT_IA_GID:?},mode=700,size=64m
+      - /tmp:uid=${TT_IA_UID:?},gid=${TT_IA_GID:?},mode=700,size=1g
+    environment:
+      IA_MAX_CONCURRENT: "1"
+      IA_STORAGE_KEY_FILE: /run/tt/ia-storage.key
+      IA_TLS_CERT_FILE: /run/tt/ia/cert.pem
+      IA_TLS_KEY_FILE: /run/tt/ia/key.pem
+      IA_REQUIRE_API_KEY: "true"
+      IA_LOGS_PRIVADOS: "true"
+      OLLAMA_HOST: https://ollama:11443
+      SSL_CERT_FILE: /run/tt/ca-bundle.crt
+      REQUESTS_CA_BUNDLE: /run/tt/ca-bundle.crt
+    networks: !override [procesamiento]
+    volumes:
+      - ${TT_SECURITY_DIR:?}/ia-storage.key:/run/tt/ia-storage.key:ro
+      - ${TT_SECURITY_DIR:?}/ia:/run/tt/ia:ro
+      - ${TT_SECURITY_DIR:?}/ca-bundle.crt:/run/tt/ca-bundle.crt:ro
+      - ${TT_SECURITY_DIR:?}/ca.crt:/run/tt/ca.crt:ro
+    depends_on:
+      ollama-tls: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--cacert", "/run/tt/ca.crt", "https://localhost:5001/health"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+
+  ollama:
+    environment:
+      OLLAMA_HOST: 127.0.0.1:11434
+    networks: !override [procesamiento]
+
+  ollama-tls:
+    image: ${TT_WEB_IMAGE:?}
+    profiles: ["ollama"]
+    entrypoint: ["nginx", "-g", "daemon off;"]
+    network_mode: service:ollama
+    depends_on:
+      ollama: { condition: service_healthy }
+    volumes:
+      - ./deploy/seguridad/ollama-nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${TT_SECURITY_DIR:?}/ollama:/run/tt/ollama:ro
+      - ${TT_SECURITY_DIR:?}/ca.crt:/run/tt/ca.crt:ro
+    healthcheck:
+      test: ["CMD-SHELL", "openssl s_client -connect 127.0.0.1:11443 -servername localhost -verify_hostname localhost -verify_return_error -CAfile /run/tt/ca.crt </dev/null >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+
+  ollama-pull:
+    depends_on:
+      ollama-tls: { condition: service_healthy }
+    environment:
+      OLLAMA_HOST: https://ollama:11443
+      SSL_CERT_FILE: /run/tt/ca-bundle.crt
+    networks: !override [procesamiento]
+    volumes:
+      - ${TT_SECURITY_DIR:?}/ca-bundle.crt:/run/tt/ca-bundle.crt:ro
+
+  backup:
+    environment:
+      DATABASE_URL: ${TT_BACKUP_DATABASE_URL:?}
+      MONGO_URL: ${TT_BACKUP_MONGO_URL:?}
+    networks: !override [datos]
+    volumes:
+      - ${TT_SECURITY_DIR:?}/ca.crt:/run/tt/ca.crt:ro
+      - iadata:/iadata:ro
+    tmpfs: ["/tmp:mode=700"]
+    security_opt: ["no-new-privileges:true"]
+
+  ia-storage:
+    profiles: ["seguridad"]
+    image: ${TT_IA_IMAGE:?}
+    entrypoint: ["python"]
+    command: ["scripts/migrar_almacenamiento.py"]
+    network_mode: none
+    environment:
+      IA_STORAGE_KEY_FILE: /run/tt/ia-storage.key
+    volumes:
+      - iadata:/app/data
+      - ${TT_SECURITY_DIR:?}/ia-storage.key:/run/tt/ia-storage.key:ro
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+
+  migrate:
+    profiles: ["seguridad"]
+    build: ./backend
+    image: ${TT_BACKEND_IMAGE:?}
+    entrypoint: ["node"]
+    command: ["dist/db/cli.js"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${TT_ADMIN_DATABASE_URL:?}
+      MONGO_URL: ${TT_ADMIN_MONGO_URL:?}
+      MONGO_DB: ${MONGO_DB:-tt_ocr}
+      JWT_SECRET: ${JWT_SECRET:?}
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?}
+      MAIL_PROVIDER: resend
+      RESEND_API_KEY: ${RESEND_API_KEY:?}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ALLOW_LEGACY_PLAINTEXT: "true"
+      NODE_EXTRA_CA_CERTS: /run/tt/ca.crt
+    networks: [datos]
+    volumes:
+      - ${TT_SECURITY_DIR:?}/ca.crt:/run/tt/ca.crt:ro
+      - ./deploy/seguridad/backend-tools.mjs:/app/tt-security-tools.mjs:ro
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+
+networks:
+  edge: {}
+  datos:
+    internal: true
+  procesamiento: {}

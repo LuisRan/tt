@@ -81,6 +81,7 @@ if (-not (Test-Path .env)) {
   Poner-Env 'JWT_SECRET' (Aleatorio-Hex 48)
   Poner-Env 'DATA_ENCRYPTION_KEY' (Aleatorio-B64 32)
   Poner-Env 'IA_API_KEY' (Aleatorio-Hex 24)
+  Poner-Env 'IA_STORAGE_KEY' (Aleatorio-B64 32)
   Poner-Env 'BACKUP_ENCRYPTION_KEY' (Aleatorio-Hex 32)
   Poner-Env 'ADMIN_PASSWORD' ("Admin-" + (Aleatorio-Hex 6) + "A9")
   Amarillo '  Edita ADMIN_EMAIL y (opcional) RESEND_API_KEY / MAIL_FROM en .env'

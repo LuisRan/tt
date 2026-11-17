@@ -127,8 +127,8 @@ rutasAuth.get('/registro/estado', async (req, res) => {
   });
 });
 
-const VERSION_TERMINOS = 'TT-2026-10';
-const VERSION_AVISO = 'TT-2026-10';
+const VERSION_TERMINOS = 'TT-2026-11-v09';
+const VERSION_AVISO = 'TT-2026-11-v09';
 const subidaINE = multer({ storage: multer.memoryStorage(), limits: {
   fileSize: config.MAX_UPLOAD_MB * 1024 * 1024, files: 1, fields: 2,
 }});

@@ -30,7 +30,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
-    # Sin puertos publicados: solo el backend accede (sección 4.3).
+    # Sin puertos publicados: acceso interno según redes y cuentas autorizadas.
     # Para inspeccionar la BD desde tu equipo descomenta:
     # ports: ["127.0.0.1:5432:5432"]
 
@@ -60,6 +60,7 @@ services:
         PRELOAD_DOCLING_MODELS: ${PRELOAD_DOCLING_MODELS:-true}
     environment:
       IA_API_KEY: ${IA_API_KEY:?define IA_API_KEY en .env}
+      IA_STORAGE_KEY: ${IA_STORAGE_KEY:-}
       IA_API_PORT: 5001
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
@@ -109,7 +110,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"   # módulo de IA nativo (modo --ia-nativa)
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: 3000
       APP_NAME: ${APP_NAME:-OCR Platform}
       PUBLIC_URL: ${PUBLIC_URL:-https://localhost:8443}
@@ -143,6 +144,11 @@ services:
     build:
       context: .
       dockerfile: nginx/Dockerfile
+      args:
+        PUBLIC_PRIVACIDAD_RESPONSABLE: ${PUBLIC_PRIVACIDAD_RESPONSABLE:-}
+        PUBLIC_PRIVACIDAD_DOMICILIO: ${PUBLIC_PRIVACIDAD_DOMICILIO:-}
+        PUBLIC_PRIVACIDAD_CONTACTO_ARCO: ${PUBLIC_PRIVACIDAD_CONTACTO_ARCO:-}
+        PUBLIC_PRIVACIDAD_CONSERVACION: ${PUBLIC_PRIVACIDAD_CONSERVACION:-}
     depends_on:
       - backend
     environment:

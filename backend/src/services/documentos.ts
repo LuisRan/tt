@@ -19,7 +19,8 @@ import { ErrorApp, noEncontrado, solicitudInvalida } from '../lib/errores.js';
 import { logger } from '../lib/logger.js';
 import { almacenamiento } from './almacenamiento.js';
 import { registrarEvento } from './auditoria.js';
-import { ErrorIA, procesarEnIA, textoCrudoIA, type EnvelopeIA } from './ia-cliente.js';
+import { ErrorIA, procesarEnIA, textoCrudoIA, borrarCopiaIA, type EnvelopeIA } from './ia-cliente.js';
+import { camposDeValidacion } from '../lib/campos-validacion.js';
 
 // ── Catálogo ─────────────────────────────────────────────────────────────────
 
@@ -403,7 +404,7 @@ export async function procesarDocumento(documentoId: number): Promise<void> {
       pipeline_version: meta.pipeline_version,
       hash_sha256: meta.hash_sha256,
       tiempo_procesamiento_ms: meta.tiempo_procesamiento_ms,
-      errores_validacion: meta.errores_validacion ?? [],
+      errores_validacion: camposDeValidacion(meta.errores_validacion, datos),
       campos_descartados_por_alucinacion: (meta.campos_descartados_por_alucinacion ?? []).map((c) => c.split('=')[0]),
       campos_corregidos_ocr: corregidosOcr,
       tiempos_etapas_ms: meta.tiempos_etapas_ms,
@@ -461,6 +462,10 @@ export async function procesarDocumento(documentoId: number): Promise<void> {
       ? `Documento ${doc.id} rechazado: ${rechazo}`
       : `Documento ${doc.id} procesado como ${NOMBRE_TIPO[tipo]} en ${Date.now() - inicio} ms`,
   });
+  if (mongoDoc.texto_crudo) {
+    await borrarCopiaIA(iaDocId).catch(() => logger.warn('Copia IA pendiente de limpieza por retención'));
+  }
+
 }
 
 // ── Identificador visible: folio + iniciales del titular (0001_CSC) ──────────

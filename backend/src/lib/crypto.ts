@@ -30,12 +30,19 @@ export function cifrarBuffer(datos: Buffer): Buffer {
 }
 
 export function descifrarBuffer(paquete: Buffer): Buffer {
+  if (paquete.length < 28) throw new Error('Paquete cifrado inválido');
   const iv = paquete.subarray(0, 12);
   const tag = paquete.subarray(12, 28);
   const datos = paquete.subarray(28);
   const decipher = crypto.createDecipheriv(ALGORITMO, CLAVE_CIFRADO, iv);
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(datos), decipher.final()]);
+}
+
+function paqueteBase64(valor: string): Buffer {
+  const paquete = Buffer.from(valor, 'base64');
+  if (paquete.length < 28 || paquete.toString('base64') !== valor) throw new Error('Paquete cifrado inválido');
+  return paquete;
 }
 
 /** Cifra un texto. null/undefined/'' se conservan como null. */
@@ -46,29 +53,60 @@ export function cifrar(texto: string | null | undefined): string | null {
 
 export function descifrar(valor: string | null | undefined): string | null {
   if (valor === null || valor === undefined) return null;
-  if (!valor.startsWith(PREFIJO)) return valor; // tolerante a datos antiguos en claro
+  if (!valor.startsWith(PREFIJO)) {
+    if (config.ALLOW_LEGACY_PLAINTEXT) return valor;
+    throw new Error('Dato protegido sin cifrado; requiere migración');
+  }
   try {
-    return descifrarBuffer(Buffer.from(valor.slice(PREFIJO.length), 'base64')).toString('utf8');
+    return descifrarBuffer(paqueteBase64(valor.slice(PREFIJO.length))).toString('utf8');
   } catch {
-    return null;
+    throw new Error('No se pudo autenticar el dato protegido');
   }
 }
 
-/** Cifra todos los valores string de un objeto plano (para Mongo). */
-export function cifrarObjeto(obj: Record<string, unknown>): Record<string, unknown> {
-  const salida: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(obj ?? {})) {
-    salida[k] = typeof v === 'string' ? cifrar(v) : v;
+const PREFIJO_TIPADO = 'enc:v2:';
+
+function transformar(valor: unknown, descifra: boolean, profundidad = 0): unknown {
+  if (profundidad > 32) throw new Error('Objeto protegido demasiado profundo');
+  if (valor === null || valor === undefined) return valor ?? null;
+  if (Array.isArray(valor)) return valor.map((v) => transformar(v, descifra, profundidad + 1));
+  if (typeof valor === 'object') {
+    if (Object.getPrototypeOf(valor) !== Object.prototype && Object.getPrototypeOf(valor) !== null) {
+      throw new Error('Tipo no admitido en datos protegidos');
+    }
+    return Object.fromEntries(Object.entries(valor).map(([k, v]) => [k, transformar(v, descifra, profundidad + 1)]));
   }
-  return salida;
+  if (!descifra) {
+    if (!['string', 'number', 'boolean'].includes(typeof valor) ||
+        (typeof valor === 'number' && !Number.isFinite(valor))) {
+      throw new Error('Valor no admitido en datos protegidos');
+    }
+    return PREFIJO_TIPADO + cifrarBuffer(Buffer.from(JSON.stringify(valor), 'utf8')).toString('base64');
+  }
+  if (typeof valor === 'string' && valor.startsWith(PREFIJO_TIPADO)) {
+    let plano: unknown;
+    try {
+      plano = JSON.parse(descifrarBuffer(paqueteBase64(valor.slice(PREFIJO_TIPADO.length))).toString('utf8'));
+    } catch {
+      throw new Error('No se pudo autenticar el dato protegido');
+    }
+    if (plano !== null && !['string', 'number', 'boolean'].includes(typeof plano)) {
+      throw new Error('Tipo protegido inválido');
+    }
+    return plano;
+  }
+  if (typeof valor === 'string') return descifrar(valor);
+  if (config.ALLOW_LEGACY_PLAINTEXT) return valor;
+  throw new Error('Dato protegido sin cifrado; requiere migración');
+}
+
+/** Protege recursivamente valores JSON, incluidos números y booleanos. */
+export function cifrarObjeto(obj: Record<string, unknown>): Record<string, unknown> {
+  return transformar(obj ?? {}, false) as Record<string, unknown>;
 }
 
 export function descifrarObjeto(obj: Record<string, unknown> | null | undefined): Record<string, unknown> {
-  const salida: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(obj ?? {})) {
-    salida[k] = typeof v === 'string' ? descifrar(v) : v;
-  }
-  return salida;
+  return transformar(obj ?? {}, true) as Record<string, unknown>;
 }
 
 export function hmac(valor: string): string {

@@ -10,3 +10,8 @@ backups
 .env
 *.tgz
 .git
+deploy/
+.env.*
+**/*.key
+**/*.pem
+gen-ia/out/

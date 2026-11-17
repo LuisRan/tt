@@ -29,15 +29,21 @@ from config import settings  # noqa: E402
 def main() -> None:
     sistema = platform.system()
     host, port = settings.IA_API_HOST, settings.IA_API_PORT
+    if bool(settings.IA_TLS_CERT_FILE) != bool(settings.IA_TLS_KEY_FILE):
+        raise RuntimeError("HTTPS interno requiere certificado y llave")
+    tls = bool(settings.IA_TLS_CERT_FILE and settings.IA_TLS_KEY_FILE)
     print(f"[ia_documentos] SO detectado: {sistema} ({platform.machine()}) -> "
-          f"API en http://{host}:{port}")
+          f"API en {'https' if tls else 'http'}://{host}:{port}")
 
     if "--dev" in sys.argv:
+        if tls:
+            raise RuntimeError("Usa Gunicorn para el perfil con TLS interno")
         from integration.flask_app import app
         app.run(host=host, port=port)
         return
 
     if sistema != "Windows" and importlib.util.find_spec("gunicorn"):
+        argumentos_tls = (["--config", "python:config.gunicorn_tls", "--certfile", settings.IA_TLS_CERT_FILE, "--keyfile", settings.IA_TLS_KEY_FILE] if tls else [])
         os.execvp(sys.executable, [
             sys.executable, "-m", "gunicorn",
             "--bind", f"{host}:{port}",
@@ -46,8 +52,13 @@ def main() -> None:
             "--timeout", str(settings.IA_REQUEST_TIMEOUT),
             "--graceful-timeout", "30",
             "--access-logfile", "-",
+            "--access-logformat", "%(m)s %(s)s %(D)s",
+            *argumentos_tls,
             "integration.flask_app:app",
         ])
+
+    if tls:
+        raise RuntimeError("HTTPS interno requiere Gunicorn en Linux/Docker")
 
     if importlib.util.find_spec("waitress"):
         from waitress import serve

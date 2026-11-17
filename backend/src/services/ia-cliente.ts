@@ -82,8 +82,7 @@ export async function textoCrudoIA(docId: string): Promise<string | null> {
   }
   if (r.status === 404) return null;
   if (!r.ok) {
-    const cuerpo = await r.text().catch(() => '');
-    logger.warn({ status: r.status, cuerpo: cuerpo.slice(0, 200) }, 'el módulo de IA no devolvió el texto');
+    logger.warn({ status: r.status }, 'el módulo de IA no devolvió el texto');
     throw new ErrorIA(r.status, 'IA_ERROR', 'No se pudo recuperar el texto', r.status >= 500);
   }
   const j = (await r.json()) as { texto: string };
@@ -97,4 +96,12 @@ export async function saludIA(): Promise<Record<string, any> | null> {
   } catch {
     return null;
   }
+}
+
+/** Borra únicamente la copia de trabajo después de persistir el resultado y su texto. */
+export async function borrarCopiaIA(docId: string): Promise<void> {
+  const respuesta = await fetch(config.IA_URL + '/api/v1/documentos/' + encodeURIComponent(docId), {
+    method: 'DELETE', headers: cabeceras(), signal: AbortSignal.timeout(10_000),
+  });
+  if (!respuesta.ok && respuesta.status !== 404) throw new Error('No se pudo eliminar la copia de trabajo IA');
 }

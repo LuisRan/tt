@@ -5,6 +5,10 @@ import { config } from '../config.js';
 export const logger = pino({
   level: config.esTest ? 'silent' : config.LOG_LEVEL,
   base: { servicio: 'backend' },
+  serializers: config.esProduccion ? {
+    err: (e: any) => ({ type: typeof e?.name === 'string' ? e.name : 'Error', code: e?.code }),
+    req: (r: any) => ({ id: r.id, method: r.method, url: String(r.url ?? '').split('?')[0] }),
+  } : undefined,
   redact: {
     paths: [
       'req.headers.cookie',
@@ -12,7 +16,9 @@ export const logger = pino({
       'req.headers["x-api-key"]',
       '*.password',
       '*.codigo',
-      '*.curp',
+      '*.curp', '*.direccion', '*.correo', '*.para', '*.token', '*.secret',
+      'password', 'codigo', 'curp', 'direccion', 'correo', 'para', 'token', 'secret',
+      'texto', 'cuerpo', 'error', 'mensaje', '*.texto', '*.cuerpo', '*.error', '*.mensaje',
     ],
     censor: '[oculto]',
   },

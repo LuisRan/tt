@@ -13,11 +13,18 @@ export async function migrar(reintentos = 30): Promise<void> {
   const sql = readFileSync(path.join(aqui, 'schema.sql'), 'utf8');
   for (let intento = 1; ; intento++) {
     try {
-      await pool.query('SELECT pg_advisory_lock(424242)');
+      const cliente = await pool.connect();
       try {
-        await pool.query(sql);
+        await cliente.query('SELECT pg_advisory_lock(424242)');
+        await cliente.query('BEGIN');
+        await cliente.query(sql);
+        await cliente.query('COMMIT');
+      } catch (err) {
+        await cliente.query('ROLLBACK').catch(() => undefined);
+        throw err;
       } finally {
-        await pool.query('SELECT pg_advisory_unlock(424242)');
+        await cliente.query('SELECT pg_advisory_unlock(424242)').catch(() => undefined);
+        cliente.release();
       }
       logger.info('esquema de PostgreSQL aplicado');
       return;
@@ -41,5 +48,5 @@ export async function sembrarAdmin(): Promise<void> {
      VALUES ($1, $2, 'administrador', TRUE, TRUE, NOW())`,
     [correo, hash],
   );
-  logger.info({ correo }, 'cuenta de administrador inicial creada');
+  logger.info('cuenta de administrador inicial creada');
 }

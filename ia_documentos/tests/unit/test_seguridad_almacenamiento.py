@@ -28,7 +28,8 @@ def test_json_0600_desde_creacion(tmp_path, monkeypatch):
     assert _modo(ruta) == 0o600
     assert _modo(tmp_path / "_indices" / "u1.json") == 0o600
     assert modos and all(m == 0o600 for m in modos)
-    assert json.loads(ruta.read_text()) == {"tipo_documento": "ine"}
+    assert repo.obtener_resultado("d1") == {"tipo_documento": "ine"}
+    assert b"tipo_documento" not in ruta.read_bytes()
     assert not [p for p in tmp_path.rglob(".*.tmp")]
 
 
@@ -40,9 +41,11 @@ def test_md_0600(tmp_path):
     except TypeError:
         import pytest
         pytest.skip("firma de TextoExtraido distinta")
-    ruta = MarkdownFileAdapter(tmp_path).guardar_texto(te)
+    adapter = MarkdownFileAdapter(tmp_path)
+    ruta = adapter.guardar_texto(te)
     assert _modo(ruta) == 0o600
-    assert "hola" in ruta.read_text()
+    assert adapter.recuperar_texto("d1") == "hola"
+    assert b"hola" not in ruta.read_bytes()
 
 
 def test_indice_concurrente_sin_perdida(tmp_path):

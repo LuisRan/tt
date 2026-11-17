@@ -123,7 +123,8 @@ rutasAdmin.get('/usuarios/:id', async (req, res) => {
   res.json({
     ...u,
     curp: enmascarar(descifrar(u.curp)),
-    direccion: descifrar(u.direccion),
+    direccion: null,
+    direccion_protegida: Boolean(u.direccion),
     documentos: docs.rows,
     accesos: accesos.rows,
   });

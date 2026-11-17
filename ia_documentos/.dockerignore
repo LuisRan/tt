@@ -9,3 +9,10 @@ data/output/
 data/logs/
 data/input/*.pdf
 .env
+
+# Datos, llaves y resultados de trabajo no pertenecen a la imagen.
+data/
+.env
+.env.*
+**/__pycache__/
+.pytest_cache/

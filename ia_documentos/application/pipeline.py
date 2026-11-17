@@ -589,3 +589,7 @@ class DocumentPipeline:
 
     def listar_documentos_usuario(self, user_id: str) -> list[dict]:
         return self._json_storage.listar_documentos_usuario(user_id)
+
+    def eliminar_documento(self, doc_id: str) -> None:
+        self._json_storage.eliminar(doc_id)
+        self._md_storage.eliminar(doc_id)

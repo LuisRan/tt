@@ -173,6 +173,13 @@ def create_app(pipeline: DocumentPipeline | None = None) -> Flask:
             return Response(texto, mimetype="text/markdown; charset=utf-8")
         return jsonify({"doc_id": doc_id, "texto": texto}), 200
 
+    @app.delete("/api/v1/documentos/<doc_id>")
+    def eliminar_copia_documento(doc_id: str):
+        if not _id_valido(doc_id):
+            return jsonify({"error": "doc_id invalido"}), 400
+        obtener_pipeline().eliminar_documento(doc_id)
+        return "", 204
+
     @app.get("/api/v1/usuarios/<user_id>/documentos")
     def listar_documentos(user_id: str):
         if not _id_valido(user_id):

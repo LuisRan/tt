@@ -38,3 +38,7 @@ venv/
 .DS_Store
 .vscode/
 .idea/
+
+# Secretos y estado local del despliegue seguro
+/deploy/seguridad/private/
+/deploy/seguridad/tests/.runtime/

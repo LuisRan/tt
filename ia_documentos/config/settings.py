@@ -214,6 +214,9 @@ OCR_ACTA_ZONA_SUPERIOR = _env_bool("OCR_ACTA_ZONA_SUPERIOR", False)
 # ── API REST (Flask) ──────────────────────────────────────────────────────────
 IA_API_HOST = _env_str("IA_API_HOST", "0.0.0.0")
 IA_API_PORT = _env_int("IA_API_PORT", 5001)
+# HTTPS interno del servicio IA en la VPS.
+IA_TLS_CERT_FILE = _env_str("IA_TLS_CERT_FILE", "")
+IA_TLS_KEY_FILE = _env_str("IA_TLS_KEY_FILE", "")
 # Clave compartida con el backend Node.js (cabecera X-API-Key).
 # Si esta vacia, la API no exige clave (solo recomendable en desarrollo local).
 IA_API_KEY = os.environ.get("IA_API_KEY", "").strip()

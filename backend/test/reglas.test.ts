@@ -47,7 +47,7 @@ describe('criptografía', () => {
     expect(c.startsWith('enc:v1:')).toBe(true);
     expect(crypto.descifrar(c)).toBe('SACR760818HDFVNL08');
     const alterado = c.slice(0, -4) + (c.endsWith('AAAA') ? 'BBBB' : 'AAAA');
-    expect(crypto.descifrar(alterado)).toBeNull();
+    expect(() => crypto.descifrar(alterado)).toThrow();
   });
   it('códigos 2FA de 6 dígitos', () => {
     for (let i = 0; i < 50; i++) expect(crypto.generarCodigo()).toMatch(/^\d{6}$/);

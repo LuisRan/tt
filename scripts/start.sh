@@ -85,6 +85,7 @@ if [ ! -f .env ]; then
   poner_env JWT_SECRET "$(openssl rand -hex 48)"
   poner_env DATA_ENCRYPTION_KEY "$(openssl rand -base64 32)"
   poner_env IA_API_KEY "$(openssl rand -hex 24)"
+  poner_env IA_STORAGE_KEY "$(openssl rand -base64 32)"
   poner_env BACKUP_ENCRYPTION_KEY "$(openssl rand -hex 32)"
   poner_env ADMIN_PASSWORD "Admin-$(openssl rand -hex 6)A9"
   amarillo "  Edita ADMIN_EMAIL y (opcional) RESEND_API_KEY / MAIL_FROM en .env"

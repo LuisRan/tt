@@ -70,7 +70,7 @@ import Panel from '../../layouts/Panel.astro';
       <div class="campo"><label>Sexo</label><select name="sexo">
         <option value="">Sin especificar</option><option value="H" ${u.sexo === 'H' ? 'selected' : ''}>Hombre</option><option value="M" ${u.sexo === 'M' ? 'selected' : ''}>Mujer</option></select></div>
     </div>
-    <div class="campo"><label>Domicilio</label><input name="direccion" value="${esc(u.direccion ?? '')}"></div>`;
+    <div class="campo"><label>Domicilio</label><input name="direccion" placeholder="${u.direccion_protegida ? 'Protegido: deja vacío para conservarlo' : ''}"></div>`;
 
   const camposCuenta = (u: any = {}, esYo = false) => `
     <div class="form-validacion">
@@ -84,13 +84,14 @@ import Panel from '../../layouts/Panel.astro';
   function leerFormulario(form: HTMLFormElement, original: any = {}): Record<string, unknown> {
     const datos: Record<string, unknown> = {};
     const val = (n: string) => ((form.elements.namedItem(n) as HTMLInputElement | null)?.value ?? '').trim();
-    for (const n of ['nombre', 'apellido_paterno', 'apellido_materno', 'direccion', 'sexo']) {
+    for (const n of ['nombre', 'apellido_paterno', 'apellido_materno', 'sexo']) {
       const v = val(n) || null;
       if ((original[n] ?? null) !== v) datos[n] = v;
     }
     const fn = val('fecha_nacimiento') || null;
     if (isoADmy(original.fecha_nacimiento) !== (fn ?? '')) datos.fecha_nacimiento = fn;
     if (val('curp')) datos.curp = val('curp');
+    if (val('direccion')) datos.direccion = val('direccion');
     const correo = val('correo').toLowerCase();
     if (correo && correo !== original.correo) datos.correo = correo;
     const rol = form.elements.namedItem('rol') as HTMLSelectElement | null;

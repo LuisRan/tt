@@ -15,6 +15,9 @@ export interface Correo {
 }
 
 export async function enviarCorreo(c: Correo): Promise<{ id?: string; proveedor: string }> {
+  if (config.esProduccion && config.proveedorCorreo !== 'resend') {
+    throw new Error('Proveedor de correo no disponible; el código no se registra.');
+  }
   if (config.proveedorCorreo === 'resend') {
     const respuesta = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -34,8 +37,8 @@ export async function enviarCorreo(c: Correo): Promise<{ id?: string; proveedor:
     });
     const cuerpo = (await respuesta.json().catch(() => ({}))) as { id?: string; message?: string };
     if (!respuesta.ok) {
-      logger.error({ status: respuesta.status, error: cuerpo.message }, 'Resend rechazó el correo');
-      throw new Error(`No se pudo enviar el correo (${respuesta.status}): ${cuerpo.message ?? 'error'}`);
+      logger.error({ status: respuesta.status }, 'Resend rechazó el correo');
+      throw new Error('No se pudo enviar el correo (' + respuesta.status + ')');
     }
     logger.info({ id: cuerpo.id }, 'correo enviado con Resend');
     return { id: cuerpo.id, proveedor: 'resend' };
